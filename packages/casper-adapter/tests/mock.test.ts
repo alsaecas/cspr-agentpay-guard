@@ -18,12 +18,12 @@ describe("MockCasperPaymentAdapter", () => {
       merchantAccount: "mock-merchant-account",
       method: "GET",
       url: "https://api.example.test/premium/report?symbol=CSPR",
-      resourceId: "premium-report-cspr",
+      endpointId: "premium-report-cspr",
       amount: "1000000000",
       currency: "CSPR",
       requestHash:
         "d52ebc6bb72c8da8aa998f348f27c50eea07e5af9245f0e697c5bbf12dc8e4aa",
-      requirementNonce: "requirement-nonce",
+      nonce: "requirement-nonce",
       termsHash:
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       escrowMode: "authorize_then_settle",
@@ -37,11 +37,13 @@ describe("MockCasperPaymentAdapter", () => {
       policyId: "policy_demo_agent_001",
       agentId: "agent_research_001",
       merchantId: "merchant_market_data_001",
+      merchantAccount: requirement.merchantAccount,
       requirementId: "req_001",
+      endpointId: requirement.endpointId,
       requestHash: requirement.requestHash,
       amount: requirement.amount,
       currency: "CSPR",
-      authorizationNonce: "authorization-nonce",
+      nonce: "authorization-nonce",
       expiresAt: requirement.expiresAt,
       authorizedAt: "2026-06-03T00:00:10.000Z",
       signature: "mock-signature",
@@ -56,6 +58,8 @@ describe("MockCasperPaymentAdapter", () => {
     expect(receipt.status).toBe("escrowed");
     expect(receipt.paymentId).toBe(authorization.paymentId);
     expect(receipt.requestHash).toBe(requirement.requestHash);
+    expect(receipt.endpointId).toBe(requirement.endpointId);
+    expect(receipt.chainMode).toBe("mock");
     expect(receipt.casperDeployHash).toContain("mock-deploy-");
   });
 });

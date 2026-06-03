@@ -3,7 +3,8 @@ import express, { type Request, type Response } from "express";
 import {
   PROTOCOL_VERSION,
   blake2b256Hex,
-  computeRequestHash,
+  createBodyHash,
+  createRequestHash,
   type PaymentRequirement,
 } from "@cspr-agentpay/protocol";
 
@@ -16,12 +17,13 @@ export function createPaidApiServer() {
   });
 
   app.get("/premium/report", (req: Request, res: Response) => {
-    const agentId = String(req.header("x-agent-id") ?? "agent_research_001");
     const merchantId = process.env.MERCHANT_ID ?? "merchant_market_data_001";
-    const resourceId = "premium-report-cspr";
+    const endpointId = "premium-report-cspr";
 
     if (!req.header("x-agentpay-receipt")) {
       const url = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      const nonce = "paid-api-placeholder-nonce";
       const requirement: PaymentRequirement = {
         version: PROTOCOL_VERSION,
         requirementId: "req_paid_api_placeholder",
@@ -30,28 +32,22 @@ export function createPaidApiServer() {
           process.env.MERCHANT_ACCOUNT ?? "mock-merchant-account",
         method: req.method,
         url,
-        resourceId,
+        endpointId,
         amount: "1000000000",
         currency: "CSPR",
-        requestHash: computeRequestHash({
+        requestHash: createRequestHash({
           method: req.method,
           url,
-          resourceId,
-          merchantId,
-          agentId,
-          body: {},
-          headers: {
-            "content-type": req.header("content-type"),
-            "x-agent-id": agentId,
-            "x-merchant-id": merchantId,
-            "x-resource-id": resourceId,
-          },
+          bodyHash: createBodyHash({}),
+          endpointId,
+          nonce,
+          expiresAt,
         }),
-        requirementNonce: "paid-api-placeholder-nonce",
+        nonce,
         termsHash: blake2b256Hex("premium report terms"),
         escrowMode: "authorize_then_settle",
         issuedAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        expiresAt,
       };
 
       res.status(402).json({ error: "PAYMENT_REQUIRED", requirement });

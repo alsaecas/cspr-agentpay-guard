@@ -1,11 +1,12 @@
 import type {
+  ChainMode,
   PaymentAuthorization,
   PaymentReceipt,
   PaymentRequirement,
-  ReceiptStatus,
+  PaymentStatus,
 } from "@cspr-agentpay/protocol";
 
-export type AgentPayMode = "mock" | "casper-testnet";
+export type AgentPayMode = ChainMode;
 
 export interface SubmitPaymentInput {
   requirement: PaymentRequirement;
@@ -20,7 +21,7 @@ export interface SettlePaymentInput {
 
 export interface SettlementResult {
   paymentId: string;
-  status: Extract<ReceiptStatus, "settled">;
+  status: Extract<PaymentStatus, "settled">;
   casperDeployHash: string;
   casperEventId: string;
   settledAt: string;

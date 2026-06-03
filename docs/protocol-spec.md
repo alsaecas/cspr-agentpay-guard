@@ -109,11 +109,11 @@ Required fields:
   "merchantAccount": "casper-account-hash-or-public-key",
   "method": "GET",
   "url": "https://api.example.test/premium/report?symbol=CSPR",
-  "resourceId": "premium-report-cspr",
+  "endpointId": "premium-report-cspr",
   "amount": "1000000000",
   "currency": "CSPR",
   "requestHash": "hex-blake2b256",
-  "requirementNonce": "merchant-generated-unique-nonce",
+  "nonce": "merchant-generated-unique-nonce",
   "termsHash": "hex-blake2b256",
   "escrowMode": "authorize_then_settle",
   "expiresAt": "2026-06-03T00:05:00Z",
@@ -126,7 +126,7 @@ Rules:
 - The gateway creates the requirement.
 - The requirement expires quickly.
 - The requirement must bind to the request via `requestHash`.
-- The merchant must not change amount, destination, URL, resource, expiry, or nonce after issuing the requirement.
+- The merchant must not change amount, destination, URL, endpoint, expiry, or nonce after issuing the requirement.
 
 ## PaymentAuthorization
 
@@ -141,11 +141,13 @@ Required fields:
   "policyId": "policy_demo_agent_001",
   "agentId": "agent_research_001",
   "merchantId": "merchant_market_data_001",
+  "merchantAccount": "casper-account-hash-or-public-key",
   "requirementId": "req_001",
+  "endpointId": "premium-report-cspr",
   "requestHash": "hex-blake2b256",
   "amount": "1000000000",
   "currency": "CSPR",
-  "authorizationNonce": "agent-generated-unique-nonce",
+  "nonce": "agent-generated-unique-nonce",
   "expiresAt": "2026-06-03T00:04:00Z",
   "authorizedAt": "2026-06-03T00:00:10Z",
   "signature": "agent-or-owner-signature"
@@ -172,10 +174,13 @@ Required fields:
   "policyId": "policy_demo_agent_001",
   "agentId": "agent_research_001",
   "merchantId": "merchant_market_data_001",
+  "merchantAccount": "casper-account-hash-or-public-key",
+  "endpointId": "premium-report-cspr",
   "requestHash": "hex-blake2b256",
   "amount": "1000000000",
   "currency": "CSPR",
   "status": "escrowed",
+  "chainMode": "mock",
   "casperDeployHash": "hex-or-mock-deploy-hash",
   "casperEventId": "event-or-mock-event-id",
   "receiptNonce": "adapter-generated-unique-nonce",
@@ -199,18 +204,16 @@ Rules:
 Formula:
 
 ```text
-requestBodyHash = BLAKE2b-256(canonicalJson(request.body))
-selectedHeadersHash = BLAKE2b-256(canonicalJson(selectedHeaders))
+bodyHash = BLAKE2b-256(canonicalJson(request.body))
 
 requestHash = BLAKE2b-256(
   "CSPR_AGENTPAY_REQUEST_V1" + "\n" +
   upper(method) + "\n" +
   normalizeUrl(url) + "\n" +
-  resourceId + "\n" +
-  merchantId + "\n" +
-  agentId + "\n" +
-  requestBodyHash + "\n" +
-  selectedHeadersHash
+  bodyHash + "\n" +
+  endpointId + "\n" +
+  nonce + "\n" +
+  expiresAtUtc
 )
 ```
 
@@ -226,21 +229,18 @@ Formula:
 paymentId = BLAKE2b-256(
   "CSPR_AGENTPAY_PAYMENT_V1" + "\n" +
   policyId + "\n" +
-  agentId + "\n" +
-  merchantId + "\n" +
-  requirementId + "\n" +
-  requestHash + "\n" +
+  merchantAccount + "\n" +
   amount + "\n" +
-  currency + "\n" +
-  requirementNonce + "\n" +
-  authorizationNonce
+  endpointId + "\n" +
+  requestHash + "\n" +
+  nonce
 )
 ```
 
 Rules:
 
-- `authorizationNonce` must be unique per agent.
-- `requirementNonce` must be unique per merchant.
+- Request nonces must be unique per merchant-issued requirement.
+- Payment nonces must be unique per agent authorization.
 - The same `paymentId` cannot be authorized, escrowed, or settled twice.
 
 ## State Transitions
@@ -323,4 +323,3 @@ HTTP mapping:
 - `409`: Replay, duplicate settlement, or invalid state transition.
 - `410`: Expired requirement, authorization, or receipt.
 - `502`: Casper submission or event lookup failed.
-

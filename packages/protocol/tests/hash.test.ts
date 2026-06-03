@@ -1,44 +1,99 @@
 import { describe, expect, it } from "vitest";
 
-import { computePaymentId, computeRequestHash } from "../src/index";
+import {
+  createBodyHash,
+  createPaymentId,
+  createRequestHash,
+  createResponseHash,
+} from "../src/index";
 
 describe("protocol hashes", () => {
   it("computes deterministic request hashes with normalized query order", () => {
-    const left = computeRequestHash({
+    const left = createRequestHash({
       method: "get",
       url: "https://api.example.test/premium/report?symbol=CSPR&kind=daily",
-      resourceId: "premium-report-cspr",
-      merchantId: "merchant_market_data_001",
-      agentId: "agent_research_001",
-      body: {},
+      bodyHash: createBodyHash({ symbol: "CSPR" }),
+      endpointId: "premium-report-cspr",
+      nonce: "request-nonce",
+      expiresAt: "2030-01-01T00:00:00.000Z",
     });
-    const right = computeRequestHash({
+    const right = createRequestHash({
       method: "GET",
       url: "https://api.example.test/premium/report?kind=daily&symbol=CSPR",
-      resourceId: "premium-report-cspr",
-      merchantId: "merchant_market_data_001",
-      agentId: "agent_research_001",
-      body: {},
+      bodyHash: createBodyHash({ symbol: "CSPR" }),
+      endpointId: "premium-report-cspr",
+      nonce: "request-nonce",
+      expiresAt: "2030-01-01T00:00:00Z",
     });
 
     expect(left).toEqual(right);
     expect(left).toMatch(/^[a-f0-9]{64}$/);
   });
 
-  it("computes deterministic payment ids", () => {
-    const paymentId = computePaymentId({
-      policyId: "policy_demo_agent_001",
-      agentId: "agent_research_001",
-      merchantId: "merchant_market_data_001",
-      requirementId: "req_001",
-      requestHash:
-        "d52ebc6bb72c8da8aa998f348f27c50eea07e5af9245f0e697c5bbf12dc8e4aa",
-      amount: "1000000000",
-      currency: "CSPR",
-      requirementNonce: "requirement-nonce",
-      authorizationNonce: "authorization-nonce",
+  it("produces different request hashes for different URLs", () => {
+    const base = requestHashInput();
+    const left = createRequestHash(base);
+    const right = createRequestHash({
+      ...base,
+      url: "https://api.example.test/premium/report?symbol=ETH",
     });
 
-    expect(paymentId).toMatch(/^[a-f0-9]{64}$/);
+    expect(left).not.toEqual(right);
+  });
+
+  it("produces different request hashes for different bodies", () => {
+    const base = requestHashInput();
+    const left = createRequestHash({
+      ...base,
+      bodyHash: createBodyHash({ symbol: "CSPR" }),
+    });
+    const right = createRequestHash({
+      ...base,
+      bodyHash: createBodyHash({ symbol: "ETH" }),
+    });
+
+    expect(left).not.toEqual(right);
+  });
+
+  it("produces different payment IDs for different nonces", () => {
+    const requestHash = createRequestHash(requestHashInput());
+    const left = createPaymentId({
+      policyId: "policy_demo_agent_001",
+      merchantAccount: "mock-merchant-account",
+      amount: "1000000000",
+      endpointId: "premium-report-cspr",
+      requestHash,
+      nonce: "authorization-nonce-left",
+    });
+    const right = createPaymentId({
+      policyId: "policy_demo_agent_001",
+      merchantAccount: "mock-merchant-account",
+      amount: "1000000000",
+      endpointId: "premium-report-cspr",
+      requestHash,
+      nonce: "authorization-nonce-right",
+    });
+
+    expect(left).not.toEqual(right);
+    expect(left).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it("computes deterministic response hashes", () => {
+    const left = createResponseHash({ data: ["a", "b"], ok: true });
+    const right = createResponseHash({ ok: true, data: ["a", "b"] });
+
+    expect(left).toEqual(right);
+    expect(left).toMatch(/^[a-f0-9]{64}$/);
   });
 });
+
+function requestHashInput() {
+  return {
+    method: "GET",
+    url: "https://api.example.test/premium/report?symbol=CSPR",
+    bodyHash: createBodyHash({ symbol: "CSPR" }),
+    endpointId: "premium-report-cspr",
+    nonce: "request-nonce",
+    expiresAt: "2030-01-01T00:00:00.000Z",
+  };
+}

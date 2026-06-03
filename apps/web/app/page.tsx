@@ -1,14 +1,18 @@
-import { PROTOCOL_VERSION, computeRequestHash } from "@cspr-agentpay/protocol";
+import {
+  PROTOCOL_VERSION,
+  createBodyHash,
+  createRequestHash,
+} from "@cspr-agentpay/protocol";
 import { mockId } from "@cspr-agentpay/casper-adapter";
 
 const mode = process.env.NEXT_PUBLIC_AGENTPAY_MODE ?? "mock";
-const requestHash = computeRequestHash({
+const requestHash = createRequestHash({
   method: "GET",
   url: "https://api.example.test/premium/report?symbol=CSPR",
-  resourceId: "premium-report-cspr",
-  merchantId: "merchant_market_data_001",
-  agentId: "agent_research_001",
-  body: {},
+  bodyHash: createBodyHash({}),
+  endpointId: "premium-report-cspr",
+  nonce: "dashboard-request-nonce",
+  expiresAt: "2030-01-01T00:00:00.000Z",
 });
 
 export default function DashboardPage() {

@@ -1,16 +1,18 @@
 export const PROTOCOL_VERSION = "agentpay-guard-v1" as const;
 
 export type ProtocolVersion = typeof PROTOCOL_VERSION;
+export type ChainMode = "mock" | "casper-testnet";
 export type PaymentCurrency = "CSPR";
 export type PolicyStatus = "active" | "paused" | "expired" | "revoked";
 export type MerchantStatus = "active" | "paused" | "revoked";
-export type ReceiptStatus =
+export type PaymentStatus =
   | "pending"
   | "escrowed"
   | "settled"
   | "refunded"
   | "expired"
   | "failed";
+export type ReceiptStatus = PaymentStatus;
 
 export interface AgentPolicy {
   version: ProtocolVersion;
@@ -49,11 +51,11 @@ export interface PaymentRequirement {
   merchantAccount: string;
   method: string;
   url: string;
-  resourceId: string;
+  endpointId: string;
   amount: string;
   currency: PaymentCurrency;
   requestHash: string;
-  requirementNonce: string;
+  nonce: string;
   termsHash: string;
   escrowMode: "authorize_then_settle";
   expiresAt: string;
@@ -66,11 +68,13 @@ export interface PaymentAuthorization {
   policyId: string;
   agentId: string;
   merchantId: string;
+  merchantAccount: string;
   requirementId: string;
+  endpointId: string;
   requestHash: string;
   amount: string;
   currency: PaymentCurrency;
-  authorizationNonce: string;
+  nonce: string;
   expiresAt: string;
   authorizedAt: string;
   signature: string;
@@ -82,35 +86,38 @@ export interface PaymentReceipt {
   policyId: string;
   agentId: string;
   merchantId: string;
+  merchantAccount: string;
+  endpointId: string;
   requestHash: string;
   amount: string;
   currency: PaymentCurrency;
-  status: ReceiptStatus;
+  status: PaymentStatus;
+  chainMode: ChainMode;
   casperDeployHash: string;
   casperEventId: string;
   receiptNonce: string;
   issuedAt: string;
   expiresAt: string;
+  responseHash?: string | undefined;
 }
 
-export interface RequestHashInput {
+export interface CreateRequestHashInput {
   method: string;
   url: string;
-  resourceId: string;
-  merchantId: string;
-  agentId: string;
-  body?: unknown;
-  headers?: Record<string, string | string[] | undefined>;
+  bodyHash: string;
+  endpointId: string;
+  nonce: string;
+  expiresAt: string;
 }
 
-export interface PaymentIdInput {
+export interface CreatePaymentIdInput {
   policyId: string;
-  agentId: string;
-  merchantId: string;
-  requirementId: string;
-  requestHash: string;
+  merchantAccount: string;
   amount: string;
-  currency: PaymentCurrency;
-  requirementNonce: string;
-  authorizationNonce: string;
+  endpointId: string;
+  requestHash: string;
+  nonce: string;
 }
+
+export type RequestHashInput = CreateRequestHashInput;
+export type PaymentIdInput = CreatePaymentIdInput;

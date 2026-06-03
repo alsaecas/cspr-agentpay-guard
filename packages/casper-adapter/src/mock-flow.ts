@@ -1,8 +1,9 @@
 import {
   PROTOCOL_VERSION,
   blake2b256Hex,
-  computePaymentId,
-  computeRequestHash,
+  createBodyHash,
+  createPaymentId,
+  createRequestHash,
   type PaymentAuthorization,
   type PaymentRequirement,
 } from "@cspr-agentpay/protocol";
@@ -23,51 +24,45 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
   const expiresAt = new Date("2026-06-03T00:05:00.000Z").toISOString();
   const agentId = process.env.AGENT_ID ?? "agent_research_001";
   const merchantId = process.env.MERCHANT_ID ?? "merchant_market_data_001";
+  const merchantAccount = "mock-merchant-account";
+  const endpointId = "premium-report-cspr";
   const amount = "1000000000";
-  const requestHash = computeRequestHash({
+  const requestNonce = "mock-requirement-nonce-001";
+  const requestHash = createRequestHash({
     method: "GET",
     url: "https://api.example.test/premium/report?symbol=CSPR",
-    resourceId: "premium-report-cspr",
-    merchantId,
-    agentId,
-    body: {},
-    headers: {
-      "content-type": "application/json",
-      "x-agent-id": agentId,
-      "x-merchant-id": merchantId,
-      "x-resource-id": "premium-report-cspr",
-    },
+    bodyHash: createBodyHash({}),
+    endpointId,
+    nonce: requestNonce,
+    expiresAt,
   });
 
   const requirement: PaymentRequirement = {
     version: PROTOCOL_VERSION,
     requirementId: "req_mock_001",
     merchantId,
-    merchantAccount: "mock-merchant-account",
+    merchantAccount,
     method: "GET",
     url: "https://api.example.test/premium/report?symbol=CSPR",
-    resourceId: "premium-report-cspr",
+    endpointId,
     amount,
     currency: "CSPR",
     requestHash,
-    requirementNonce: "mock-requirement-nonce-001",
+    nonce: requestNonce,
     termsHash: blake2b256Hex("mock terms"),
     escrowMode: "authorize_then_settle",
     expiresAt,
     issuedAt: now.toISOString(),
   };
 
-  const authorizationNonce = "mock-authorization-nonce-001";
-  const paymentId = computePaymentId({
+  const paymentNonce = "mock-payment-nonce-001";
+  const paymentId = createPaymentId({
     policyId: "policy_demo_agent_001",
-    agentId,
-    merchantId,
-    requirementId: requirement.requirementId,
-    requestHash,
+    merchantAccount,
     amount,
-    currency: "CSPR",
-    requirementNonce: requirement.requirementNonce,
-    authorizationNonce,
+    endpointId,
+    requestHash,
+    nonce: paymentNonce,
   });
 
   const authorization: PaymentAuthorization = {
@@ -76,11 +71,13 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
     policyId: "policy_demo_agent_001",
     agentId,
     merchantId,
+    merchantAccount,
     requirementId: requirement.requirementId,
+    endpointId,
     requestHash,
     amount,
     currency: "CSPR",
-    authorizationNonce,
+    nonce: paymentNonce,
     expiresAt,
     authorizedAt: new Date("2026-06-03T00:00:10.000Z").toISOString(),
     signature: "mock-agent-signature",
