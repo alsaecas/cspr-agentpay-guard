@@ -6,16 +6,17 @@ Scope: identify the current best package choices and integration strategy for th
 
 ## Executive Recommendation
 
-Build the MVP around a stable TypeScript protocol spine and a `CasperPaymentAdapter` interface before touching chain integration.
+Build the MVP around a stable TypeScript protocol spine, pure policy package, and full `CasperPaymentAdapter` interface before touching chain integration.
 
 Recommended order:
 
-1. Implement protocol types, deterministic hashes, policy checks, gateway flow, audit events, and a deterministic `MockCasperPaymentAdapter`.
-2. Add a real Casper Testnet adapter that can submit one visible Casper transaction or contract call and map it into the same receipt shape.
-3. Add a minimal Odra contract only after the mock flow is proven. The first contract should store `paymentId`, `requestHash`, amount, merchant, status, expiry, and emit Casper Event Standard events.
-4. Use CSPR.cloud as the read/index/streaming layer for dashboard proof.
-5. Use CSPR.click for policy owner wallet UX and optional funding/signing, not as the core autonomous-agent payment mechanism.
-6. Add MCP as an agent-facing tool surface only after the HTTP 402 flow works.
+1. Completed locally: protocol types, deterministic hashes, pure policy checks, audit event types, and a deterministic in-memory `MockCasperPaymentAdapter` state machine.
+2. Next: build the paid API HTTP 402 flow on top of the mock adapter.
+3. Then add a real Casper Testnet adapter that can submit one visible Casper transaction or contract call and map it into the same receipt shape.
+4. Add a minimal Odra contract only after the mock flow is proven. The first contract should store `paymentId`, `requestHash`, amount, merchant, status, expiry, and emit Casper Event Standard events.
+5. Use CSPR.cloud as the read/index/streaming layer for dashboard proof.
+6. Use CSPR.click for policy owner wallet UX and optional funding/signing, not as the core autonomous-agent payment mechanism.
+7. Add MCP as an agent-facing tool surface only after the HTTP 402 flow works.
 
 ## Chosen Libraries
 
@@ -30,12 +31,13 @@ Recommended order:
 
 ## Casper 2.x Terminology Risk
 
-Casper 2.0 docs say Transactions supersede legacy Deploys and legacy Deploy support is deprecated. The existing protocol spec uses `casperDeployHash`. Do not silently change the protocol during implementation.
+Casper 2.0 docs say Transactions supersede legacy Deploys and legacy Deploy support is deprecated. The protocol now uses `PaymentReceipt.proof` internally and keeps `casperDeployHash` only as an optional display compatibility field.
 
 Recommendation:
 
-- Keep `PaymentReceipt.casperDeployHash` for the current docs and UI copy until the protocol is deliberately revised.
-- Internally model proof as:
+- `PaymentReceipt.proof` is now the internal source of truth.
+- Keep `PaymentReceipt.casperDeployHash` and `casperEventId` only as backward-compatible display fields when useful for current UI copy.
+- Proof is modeled as:
 
 ```ts
 type CasperProof =
@@ -44,7 +46,7 @@ type CasperProof =
   | { kind: "legacy-deploy"; deployHash: string; eventId?: string };
 ```
 
-- Before real integration, decide whether to update `docs/protocol-spec.md` from `casperDeployHash` to `casperProofHash` or `casperTransactionHash`.
+- Real integration should populate `proof.kind = "transaction-v1"` for Casper 2.x transactions or `proof.kind = "legacy-deploy"` only for legacy paths.
 
 ## Mock Fallbacks
 
@@ -53,8 +55,8 @@ Every integration must have a local fallback with the same app-facing interface.
 | Integration | Mock fallback |
 | --- | --- |
 | Odra contract | `MockPaymentContractStore` in TypeScript, keyed by `paymentId`, enforcing state transitions and duplicate-settlement rejection. |
-| Casper Testnet deploy/transaction | `MockCasperPaymentAdapter` returns deterministic `mock-deploy-*`, `mock-txn-*`, and `mock-event-*` values derived from `paymentId`. |
-| Casper JS/TS SDK | Adapter test double with no network calls and fixed transaction status progression: `submitted -> escrowed -> settled`. |
+| Casper Testnet deploy/transaction | `MockCasperPaymentAdapter` returns deterministic `mock-*` proof hashes and event IDs derived from `paymentId`. |
+| Casper JS/TS SDK | Adapter test double with no network calls and fixed transaction status progression: `authorized -> submitted -> escrowed -> fulfilled -> settled`. |
 | CSPR.click | `MockWalletAdapter` with a seeded demo public key and explicit UI label `mock wallet`. No per-payment human approval. |
 | CSPR.cloud | `MockCasperEventIndex` exposes REST-like reads and WebSocket-like event callbacks over the local audit log. |
 | MCP server | MCP tools call the same mock gateway and policy engine. If MCP is not running, the demo agent can call the HTTP API directly. |
@@ -65,12 +67,12 @@ Mock mode must remain visibly labeled and must never be presented as real Casper
 
 Mock first:
 
-- Policy creation and budget state.
+- Policy creation and budget state through `packages/policy`.
 - Merchant registry and allowlist checks.
 - HTTP `402 Payment Required` response.
 - `PaymentRequirement`, `PaymentAuthorization`, `PaymentReceipt`.
 - `requestHash` and `paymentId` deterministic fixtures.
-- Casper payment submission, event emission, receipt status, settlement, duplicate settlement rejection.
+- Casper payment submission, event emission, receipt status transitions, fulfillment, settlement, duplicate settlement rejection, and nonce replay rejection.
 - CSPR.cloud event reads and stream updates.
 - CSPR.click wallet connection in the dashboard.
 - MCP tools for calling the same demo flow.
@@ -214,7 +216,7 @@ Setup implication: install `cargo-odra`, add `wasm32-unknown-unknown`, and updat
 | CSPR.click is human-wallet UX | It cannot be the autonomous agent's per-payment path | Use it for owner setup/funding; backend policy/adapter handles autonomous payment. |
 | CSPR.cloud requires access token | Event reads fail without account setup | Keep mock event index; add clear env validation and mode label. |
 | CSPR.cloud streaming can duplicate messages or reconnect | Dashboard may show duplicate events | Deduplicate by `paymentId`, transaction hash, and event ID. |
-| CSPR.cloud indexing latency | Dashboard may lag after transaction | Poll RPC first, then stream/index when available. Show pending state. |
+| CSPR.cloud indexing latency | Dashboard may lag after transaction | Poll RPC first, then stream/index when available. Show `submitted` or `escrowed` state. |
 | MCP remote server auth/CORS | Remote MCP demo can become infrastructure-heavy | Use stdio first for local demo. Streamable HTTP only after core flow works. |
 | Testnet faucet or gas limits | Real demo can stall | Keep mock mode reliable and pre-fund testnet accounts before judging. |
 | Secret key handling | Demo custody risk | Keep testnet-only keys in `.env`, never commit PEM files, never expose backend signing key to frontend. |
@@ -226,7 +228,6 @@ Setup implication: install `cargo-odra`, add `wasm32-unknown-unknown`, and updat
 - Whether CSPR.cloud Testnet streaming can be used reliably with the available access tier during the hackathon.
 - Whether `ODRA_CASPER_LIVENET_EVENTS_URL` should use `https://node.testnet.cspr.cloud/events`, `https://node-sse.testnet.cspr.cloud/events/main`, or another CSPR.cloud-specific URL for Odra Livenet.
 - Whether CSPR.click `send()` supports the exact TransactionV1 or contract-call JSON shape needed by the dashboard funding flow across selected wallets.
-- Whether the MVP protocol should rename `casperDeployHash` before implementation to avoid confusing judges with Casper 2.x terminology.
 - Whether true on-chain escrow is feasible inside the hackathon timeline or should remain a stretch after on-chain payment-state proof.
 
 ## Recommended First Implementation Step
@@ -235,11 +236,10 @@ Start with the protocol and adapter spine, not the contract.
 
 Next task:
 
-1. Create a TypeScript workspace.
-2. Add `packages/protocol` with exact protocol types and deterministic `requestHash`/`paymentId` helpers.
-3. Add `packages/policy` with pure policy checks.
-4. Add `packages/casper-adapter` with a `CasperPaymentAdapter` interface and deterministic mock implementation.
-5. Add unit tests for policy approval, rejection, hash mismatch, replay, expiry, over-budget, and duplicate settlement.
+1. Build `apps/paid-api` into the real HTTP 402 protected-resource flow.
+2. Have it create `PaymentRequirement` objects with canonical `requestHash`.
+3. Verify mock receipts through the adapter state machine before returning premium data.
+4. Emit/read adapter audit events for the later dashboard.
 
 Acceptance for that step:
 

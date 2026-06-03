@@ -1,5 +1,5 @@
 {
-  "name": "@cspr-agentpay/casper-adapter",
+  "name": "@cspr-agentpay/policy",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@cspr-agentpay/policy": "workspace:*",
     "@cspr-agentpay/protocol": "workspace:*"
   }
 }

@@ -17,6 +17,7 @@
     "baseUrl": ".",
     "paths": {
       "@cspr-agentpay/protocol": ["packages/protocol/src/index.ts"],
+      "@cspr-agentpay/policy": ["packages/policy/src/index.ts"],
       "@cspr-agentpay/casper-adapter": ["packages/casper-adapter/src/index.ts"],
       "@cspr-agentpay/mcp-server": ["packages/mcp-server/src/index.ts"]
     }

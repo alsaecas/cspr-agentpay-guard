@@ -24,9 +24,15 @@ References:
 
 ## Current Status
 
-This repository currently contains the project knowledge base and operating rules. The application has not been implemented yet.
+This repository now contains the project knowledge base plus the core TypeScript protocol spine:
 
-The first build phase should create a mock-first end-to-end demo, then replace the mock Casper adapter with real Casper Testnet integration while preserving protocol objects and behavior.
+- `packages/protocol` defines canonical types, deterministic hashes, validation schemas, proof objects, policy decisions, and audit event types.
+- `packages/policy` implements pure policy checks for allowlists, resource scope, expiry, per-payment limits, total budgets, destination matching, and request-hash matching.
+- `packages/casper-adapter` includes a faithful in-memory mock state machine with audit events, nonce replay protection, payment ID uniqueness, fulfillment, settlement, and duplicate-settlement rejection.
+
+Mock mode is now a trustworthy local simulator for the product thesis. The real Casper Testnet adapter remains a compatible skeleton until the paid API flow is proven.
+
+The next recommended implementation task is `apps/paid-api`: build the HTTP `402 Payment Required` protected-resource flow on top of the protocol, policy engine, and mock adapter.
 
 ## MVP Demo Goal
 
@@ -58,10 +64,10 @@ The implementation must preserve these core invariants:
 - Payments are identified by deterministic `paymentId`.
 - Policies enforce merchant allowlists, per-payment limits, total budgets, expiry, and resource scope.
 - Duplicate settlement is rejected.
+- Requirement, authorization, receipt nonce, and payment ID replay are rejected.
 - Mock mode and real Casper mode share the same protocol surface.
 - Mock mode is clearly labeled and never presented as real Casper settlement.
 
 ## License
 
 MIT License. See [LICENSE](LICENSE).
-

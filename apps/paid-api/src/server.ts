@@ -17,6 +17,7 @@ export function createPaidApiServer() {
   });
 
   app.get("/premium/report", (req: Request, res: Response) => {
+    const agentId = String(req.header("x-agent-id") ?? "agent_research_001");
     const merchantId = process.env.MERCHANT_ID ?? "merchant_market_data_001";
     const endpointId = "premium-report-cspr";
 
@@ -40,6 +41,8 @@ export function createPaidApiServer() {
           url,
           bodyHash: createBodyHash({}),
           endpointId,
+          merchantId,
+          agentId,
           nonce,
           expiresAt,
         }),

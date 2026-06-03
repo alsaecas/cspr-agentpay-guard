@@ -14,6 +14,8 @@ describe("protocol hashes", () => {
       url: "https://api.example.test/premium/report?symbol=CSPR&kind=daily",
       bodyHash: createBodyHash({ symbol: "CSPR" }),
       endpointId: "premium-report-cspr",
+      merchantId: "merchant_market_data_001",
+      agentId: "agent_research_001",
       nonce: "request-nonce",
       expiresAt: "2030-01-01T00:00:00.000Z",
     });
@@ -22,6 +24,8 @@ describe("protocol hashes", () => {
       url: "https://api.example.test/premium/report?kind=daily&symbol=CSPR",
       bodyHash: createBodyHash({ symbol: "CSPR" }),
       endpointId: "premium-report-cspr",
+      merchantId: "merchant_market_data_001",
+      agentId: "agent_research_001",
       nonce: "request-nonce",
       expiresAt: "2030-01-01T00:00:00Z",
     });
@@ -55,24 +59,41 @@ describe("protocol hashes", () => {
     expect(left).not.toEqual(right);
   });
 
+  it("produces different request hashes for different merchants", () => {
+    const base = requestHashInput();
+    const left = createRequestHash(base);
+    const right = createRequestHash({
+      ...base,
+      merchantId: "merchant_compute_002",
+    });
+
+    expect(left).not.toEqual(right);
+  });
+
+  it("produces different request hashes for different agents", () => {
+    const base = requestHashInput();
+    const left = createRequestHash(base);
+    const right = createRequestHash({
+      ...base,
+      agentId: "agent_trading_002",
+    });
+
+    expect(left).not.toEqual(right);
+  });
+
+  it("computes deterministic payment IDs", () => {
+    const requestHash = createRequestHash(requestHashInput());
+    const left = createPaymentId(paymentIdInput(requestHash, "payment-nonce"));
+    const right = createPaymentId(paymentIdInput(requestHash, "payment-nonce"));
+
+    expect(left).toEqual(right);
+    expect(left).toMatch(/^[a-f0-9]{64}$/);
+  });
+
   it("produces different payment IDs for different nonces", () => {
     const requestHash = createRequestHash(requestHashInput());
-    const left = createPaymentId({
-      policyId: "policy_demo_agent_001",
-      merchantAccount: "mock-merchant-account",
-      amount: "1000000000",
-      endpointId: "premium-report-cspr",
-      requestHash,
-      nonce: "authorization-nonce-left",
-    });
-    const right = createPaymentId({
-      policyId: "policy_demo_agent_001",
-      merchantAccount: "mock-merchant-account",
-      amount: "1000000000",
-      endpointId: "premium-report-cspr",
-      requestHash,
-      nonce: "authorization-nonce-right",
-    });
+    const left = createPaymentId(paymentIdInput(requestHash, "payment-left"));
+    const right = createPaymentId(paymentIdInput(requestHash, "payment-right"));
 
     expect(left).not.toEqual(right);
     expect(left).toMatch(/^[a-f0-9]{64}$/);
@@ -93,7 +114,20 @@ function requestHashInput() {
     url: "https://api.example.test/premium/report?symbol=CSPR",
     bodyHash: createBodyHash({ symbol: "CSPR" }),
     endpointId: "premium-report-cspr",
+    merchantId: "merchant_market_data_001",
+    agentId: "agent_research_001",
     nonce: "request-nonce",
     expiresAt: "2030-01-01T00:00:00.000Z",
+  };
+}
+
+function paymentIdInput(requestHash: string, nonce: string) {
+  return {
+    policyId: "policy_demo_agent_001",
+    merchantAccount: "mock-merchant-account",
+    amount: "1000000000",
+    endpointId: "premium-report-cspr",
+    requestHash,
+    nonce,
   };
 }

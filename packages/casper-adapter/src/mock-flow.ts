@@ -2,10 +2,10 @@ import {
   PROTOCOL_VERSION,
   blake2b256Hex,
   createBodyHash,
-  createPaymentId,
   createRequestHash,
   type PaymentAuthorization,
   type PaymentRequirement,
+  type CasperProof,
 } from "@cspr-agentpay/protocol";
 
 import { createCasperPaymentAdapter } from "./factory";
@@ -28,14 +28,17 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
   const endpointId = "premium-report-cspr";
   const amount = "1000000000";
   const requestNonce = "mock-requirement-nonce-001";
-  const requestHash = createRequestHash({
+  const request = {
     method: "GET",
     url: "https://api.example.test/premium/report?symbol=CSPR",
     bodyHash: createBodyHash({}),
     endpointId,
+    merchantId,
+    agentId,
     nonce: requestNonce,
     expiresAt,
-  });
+  };
+  const requestHash = createRequestHash(request);
 
   const requirement: PaymentRequirement = {
     version: PROTOCOL_VERSION,
@@ -55,50 +58,35 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
     issuedAt: now.toISOString(),
   };
 
-  const paymentNonce = "mock-payment-nonce-001";
-  const paymentId = createPaymentId({
+  const authorizationResult = await adapter.authorizePayment({
     policyId: "policy_demo_agent_001",
-    merchantAccount,
-    amount,
-    endpointId,
-    requestHash,
-    nonce: paymentNonce,
-  });
-
-  const authorization: PaymentAuthorization = {
-    version: PROTOCOL_VERSION,
-    paymentId,
-    policyId: "policy_demo_agent_001",
-    agentId,
-    merchantId,
-    merchantAccount,
-    requirementId: requirement.requirementId,
-    endpointId,
-    requestHash,
-    amount,
-    currency: "CSPR",
-    nonce: paymentNonce,
-    expiresAt,
-    authorizedAt: new Date("2026-06-03T00:00:10.000Z").toISOString(),
-    signature: "mock-agent-signature",
-  };
-
-  const receipt = await adapter.submitPayment({
     requirement,
-    authorization,
+    request,
+    authorizationNonce: "mock-payment-nonce-001",
+    now: new Date("2026-06-03T00:00:10.000Z"),
+  });
+  const receipt = await adapter.submitPayment({
+    paymentId: authorizationResult.authorization.paymentId,
     now: new Date("2026-06-03T00:00:20.000Z"),
   });
+  await adapter.markFulfilled({
+    paymentId: authorizationResult.authorization.paymentId,
+    responseBody: { symbol: "CSPR", signal: "premium-placeholder" },
+    now: new Date("2026-06-03T00:00:25.000Z"),
+  });
   const settlement = await adapter.settlePayment({
-    paymentId,
+    paymentId: authorizationResult.authorization.paymentId,
     now: new Date("2026-06-03T00:00:30.000Z"),
   });
 
   return {
     mode: adapter.mode,
     requirement,
-    authorization,
-    receiptDeployHash: receipt.casperDeployHash,
-    settlementDeployHash: settlement.casperDeployHash,
+    authorization: authorizationResult.authorization,
+    receiptDeployHash:
+      receipt.casperDeployHash ?? proofDisplayHash(receipt.proof),
+    settlementDeployHash:
+      settlement.casperDeployHash ?? proofDisplayHash(settlement.proof),
   };
 }
 
@@ -113,4 +101,14 @@ export function formatMockPaymentFlow(result: MockPaymentFlowResult): string {
     `settlement=${result.settlementDeployHash}`,
     "premium data released after request-bound receipt verification",
   ].join("\n");
+}
+
+function proofDisplayHash(proof: CasperProof): string {
+  if (proof.kind === "mock") {
+    return proof.hash;
+  }
+  if (proof.kind === "transaction-v1") {
+    return proof.transactionHash;
+  }
+  return proof.deployHash;
 }

@@ -27,6 +27,8 @@ const createRequestHashInputSchema = z
     url: z.string().url(),
     bodyHash: hexHashSchema,
     endpointId: nonEmptyStringSchema,
+    merchantId: nonEmptyStringSchema,
+    agentId: nonEmptyStringSchema,
     nonce: nonEmptyStringSchema,
     expiresAt: z.string().datetime(),
   })
@@ -67,6 +69,8 @@ export function createRequestHash(input: CreateRequestHashInput): string {
       normalizeUrl(parsed.url),
       parsed.bodyHash,
       parsed.endpointId,
+      parsed.merchantId,
+      parsed.agentId,
       parsed.nonce,
       new Date(parsed.expiresAt).toISOString(),
     ].join("\n"),

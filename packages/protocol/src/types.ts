@@ -6,13 +6,92 @@ export type PaymentCurrency = "CSPR";
 export type PolicyStatus = "active" | "paused" | "expired" | "revoked";
 export type MerchantStatus = "active" | "paused" | "revoked";
 export type PaymentStatus =
-  | "pending"
+  | "required"
+  | "authorized"
+  | "submitted"
   | "escrowed"
+  | "fulfilled"
   | "settled"
   | "refunded"
   | "expired"
-  | "failed";
+  | "failed"
+  | "settlement_failed";
 export type ReceiptStatus = PaymentStatus;
+
+export type PolicyDenialReason =
+  | "POLICY_NOT_FOUND"
+  | "POLICY_INACTIVE"
+  | "MERCHANT_NOT_ALLOWED"
+  | "MERCHANT_INACTIVE"
+  | "MERCHANT_DESTINATION_MISMATCH"
+  | "RESOURCE_NOT_ALLOWED"
+  | "CURRENCY_MISMATCH"
+  | "AMOUNT_EXCEEDS_PAYMENT_LIMIT"
+  | "BUDGET_EXCEEDED"
+  | "REQUIREMENT_EXPIRED"
+  | "REQUEST_HASH_MISMATCH";
+
+export type CasperProof =
+  | { kind: "mock"; hash: string; eventId: string }
+  | {
+      kind: "transaction-v1";
+      transactionHash: string;
+      eventId?: string | undefined;
+    }
+  | { kind: "legacy-deploy"; deployHash: string; eventId?: string | undefined };
+
+export type AuditEventType =
+  | "policy_created"
+  | "policy_revoked"
+  | "merchant_registered"
+  | "payment_required"
+  | "payment_authorized"
+  | "payment_denied"
+  | "payment_submitted"
+  | "payment_escrowed"
+  | "payment_fulfilled"
+  | "payment_settled"
+  | "payment_expired"
+  | "payment_failed"
+  | "replay_rejected"
+  | "duplicate_settlement_rejected";
+
+export interface AuditEvent {
+  eventId: string;
+  type: AuditEventType;
+  createdAt: string;
+  policyId?: string | undefined;
+  merchantId?: string | undefined;
+  paymentId?: string | undefined;
+  status?: PaymentStatus | undefined;
+  reason?:
+    | PolicyDenialReason
+    | "REPLAY_DETECTED"
+    | "DUPLICATE_SETTLEMENT"
+    | undefined;
+  message: string;
+  proof?: CasperProof | undefined;
+  metadata?: Record<string, string | number | boolean | null> | undefined;
+}
+
+export type PolicyDecision =
+  | {
+      allowed: true;
+      reason?: undefined;
+      policyId: string;
+      merchantId: string;
+      remainingBudget: string;
+      checkedAt: string;
+    }
+  | {
+      allowed: false;
+      reason: PolicyDenialReason;
+      policyId?: string | undefined;
+      merchantId?: string | undefined;
+      remainingBudget?: string | undefined;
+      checkedAt: string;
+      message: string;
+    };
 
 export interface AgentPolicy {
   version: ProtocolVersion;
@@ -93,8 +172,9 @@ export interface PaymentReceipt {
   currency: PaymentCurrency;
   status: PaymentStatus;
   chainMode: ChainMode;
-  casperDeployHash: string;
-  casperEventId: string;
+  proof: CasperProof;
+  casperDeployHash?: string | undefined;
+  casperEventId?: string | undefined;
   receiptNonce: string;
   issuedAt: string;
   expiresAt: string;
@@ -106,6 +186,8 @@ export interface CreateRequestHashInput {
   url: string;
   bodyHash: string;
   endpointId: string;
+  merchantId: string;
+  agentId: string;
   nonce: string;
   expiresAt: string;
 }

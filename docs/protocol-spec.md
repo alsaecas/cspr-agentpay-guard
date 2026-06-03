@@ -25,14 +25,7 @@ URL normalization means:
 - Sort query parameters lexicographically by key, then value.
 - Remove fragment.
 
-Header canonicalization for request binding includes only protocol-selected headers. The MVP selected header set is:
-
-- `content-type`
-- `x-agent-id`
-- `x-merchant-id`
-- `x-resource-id`
-
-Missing selected headers are omitted from the canonical header object.
+Header canonicalization is not part of the MVP hash formula. The MVP binds request identity through method, normalized URL, body hash, endpoint ID, merchant ID, agent ID, nonce, and expiry. Selected header binding can be added later as a stretch protocol revision.
 
 ## AgentPolicy
 
@@ -181,8 +174,13 @@ Required fields:
   "currency": "CSPR",
   "status": "escrowed",
   "chainMode": "mock",
-  "casperDeployHash": "hex-or-mock-deploy-hash",
-  "casperEventId": "event-or-mock-event-id",
+  "proof": {
+    "kind": "mock",
+    "hash": "mock-escrowed-hash",
+    "eventId": "mock-escrowed-event-id"
+  },
+  "casperDeployHash": "optional-backward-compatible-display-hash",
+  "casperEventId": "optional-backward-compatible-display-event-id",
   "receiptNonce": "adapter-generated-unique-nonce",
   "issuedAt": "2026-06-03T00:00:20Z",
   "expiresAt": "2026-06-03T00:05:00Z"
@@ -191,11 +189,24 @@ Required fields:
 
 Rules:
 
-- `status` is one of `pending`, `escrowed`, `settled`, `refunded`, `expired`, or `failed`.
+- `status` is one of `required`, `authorized`, `submitted`, `escrowed`, `fulfilled`, `settled`, `refunded`, `expired`, `failed`, or `settlement_failed`.
 - The receipt must be bound to the same `paymentId` and `requestHash` as the authorization.
 - The receipt is accepted by the gateway only while `status` is `escrowed` or `settled`.
 - A settled receipt cannot be settled again.
-- Mock receipts must be clearly marked by mock deploy and event prefixes.
+- Mock proofs must be clearly marked by `mock-` hash and event prefixes.
+
+## CasperProof
+
+Internal payment proof uses a proof object instead of assuming Casper legacy deploys:
+
+```ts
+type CasperProof =
+  | { kind: "mock"; hash: string; eventId: string }
+  | { kind: "transaction-v1"; transactionHash: string; eventId?: string }
+  | { kind: "legacy-deploy"; deployHash: string; eventId?: string };
+```
+
+`casperDeployHash` and `casperEventId` may appear as backward-compatible display fields, but adapter logic must use `proof`.
 
 ## requestHash Formula
 
@@ -212,6 +223,8 @@ requestHash = BLAKE2b-256(
   normalizeUrl(url) + "\n" +
   bodyHash + "\n" +
   endpointId + "\n" +
+  merchantId + "\n" +
+  agentId + "\n" +
   nonce + "\n" +
   expiresAtUtc
 )
@@ -242,6 +255,72 @@ Rules:
 - Request nonces must be unique per merchant-issued requirement.
 - Payment nonces must be unique per agent authorization.
 - The same `paymentId` cannot be authorized, escrowed, or settled twice.
+
+## PolicyDecision
+
+The pure policy engine returns a `PolicyDecision`.
+
+Allowed:
+
+```json
+{
+  "allowed": true,
+  "policyId": "policy_demo_agent_001",
+  "merchantId": "merchant_market_data_001",
+  "remainingBudget": "9000000000",
+  "checkedAt": "2026-06-03T00:00:10Z"
+}
+```
+
+Denied:
+
+```json
+{
+  "allowed": false,
+  "reason": "MERCHANT_NOT_ALLOWED",
+  "policyId": "policy_demo_agent_001",
+  "merchantId": "merchant_unknown",
+  "remainingBudget": "9000000000",
+  "checkedAt": "2026-06-03T00:00:10Z",
+  "message": "Merchant is not on the policy allowlist."
+}
+```
+
+Policy denial reasons are:
+
+- `POLICY_NOT_FOUND`
+- `POLICY_INACTIVE`
+- `MERCHANT_NOT_ALLOWED`
+- `MERCHANT_INACTIVE`
+- `MERCHANT_DESTINATION_MISMATCH`
+- `RESOURCE_NOT_ALLOWED`
+- `CURRENCY_MISMATCH`
+- `AMOUNT_EXCEEDS_PAYMENT_LIMIT`
+- `BUDGET_EXCEEDED`
+- `REQUIREMENT_EXPIRED`
+- `REQUEST_HASH_MISMATCH`
+
+## AuditEvent
+
+The mock adapter and future Casper adapter expose an ordered audit timeline. Events include:
+
+```json
+{
+  "eventId": "mock-event-...",
+  "type": "payment_escrowed",
+  "createdAt": "2026-06-03T00:00:20Z",
+  "policyId": "policy_demo_agent_001",
+  "merchantId": "merchant_market_data_001",
+  "paymentId": "hex-blake2b256",
+  "status": "escrowed",
+  "proof": {
+    "kind": "mock",
+    "hash": "mock-escrowed-...",
+    "eventId": "mock-escrowed-event-..."
+  },
+  "message": "Payment hex-blake2b256 escrowed."
+}
+```
 
 ## State Transitions
 

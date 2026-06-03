@@ -7,7 +7,7 @@ describe("mock agent demo", () => {
     const result = await runMockAgentDemo();
 
     expect(result.mode).toBe("mock");
-    expect(result.receiptDeployHash).toContain("mock-deploy-");
-    expect(result.settlementDeployHash).toContain("mock-settlement-deploy-");
+    expect(result.receiptDeployHash).toContain("mock-escrowed-");
+    expect(result.settlementDeployHash).toContain("mock-settled-");
   });
 });

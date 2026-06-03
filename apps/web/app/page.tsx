@@ -11,6 +11,8 @@ const requestHash = createRequestHash({
   url: "https://api.example.test/premium/report?symbol=CSPR",
   bodyHash: createBodyHash({}),
   endpointId: "premium-report-cspr",
+  merchantId: "merchant_market_data_001",
+  agentId: "agent_research_001",
   nonce: "dashboard-request-nonce",
   expiresAt: "2030-01-01T00:00:00.000Z",
 });

@@ -79,6 +79,9 @@ importers:
 
   packages/casper-adapter:
     dependencies:
+      '@cspr-agentpay/policy':
+        specifier: workspace:*
+        version: link:../policy
       '@cspr-agentpay/protocol':
         specifier: workspace:*
         version: link:../protocol
@@ -97,6 +100,12 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+
+  packages/policy:
+    dependencies:
+      '@cspr-agentpay/protocol':
+        specifier: workspace:*
+        version: link:../protocol
 
   packages/protocol:
     dependencies:

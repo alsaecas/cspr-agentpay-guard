@@ -58,7 +58,7 @@ Narration:
 
 Expected event:
 
-- Mock mode: dashboard shows `mock-deploy-*` and `mock-event-*`.
+- Mock mode: dashboard shows status-specific `mock-*` proof hashes and event IDs.
 - Real mode: dashboard shows Casper Testnet deploy hash and link.
 - Receipt status becomes `escrowed`.
 
@@ -118,4 +118,3 @@ The demo wins if a judge can say:
 - Policy prevented unsafe spending.
 - Casper provided visible transaction or event proof.
 - The protected resource was released only after receipt verification.
-

@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   PROTOCOL_VERSION,
   type AgentPolicy,
+  type AuditEvent,
   type Merchant,
   type PaymentAuthorization,
   type PaymentReceipt,
@@ -42,13 +43,97 @@ export interface ProtocolValidationOptions {
 export const ChainModeSchema = z.enum(["mock", "casper-testnet"]);
 
 export const PaymentStatusSchema = z.enum([
-  "pending",
+  "required",
+  "authorized",
+  "submitted",
   "escrowed",
+  "fulfilled",
   "settled",
   "refunded",
   "expired",
   "failed",
+  "settlement_failed",
 ]);
+
+export const PolicyDenialReasonSchema = z.enum([
+  "POLICY_NOT_FOUND",
+  "POLICY_INACTIVE",
+  "MERCHANT_NOT_ALLOWED",
+  "MERCHANT_INACTIVE",
+  "MERCHANT_DESTINATION_MISMATCH",
+  "RESOURCE_NOT_ALLOWED",
+  "CURRENCY_MISMATCH",
+  "AMOUNT_EXCEEDS_PAYMENT_LIMIT",
+  "BUDGET_EXCEEDED",
+  "REQUIREMENT_EXPIRED",
+  "REQUEST_HASH_MISMATCH",
+]);
+
+export const CasperProofSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("mock"),
+      hash: z.string().startsWith("mock-"),
+      eventId: z.string().startsWith("mock-"),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("transaction-v1"),
+      transactionHash: nonEmptyString,
+      eventId: nonEmptyString.optional(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("legacy-deploy"),
+      deployHash: nonEmptyString,
+      eventId: nonEmptyString.optional(),
+    })
+    .strict(),
+]);
+
+export const AuditEventSchema = z
+  .object({
+    eventId: nonEmptyString,
+    type: z.enum([
+      "policy_created",
+      "policy_revoked",
+      "merchant_registered",
+      "payment_required",
+      "payment_authorized",
+      "payment_denied",
+      "payment_submitted",
+      "payment_escrowed",
+      "payment_fulfilled",
+      "payment_settled",
+      "payment_expired",
+      "payment_failed",
+      "replay_rejected",
+      "duplicate_settlement_rejected",
+    ]),
+    createdAt: isoTimestamp,
+    policyId: nonEmptyString.optional(),
+    merchantId: nonEmptyString.optional(),
+    paymentId: hexHash.optional(),
+    status: PaymentStatusSchema.optional(),
+    reason: z
+      .union([
+        PolicyDenialReasonSchema,
+        z.literal("REPLAY_DETECTED"),
+        z.literal("DUPLICATE_SETTLEMENT"),
+      ])
+      .optional(),
+    message: nonEmptyString,
+    proof: CasperProofSchema.optional(),
+    metadata: z
+      .record(
+        z.string(),
+        z.union([z.string(), z.number(), z.boolean(), z.null()]),
+      )
+      .optional(),
+  })
+  .strict();
 
 export const AgentPolicySchema = z
   .object({
@@ -138,8 +223,9 @@ export const PaymentReceiptSchema = z
     currency: z.literal("CSPR"),
     status: PaymentStatusSchema,
     chainMode: ChainModeSchema,
-    casperDeployHash: nonEmptyString,
-    casperEventId: nonEmptyString,
+    proof: CasperProofSchema,
+    casperDeployHash: nonEmptyString.optional(),
+    casperEventId: nonEmptyString.optional(),
     receiptNonce: nonEmptyString,
     issuedAt: isoTimestamp,
     expiresAt: isoTimestamp,
@@ -172,6 +258,10 @@ export function validatePaymentAuthorization(
 
 export function validatePaymentReceipt(input: unknown): PaymentReceipt {
   return PaymentReceiptSchema.parse(input);
+}
+
+export function validateAuditEvent(input: unknown): AuditEvent {
+  return AuditEventSchema.parse(input);
 }
 
 export function validateReceiptForRequest(

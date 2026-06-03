@@ -31,7 +31,7 @@ A receipt for one URL is submitted for another URL, query, method, body, resourc
 Controls:
 
 - Receipt includes `requestHash`.
-- `requestHash` binds method, normalized URL, resource ID, merchant ID, agent ID, body hash, and selected headers hash.
+- `requestHash` binds method, normalized URL, body hash, endpoint ID, merchant ID, agent ID, nonce, and expiry.
 - Gateway recomputes `requestHash` on every protected request.
 - Any mismatch fails closed with `REQUEST_HASH_MISMATCH`.
 
@@ -67,7 +67,7 @@ Controls:
 - Merchant must be allowlisted in policy.
 - Merchant settlement account must match registry.
 - Amount must pass policy limits.
-- Requirement includes `termsHash`, `amount`, `currency`, `resourceId`, `requestHash`, and expiry.
+- Requirement includes `termsHash`, `amount`, `currency`, `endpointId`, `merchantAccount`, `requestHash`, nonce, and expiry.
 - Authorization is bound to the original requirement.
 - Dashboard shows merchant, amount, destination, terms hash, and final state.
 - Escrow mode allows withholding settlement if fulfillment is not recorded.
@@ -158,11 +158,28 @@ Judges or developers confuse a simulated payment for real Casper Testnet activit
 
 Controls:
 
-- Mock mode uses `mock-deploy-` and `mock-event-` prefixes.
+- Mock mode uses `CasperProof` objects with `mock-` hash and event prefixes.
 - Mock mode is clearly labeled in the dashboard.
-- Real mode requires Casper Testnet deploy hash and event lookup.
+- Real mode requires a Casper Testnet transaction or legacy deploy proof and event lookup.
 - Protocol objects stay identical across modes.
 - Demo script should explicitly say when switching from local mock reliability to real Casper proof.
+
+## Mock State Machine Risks
+
+Threat:
+
+A local mock could accidentally accept flows that real Casper or the real policy contract would reject.
+
+Controls:
+
+- The mock adapter uses the same protocol types and policy engine as real mode.
+- The mock adapter stores policies, merchants, payments, nonce sets, and audit events in a private in-memory store.
+- State transitions are enforced: `authorized -> submitted -> escrowed -> fulfilled -> settled`.
+- Requirement, authorization, receipt nonce, payment ID replay, and duplicate settlement are rejected before state changes.
+
+MVP evidence:
+
+- Unit tests cover replay rejection, duplicate settlement rejection, policy denial, budget denial, and ordered audit events.
 
 MVP evidence:
 
@@ -177,4 +194,3 @@ Known risks acceptable for MVP:
 - Merchant identity is registry-based and not production KYC.
 - Disputes are simplified to escrow, settlement, refund, and audit events.
 - MCP tools are optional and should not bypass the gateway or policy engine.
-
