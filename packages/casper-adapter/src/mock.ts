@@ -54,6 +54,7 @@ export class MockCasperPaymentAdapter implements CasperPaymentAdapter {
   private readonly usedRequirementNonces = new Set<string>();
   private readonly usedAuthorizationNonces = new Set<string>();
   private readonly usedReceiptNonces = new Set<string>();
+  private readonly usedPaymentIds = new Set<string>();
   private sequence = 0;
 
   constructor(options: MockCasperPaymentAdapterOptions = {}) {
@@ -146,18 +147,6 @@ export class MockCasperPaymentAdapter implements CasperPaymentAdapter {
       throw new Error("POLICY_NOT_FOUND");
     }
 
-    const requirementNonceKey = `${requirement.merchantId}:${requirement.nonce}`;
-    this.rejectReplayIfUsed(
-      this.usedRequirementNonces,
-      requirementNonceKey,
-      "Requirement nonce was already used.",
-      {
-        createdAt: authorizedAt,
-        policyId: decision.policyId,
-        merchantId: decision.merchantId,
-      },
-    );
-
     const paymentNonce =
       input.authorizationNonce ??
       mockId(
@@ -165,16 +154,6 @@ export class MockCasperPaymentAdapter implements CasperPaymentAdapter {
         `${this.seed}:${decision.policyId}:${requirement.requirementId}`,
       );
     const authorizationNonceKey = `${policy.agentId}:${paymentNonce}`;
-    this.rejectReplayIfUsed(
-      this.usedAuthorizationNonces,
-      authorizationNonceKey,
-      "Authorization nonce was already used.",
-      {
-        createdAt: authorizedAt,
-        policyId: decision.policyId,
-        merchantId: decision.merchantId,
-      },
-    );
 
     const paymentId = createPaymentId({
       policyId: decision.policyId,
@@ -185,7 +164,7 @@ export class MockCasperPaymentAdapter implements CasperPaymentAdapter {
       nonce: paymentNonce,
     });
 
-    if (this.payments.has(paymentId)) {
+    if (this.usedPaymentIds.has(paymentId) || this.payments.has(paymentId)) {
       this.emit("replay_rejected", {
         createdAt: authorizedAt,
         policyId: decision.policyId,
@@ -196,6 +175,31 @@ export class MockCasperPaymentAdapter implements CasperPaymentAdapter {
       });
       throw new Error("REPLAY_DETECTED");
     }
+
+    const requirementNonceKey = `${requirement.merchantId}:${requirement.nonce}`;
+    this.rejectReplayIfUsed(
+      this.usedRequirementNonces,
+      requirementNonceKey,
+      "Requirement nonce was already used.",
+      {
+        createdAt: authorizedAt,
+        policyId: decision.policyId,
+        merchantId: decision.merchantId,
+        paymentId,
+      },
+    );
+
+    this.rejectReplayIfUsed(
+      this.usedAuthorizationNonces,
+      authorizationNonceKey,
+      "Authorization nonce was already used.",
+      {
+        createdAt: authorizedAt,
+        policyId: decision.policyId,
+        merchantId: decision.merchantId,
+        paymentId,
+      },
+    );
 
     const receiptNonce =
       input.receiptNonce ?? mockId("receipt", `${this.seed}:${paymentId}`);
@@ -214,6 +218,7 @@ export class MockCasperPaymentAdapter implements CasperPaymentAdapter {
     this.usedRequirementNonces.add(requirementNonceKey);
     this.usedAuthorizationNonces.add(authorizationNonceKey);
     this.usedReceiptNonces.add(receiptNonce);
+    this.usedPaymentIds.add(paymentId);
 
     const authorization: PaymentAuthorization = {
       version: PROTOCOL_VERSION,
@@ -384,6 +389,11 @@ export class MockCasperPaymentAdapter implements CasperPaymentAdapter {
   async expirePayment(paymentId: string): Promise<TxResult> {
     const now = new Date().toISOString();
     const receipt = this.requirePayment(paymentId);
+    this.assertStatus(
+      receipt,
+      ["authorized", "submitted", "escrowed", "fulfilled"],
+      "expire payment",
+    );
     const proof = this.createProof("expired", paymentId);
     this.payments.set(
       paymentId,

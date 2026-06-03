@@ -115,6 +115,29 @@ describe("MockCasperPaymentAdapter", () => {
     ).rejects.toThrow("REPLAY_DETECTED");
   });
 
+  it("rejects reused requirement nonces", async () => {
+    const adapter = await readyAdapter();
+    const firstRequest = requestInput("requirement-nonce-reused");
+    await adapter.authorizePayment({
+      policyId: "policy_demo_agent_001",
+      requirement: validRequirement(firstRequest),
+      request: firstRequest,
+      authorizationNonce: "authorization-nonce-001",
+      now,
+    });
+
+    const secondRequest = requestInput("requirement-nonce-reused");
+    await expect(
+      adapter.authorizePayment({
+        policyId: "policy_demo_agent_001",
+        requirement: validRequirement(secondRequest),
+        request: secondRequest,
+        authorizationNonce: "authorization-nonce-002",
+        now,
+      }),
+    ).rejects.toThrow("REPLAY_DETECTED");
+  });
+
   it("rejects reused receipt nonces", async () => {
     const adapter = await readyAdapter();
     const firstRequest = requestInput("requirement-nonce-001");
@@ -161,6 +184,14 @@ describe("MockCasperPaymentAdapter", () => {
         now,
       }),
     ).rejects.toThrow("REPLAY_DETECTED");
+  });
+
+  it("rejects invalid transitions", async () => {
+    const { adapter, paymentId } = await authorizedPayment();
+
+    await expect(adapter.settlePayment({ paymentId, now })).rejects.toThrow(
+      "INVALID_STATE_TRANSITION",
+    );
   });
 
   it("lists audit events in timeline order", async () => {

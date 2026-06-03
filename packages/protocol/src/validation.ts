@@ -69,6 +69,30 @@ export const PolicyDenialReasonSchema = z.enum([
   "REQUEST_HASH_MISMATCH",
 ]);
 
+export const PolicyDecisionSchema = z.discriminatedUnion("allowed", [
+  z
+    .object({
+      allowed: z.literal(true),
+      reason: z.undefined().optional(),
+      policyId: nonEmptyString,
+      merchantId: nonEmptyString,
+      remainingBudget: nonNegativeAmountString,
+      checkedAt: isoTimestamp,
+    })
+    .strict(),
+  z
+    .object({
+      allowed: z.literal(false),
+      reason: PolicyDenialReasonSchema,
+      policyId: nonEmptyString.optional(),
+      merchantId: nonEmptyString.optional(),
+      remainingBudget: nonNegativeAmountString.optional(),
+      checkedAt: isoTimestamp,
+      message: nonEmptyString,
+    })
+    .strict(),
+]);
+
 export const CasperProofSchema = z.discriminatedUnion("kind", [
   z
     .object({

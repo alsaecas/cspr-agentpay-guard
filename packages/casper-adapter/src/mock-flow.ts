@@ -3,12 +3,15 @@ import {
   blake2b256Hex,
   createBodyHash,
   createRequestHash,
+  type AgentPolicy,
+  type AuditEvent,
+  type Merchant,
   type PaymentAuthorization,
   type PaymentRequirement,
   type CasperProof,
 } from "@cspr-agentpay/protocol";
 
-import { createCasperPaymentAdapter } from "./factory";
+import { MockCasperPaymentAdapter } from "./mock";
 
 export interface MockPaymentFlowResult {
   mode: "mock" | "casper-testnet";
@@ -16,10 +19,13 @@ export interface MockPaymentFlowResult {
   authorization: PaymentAuthorization;
   receiptDeployHash: string;
   settlementDeployHash: string;
+  auditEvents: AuditEvent[];
 }
 
 export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
-  const adapter = createCasperPaymentAdapter({ mode: "mock" });
+  const adapter = new MockCasperPaymentAdapter({
+    seedDemoData: false,
+  });
   const now = new Date("2026-06-03T00:00:00.000Z");
   const expiresAt = new Date("2026-06-03T00:05:00.000Z").toISOString();
   const agentId = process.env.AGENT_ID ?? "agent_research_001";
@@ -28,6 +34,38 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
   const endpointId = "premium-report-cspr";
   const amount = "1000000000";
   const requestNonce = "mock-requirement-nonce-001";
+  const policy: AgentPolicy = {
+    version: PROTOCOL_VERSION,
+    policyId: "policy_demo_agent_001",
+    ownerAccount: "mock-owner-account",
+    agentId,
+    status: "active",
+    currency: "CSPR",
+    maxAmountPerPayment: "2500000000",
+    totalBudget: "10000000000",
+    spentAmount: "0",
+    budgetWindow: "demo-total",
+    allowedMerchantIds: [merchantId],
+    allowedResourcePatterns: ["GET https://api.example.test/premium/*"],
+    expiresAt: "2026-06-04T00:00:00.000Z",
+    policyNonce: "policy-nonce-001",
+    createdAt: now.toISOString(),
+  };
+  const merchant: Merchant = {
+    version: PROTOCOL_VERSION,
+    merchantId,
+    displayName: "Market Data Merchant",
+    status: "active",
+    casperAccount: merchantAccount,
+    settlementAccount: merchantAccount,
+    allowedOrigins: ["https://api.example.test"],
+    allowedResourcePatterns: ["GET https://api.example.test/premium/*"],
+    createdAt: now.toISOString(),
+  };
+
+  await adapter.registerMerchant(merchant);
+  await adapter.createPolicy(policy);
+
   const request = {
     method: "GET",
     url: "https://api.example.test/premium/report?symbol=CSPR",
@@ -78,6 +116,7 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
     paymentId: authorizationResult.authorization.paymentId,
     now: new Date("2026-06-03T00:00:30.000Z"),
   });
+  const auditEvents = await adapter.listAuditEvents();
 
   return {
     mode: adapter.mode,
@@ -87,6 +126,7 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
       receipt.casperDeployHash ?? proofDisplayHash(receipt.proof),
     settlementDeployHash:
       settlement.casperDeployHash ?? proofDisplayHash(settlement.proof),
+    auditEvents,
   };
 }
 
@@ -99,6 +139,11 @@ export function formatMockPaymentFlow(result: MockPaymentFlowResult): string {
     `paymentId=${result.authorization.paymentId}`,
     `receipt=${result.receiptDeployHash}`,
     `settlement=${result.settlementDeployHash}`,
+    "audit timeline:",
+    ...result.auditEvents.map(
+      (event) =>
+        `- ${event.createdAt} ${event.type}${event.paymentId ? ` paymentId=${event.paymentId}` : ""}`,
+    ),
     "premium data released after request-bound receipt verification",
   ].join("\n");
 }

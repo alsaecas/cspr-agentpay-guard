@@ -115,6 +115,17 @@ describe("policy engine", () => {
     );
   });
 
+  it("rejects currency mismatches", () => {
+    expectDenied(
+      validInput({
+        requirement: validRequirement({
+          currency: "USD" as "CSPR",
+        }),
+      }),
+      "CURRENCY_MISMATCH",
+    );
+  });
+
   it("rejects expired requirements", () => {
     expectDenied(
       validInput({
@@ -123,6 +134,17 @@ describe("policy engine", () => {
         }),
       }),
       "REQUIREMENT_EXPIRED",
+    );
+  });
+
+  it("rejects request hash mismatches", () => {
+    expectDenied(
+      {
+        ...validInput(),
+        expectedRequestHash:
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      },
+      "REQUEST_HASH_MISMATCH",
     );
   });
 

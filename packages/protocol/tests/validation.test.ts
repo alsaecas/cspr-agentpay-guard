@@ -5,6 +5,10 @@ import {
   createBodyHash,
   createPaymentId,
   createRequestHash,
+  CasperProofSchema,
+  PaymentReceiptSchema,
+  PaymentStatusSchema,
+  PolicyDecisionSchema,
   validateAgentPolicy,
   validateMerchant,
   validatePaymentRequirement,
@@ -19,6 +23,39 @@ const issuedAt = "2030-01-01T00:00:00.000Z";
 const validationNow = new Date("2030-01-01T00:01:00.000Z");
 
 describe("protocol validation", () => {
+  it("includes the demo state machine statuses", () => {
+    expect(PaymentStatusSchema.options).toEqual(
+      expect.arrayContaining([
+        "required",
+        "authorized",
+        "submitted",
+        "fulfilled",
+        "settlement_failed",
+      ]),
+    );
+  });
+
+  it("validates mock Casper proofs", () => {
+    const proof = CasperProofSchema.parse({
+      kind: "mock",
+      hash: "mock-proof-hash",
+      eventId: "mock-proof-event",
+    });
+
+    expect(proof.kind).toBe("mock");
+  });
+
+  it("validates policy decisions", () => {
+    const decision = PolicyDecisionSchema.parse({
+      allowed: false,
+      reason: "MERCHANT_NOT_ALLOWED",
+      checkedAt: issuedAt,
+      message: "Merchant is not on the policy allowlist.",
+    });
+
+    expect(decision.allowed).toBe(false);
+  });
+
   it("accepts a valid policy", () => {
     const policy = validateAgentPolicy(validPolicy());
 
@@ -122,6 +159,41 @@ describe("protocol validation", () => {
         requestHashInput({ body: { symbol: "ETH" } }),
       ),
     ).toThrow("REQUEST_HASH_MISMATCH");
+  });
+
+  it("validates receipts with proof objects", () => {
+    const request = requestHashInput({ body: { symbol: "CSPR" } });
+    const receipt = PaymentReceiptSchema.parse({
+      version: PROTOCOL_VERSION,
+      paymentId: createPaymentId({
+        policyId: "policy_demo_agent_001",
+        merchantAccount: "mock-merchant-account",
+        amount: "1000000000",
+        endpointId: request.endpointId,
+        requestHash: createRequestHash(request),
+        nonce: "authorization-nonce",
+      }),
+      policyId: "policy_demo_agent_001",
+      agentId: "agent_research_001",
+      merchantId: "merchant_market_data_001",
+      merchantAccount: "mock-merchant-account",
+      endpointId: request.endpointId,
+      requestHash: createRequestHash(request),
+      amount: "1000000000",
+      currency: "CSPR",
+      status: "escrowed",
+      chainMode: "mock",
+      proof: {
+        kind: "mock",
+        hash: "mock-escrowed-hash",
+        eventId: "mock-escrowed-event-id",
+      },
+      receiptNonce: "receipt-nonce",
+      issuedAt,
+      expiresAt: future,
+    });
+
+    expect(receipt.proof.kind).toBe("mock");
   });
 });
 
