@@ -1,0 +1,34 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.secret
+secrets/
+keys/
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+dist/
+build/
+out/
+target/
+.next/
+.turbo/
+
+# Logs and caches
+*.log
+.cache/
+.pytest_cache/
+.ruff_cache/
+coverage/
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
+
