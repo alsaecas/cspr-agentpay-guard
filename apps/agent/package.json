@@ -1,0 +1,17 @@
+{
+  "name": "@cspr-agentpay/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "demo:mock": "AGENTPAY_MODE=mock tsx src/index.ts",
+    "build": "pnpm typecheck",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cspr-agentpay/casper-adapter": "workspace:*",
+    "@cspr-agentpay/protocol": "workspace:*"
+  }
+}

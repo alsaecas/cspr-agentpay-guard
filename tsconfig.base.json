@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@cspr-agentpay/protocol": ["packages/protocol/src/index.ts"],
+      "@cspr-agentpay/casper-adapter": ["packages/casper-adapter/src/index.ts"],
+      "@cspr-agentpay/mcp-server": ["packages/mcp-server/src/index.ts"]
+    }
+  }
+}

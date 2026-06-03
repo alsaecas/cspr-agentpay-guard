@@ -1,0 +1,23 @@
+{
+  "name": "@cspr-agentpay/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cspr-agentpay/casper-adapter": "workspace:*",
+    "@cspr-agentpay/protocol": "workspace:*",
+    "next": "^16.2.7",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3"
+  }
+}

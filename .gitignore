@@ -10,6 +10,7 @@ keys/
 
 # Dependencies
 node_modules/
+.pnpm-store/
 vendor/
 
 # Build outputs
@@ -19,6 +20,7 @@ out/
 target/
 .next/
 .turbo/
+*.tsbuildinfo
 
 # Logs and caches
 *.log
@@ -31,4 +33,3 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
-

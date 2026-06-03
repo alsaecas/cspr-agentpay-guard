@@ -1,0 +1,24 @@
+{
+  "name": "cspr-agentpay-guard",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.5.1",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @cspr-agentpay/web dev",
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "demo:mock": "pnpm --filter @cspr-agentpay/agent demo:mock",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@cspr-agentpay/casper-adapter": "workspace:*",
+    "@types/node": "^24.10.1",
+    "prettier": "^3.7.4",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.0.15"
+  }
+}

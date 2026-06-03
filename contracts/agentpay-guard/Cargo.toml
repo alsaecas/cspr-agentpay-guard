@@ -1,0 +1,15 @@
+[package]
+name = "agentpay_guard"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+odra = "2.7.2"
+
+[dev-dependencies]
+odra-test = "2.7.2"
+
+[features]
+default = []
+

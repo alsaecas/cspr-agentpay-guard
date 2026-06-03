@@ -1,0 +1,24 @@
+{
+  "name": "@cspr-agentpay/mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "pnpm typecheck",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cspr-agentpay/casper-adapter": "workspace:*",
+    "@cspr-agentpay/protocol": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  }
+}
