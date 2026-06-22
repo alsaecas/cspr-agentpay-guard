@@ -236,26 +236,16 @@ Setup implication: install `cargo-odra`, add `wasm32-unknown-unknown`, and updat
 
 ## Recommended Next Implementation Step
 
-Current step — Prompt 5: Casper contract boundary documentation and real adapter skeleton hardening.
+Current step — Prompt 6: `apps/paid-api` — HTTP 402 protected-resource flow.
 
-Tasks for this step:
+Completed in this step:
 
-1. Create `docs/casper-contract-boundary.md` documenting intended Casper modules (`AgentPolicyRegistry`, `MerchantRegistry`, `PaymentEscrow`), entrypoints, events, and adapter mapping.
-2. Refine `RealCasperTestnetAdapter` with method-specific error messages, environment variable validation, and a `getMissingEnvVars()` helper.
-3. Update `.env.example` files and contracts documentation.
-4. Add tests for the real adapter skeleton.
+1. HTTP `402 Payment Required` endpoint serving premium parking-lot data.
+2. `PaymentRequirement` creation with canonical `requestHash` on every unpaid request.
+3. Full receipt verification: requestHash matching, merchant/endpoint/amount/currency validation, expiry check, escrow/fulfilled/settled status check, mock-proof validation, adapter lookup.
+4. `POST /demo/authorize` helper to authorize and escrow a payment.
+5. `POST /demo/settle/:paymentId` helper to settle a fulfilled payment.
+6. `GET /demo/audit` for audit trail visibility.
+7. 22 test cases covering health, 402 flow, receipt rejection scenarios, fulfillment, settlement, duplicate settlement, and audit event ordering.
 
-Next step (Prompt 6):
-
-1. Build `apps/paid-api` into the real HTTP 402 protected-resource flow.
-2. Have it create `PaymentRequirement` objects with canonical `requestHash`.
-3. Verify mock receipts through the adapter state machine before returning premium data.
-4. Emit/read adapter audit events for the later dashboard.
-
-Acceptance for Prompt 6:
-
-- No real Casper calls yet.
-- Mock receipts use the same fields expected from real mode.
-- Tests prove the security invariants before app UI or Odra work begins.
-
-After that, build the MCP server (Prompt 7), agent demo (Prompt 8), dashboard (Prompt 9), and finally add the Odra/Casper Testnet proof path (Prompt 10).
+Next step (Prompt 7): MCP server — agent-facing tool surface.

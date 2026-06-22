@@ -299,15 +299,26 @@ describe("RealCasperTestnetAdapter", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects transaction-v1 proof with mock-prefixed hash (wrong kind for mock)", () => {
+  it("rejects transaction-v1 proof with mock-prefixed hash (not 64-char hex)", () => {
     const proof = {
       kind: "transaction-v1",
       transactionHash: "mock-abc",
     };
 
-    // mock-abc is still a nonEmptyString so it passes
+    // "mock-abc" is not a 64-character hex string — must be rejected.
     const result = CasperProofSchema.safeParse(proof);
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects legacy-deploy proof with mock-prefixed hash (not 64-char hex)", () => {
+    const proof = {
+      kind: "legacy-deploy",
+      deployHash: "mock-abc",
+    };
+
+    // "mock-abc" is not a 64-character hex string — must be rejected.
+    const result = CasperProofSchema.safeParse(proof);
+    expect(result.success).toBe(false);
   });
 
   it("rejects legacy-deploy proof with empty deployHash", () => {

@@ -14,6 +14,7 @@ import { createRequestHash } from "./hash";
 
 const nonEmptyString = z.string().trim().min(1);
 const hexHash = z.string().regex(/^[a-f0-9]{64}$/);
+const hexHash64Ic = z.string().regex(/^[a-fA-F0-9]{64}$/);
 const isoTimestamp = z.string().datetime();
 const nonNegativeAmountString = nonEmptyString.refine(
   (value) => {
@@ -104,14 +105,14 @@ export const CasperProofSchema = z.discriminatedUnion("kind", [
   z
     .object({
       kind: z.literal("transaction-v1"),
-      transactionHash: nonEmptyString,
+      transactionHash: hexHash64Ic,
       eventId: nonEmptyString.optional(),
     })
     .strict(),
   z
     .object({
       kind: z.literal("legacy-deploy"),
-      deployHash: nonEmptyString,
+      deployHash: hexHash64Ic,
       eventId: nonEmptyString.optional(),
     })
     .strict(),
