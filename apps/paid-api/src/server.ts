@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { resolve as pathResolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   MockCasperPaymentAdapter,
@@ -589,7 +591,11 @@ export function createPaidApiServer(config?: PaidApiConfig): express.Application
 // Server start (when run directly, not imported by tests)
 // ---------------------------------------------------------------------------
 
-if (process.env.NODE_ENV !== "test") {
+const isDirectRun = process.argv[1]
+  ? pathResolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  : false;
+
+if (isDirectRun && process.env.NODE_ENV !== "test") {
   const config = loadPaidApiConfig();
   const server = createPaidApiServer(config);
   server.listen(config.port, () => {

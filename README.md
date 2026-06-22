@@ -41,9 +41,9 @@ The build is sequenced in numbered prompts:
 | 1–4 | Protocol types, hashes, policy engine, mock adapter | ✅ Complete |
 | 5 | Casper contract boundary & adapter skeleton | ✅ Complete |
 | 6 | `apps/paid-api` — HTTP 402 protected-resource flow | ✅ Complete |
-| **7** | **`packages/mcp-server` — agent-facing tool surface** | ← Current |
-| 8 | Agent demo — autonomous agent runner | Next |
-| 9 | Dashboard — judge-facing audit UI | Planned |
+| 7 | `packages/mcp-server` — agent-facing tool surface | ✅ Complete |
+| **8** | **`apps/agent` — autonomous agent demo runner** | ← Current |
+| 9 | Dashboard — judge-facing audit UI | Next |
 | 10 | Real Casper Testnet proof & final polish | Planned |
 
 ## MVP Demo Goal

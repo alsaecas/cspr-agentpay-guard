@@ -10,6 +10,7 @@
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
     "demo:mock": "pnpm --filter @cspr-agentpay/agent demo:mock",
+    "demo": "pnpm --filter @cspr-agentpay/agent demo",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

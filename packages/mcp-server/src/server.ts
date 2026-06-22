@@ -3,11 +3,18 @@ import { fileURLToPath } from "node:url";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { PaymentRequirementSchema } from "@cspr-agentpay/protocol";
 import { z } from "zod";
 
-import { PaidApiClient, PaidApiError, type PaidResourceResult } from "./client";
+import { PaidApiError } from "./client";
 import { type McpServerConfig, loadMcpServerConfig } from "./config";
+import {
+  authorizeRequirementHandler,
+  callPaidResourceHandler,
+  getAgentPayStatusHandler,
+  getAuditTimelineHandler,
+  settlePaymentHandler,
+  setupDemoHandler,
+} from "./toolHandlers";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -31,7 +38,6 @@ function errorResponse(message: string) {
 
 export function createAgentPayMcpServer(config?: McpServerConfig) {
   const cfg = config ?? loadMcpServerConfig();
-  const client = new PaidApiClient(cfg);
 
   const server = new McpServer({
     name: "cspr-agentpay-guard",
@@ -53,52 +59,38 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
       },
     },
     async ({ includeConfig }) => {
-      const lines: string[] = [
-        "CSPR AgentPay Guard MCP server is ready.",
-        `mode=mock`,
-        `paidApiBaseUrl=${cfg.paidApiBaseUrl}`,
-      ];
-
-      let reachable = true;
       try {
-        await client.health();
-      } catch {
-        reachable = false;
-        lines.push("⚠ paid-api is unreachable. Start it with: pnpm --filter @cspr-agentpay/paid-api dev");
-      }
+        const status = await getAgentPayStatusHandler(cfg, includeConfig);
 
-      lines.push("");
+        const lines: string[] = [
+          "CSPR AgentPay Guard MCP server is ready.",
+          `mode=mock`,
+          `paidApiBaseUrl=${cfg.paidApiBaseUrl}`,
+        ];
 
-      const tools = [
-        "agentpay_status — server status + paid-api health",
-        "setup_demo — initialize demo merchant and policy",
-        "call_paid_resource — full 402 → authorize → retry → premium data",
-        "authorize_requirement — authorize + escrow a payment requirement",
-        "settle_payment — settle a fulfilled payment",
-        "get_audit_timeline — retrieve ordered audit events",
-      ];
+        if (!status.reachable) {
+          lines.unshift("⚠ paid-api unreachable — demo tools will fail.");
+          lines.push("⚠ paid-api is unreachable. Start it with: pnpm --filter @cspr-agentpay/paid-api dev");
+        }
 
-      lines.push("Available tools:");
-      for (const tool of tools) {
-        lines.push(`  • ${tool}`);
-      }
-
-      if (includeConfig) {
         lines.push("");
-        lines.push("Config:");
-        lines.push(`  transport: ${cfg.transport}`);
-        lines.push(`  paidApiBaseUrl: ${cfg.paidApiBaseUrl}`);
-        lines.push(`  defaultPolicyId: ${cfg.defaultPolicyId}`);
-        lines.push(`  defaultAgentId: ${cfg.defaultAgentId}`);
-        lines.push(`  autoSetup: ${cfg.autoSetup}`);
-        lines.push(`  autoSettle: ${cfg.autoSettle}`);
-      }
+        lines.push("Available tools:");
+        for (const tool of status.tools) {
+          lines.push(`  • ${tool}`);
+        }
 
-      if (!reachable) {
-        lines.unshift("⚠ paid-api unreachable — demo tools will fail.");
-      }
+        if (includeConfig) {
+          lines.push("");
+          lines.push("Config:");
+          for (const [key, value] of Object.entries(status.config ?? {})) {
+            lines.push(`  ${key}: ${value}`);
+          }
+        }
 
-      return textResponse(lines.join("\n"));
+        return textResponse(lines.join("\n"));
+      } catch (err) {
+        return errorResponse(err instanceof Error ? err.message : String(err));
+      }
     },
   );
 
@@ -118,27 +110,22 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
     },
     async () => {
       try {
-        const result = await client.setupDemo();
+        const result = await setupDemoHandler(cfg);
 
         const summary = [
           "Demo state initialized.",
-          `merchantId=${result.merchant.merchantId}`,
-          `merchant=${result.merchant.displayName}`,
-          `policyId=${result.policy.policyId}`,
-          `agentId=${result.policy.agentId}`,
-          `maxAmountPerPayment=${result.policy.maxAmountPerPayment}`,
-          `totalBudget=${result.policy.totalBudget}`,
-          `status=${result.policy.status}`,
-          `expiresAt=${result.policy.expiresAt}`,
-          `auditEvents=${result.auditEvents.length}`,
+          `merchantId=${result.merchantId}`,
+          `merchant=${result.displayName}`,
+          `policyId=${result.policyId}`,
+          `agentId=${result.agentId}`,
+          `maxAmountPerPayment=${result.maxAmountPerPayment}`,
+          `totalBudget=${result.totalBudget}`,
+          `status=${result.status}`,
+          `expiresAt=${result.expiresAt}`,
+          `auditEvents=${result.auditEventCount}`,
         ].join("\n");
 
-        return jsonResponse({
-          summary,
-          merchant: result.merchant,
-          policy: result.policy,
-          auditEvents: result.auditEvents,
-        });
+        return jsonResponse({ summary, ...result });
       } catch (err) {
         return errorResponse(
           `Failed to setup demo: ${err instanceof Error ? err.message : String(err)}`,
@@ -166,109 +153,20 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
         autoSettle: z.boolean().optional().describe("Auto-settle payment after receiving data."),
       },
     },
-    async ({ url, policyId, agentId, autoSetup, autoSettle }) => {
-      const effectivePolicyId = policyId ?? cfg.defaultPolicyId;
-      const effectiveAgentId = agentId ?? cfg.defaultAgentId;
-      const shouldSetup = autoSetup ?? cfg.autoSetup;
-      const shouldSettle = autoSettle ?? cfg.autoSettle;
-
-      const timeline: string[] = [];
-
+    async (input) => {
       try {
-        // 1. Auto-setup
-        if (shouldSetup) {
-          try {
-            await client.setupDemo();
-            timeline.push("Demo state initialized (auto-setup).");
-          } catch {
-            timeline.push("Auto-setup skipped (paid-api may already be initialized).");
-          }
-        }
-
-        // 2. Call the resource without receipt
-        timeline.push("Called protected resource.");
-        const firstResponse = await client.getPaidResource(url);
-
-        // 3. Not 402 → return directly
-        if (firstResponse.status === 200) {
-          return jsonResponse({
-            isPaid: false,
-            message: "Resource returned 200 — no payment was required.",
-            resource: firstResponse.body,
-          });
-        }
-
-        if (firstResponse.status !== 402) {
-          return errorResponse(
-            `Expected 402 Payment Required but got ${firstResponse.status}. Body: ${JSON.stringify(firstResponse.body)}`,
-          );
-        }
-
-        // 4. Parse PaymentRequirement
-        timeline.push("Received HTTP 402 PaymentRequirement.");
-        const paymentBody = firstResponse.body as Record<string, unknown> | null;
-        const requirementRaw = paymentBody?.paymentRequirement;
-        if (!requirementRaw) {
-          return errorResponse("402 response did not contain a paymentRequirement field.");
-        }
-
-        let requirement;
-        try {
-          requirement = PaymentRequirementSchema.parse(requirementRaw);
-        } catch {
-          return errorResponse("402 response contains an invalid PaymentRequirement.");
-        }
-
-        // 5. Authorize and submit
-        timeline.push("Authorized payment under policy.");
-        const authResult = await client.authorizeRequirement({
-          policyId: effectivePolicyId,
-          agentId: effectiveAgentId,
-          requirement,
-        });
-
-        timeline.push("Submitted mock Casper payment into escrow.");
-
-        // 6. Retry with receipt
-        timeline.push("Retried protected resource with request-bound receipt.");
-        const retryResponse = await client.getPaidResource(url, authResult.receipt);
-
-        if (retryResponse.status !== 200) {
-          return errorResponse(
-            `Retry with receipt failed (status ${retryResponse.status}). Body: ${JSON.stringify(retryResponse.body)}`,
-          );
-        }
-
-        timeline.push("Received premium data.");
-        timeline.push("Payment fulfilled.");
-
-        const result: PaidResourceResult = {
-          isPaid: true,
-          resource: retryResponse.body,
-          paymentRequirement: requirement,
-          authorization: authResult.authorization,
-          receipt: authResult.receipt,
-          proof: authResult.proof,
-          auditEvents: authResult.auditEvents,
-        };
-
-        // 7. Auto-settle
-        if (shouldSettle && authResult.receipt.paymentId) {
-          try {
-            const settleResult = await client.settlePayment(authResult.receipt.paymentId);
-            result.settlement = settleResult;
-            timeline.push("Payment settled.");
-          } catch (settleErr) {
-            timeline.push(
-              `Settlement failed: ${settleErr instanceof Error ? settleErr.message : String(settleErr)}`,
-            );
-          }
-        }
-
-        return jsonResponse({
-          ...result,
-          timeline,
-        });
+        const result = await callPaidResourceHandler(
+          {
+            url: input.url,
+            method: input.method,
+            policyId: input.policyId ?? undefined,
+            agentId: input.agentId ?? undefined,
+            autoSetup: input.autoSetup ?? undefined,
+            autoSettle: input.autoSettle ?? undefined,
+          },
+          cfg,
+        );
+        return jsonResponse(result);
       } catch (err) {
         const message = err instanceof PaidApiError
           ? `${err.message}. Body: ${JSON.stringify(err.body)}`
@@ -298,21 +196,15 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
     },
     async ({ requirement, policyId, agentId }) => {
       try {
-        const parsed = PaymentRequirementSchema.parse(requirement);
-
-        const result = await client.authorizeRequirement({
-          policyId: policyId ?? cfg.defaultPolicyId,
-          agentId: agentId ?? cfg.defaultAgentId,
-          requirement: parsed,
-        });
-
-        return jsonResponse({
-          authorization: result.authorization,
-          receipt: result.receipt,
-          proof: result.proof,
-          updatedPolicy: result.updatedPolicy,
-          auditEvents: result.auditEvents,
-        });
+        const result = await authorizeRequirementHandler(
+          {
+            requirement,
+            policyId: policyId ?? undefined,
+            agentId: agentId ?? undefined,
+          },
+          cfg,
+        );
+        return jsonResponse(result);
       } catch (err) {
         return errorResponse(
           `Authorization failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -337,14 +229,8 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
     },
     async ({ paymentId }) => {
       try {
-        const result = await client.settlePayment(paymentId);
-
-        return jsonResponse({
-          paymentId: result.paymentId,
-          status: result.status,
-          payment: result.payment,
-          auditEvents: result.auditEvents,
-        });
+        const result = await settlePaymentHandler(paymentId, cfg);
+        return jsonResponse(result);
       } catch (err) {
         const message = err instanceof PaidApiError
           ? `${err.message}. Body: ${JSON.stringify(err.body)}`
@@ -372,17 +258,8 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
     },
     async ({ paymentId }) => {
       try {
-        const events = await client.getAuditEvents(paymentId);
-
-        const timeline = events.map((event) =>
-          `[${event.createdAt}] ${event.type}${event.paymentId ? ` paymentId=${event.paymentId}` : ""} — ${event.message}`,
-        );
-
-        return jsonResponse({
-          auditEvents: events,
-          timeline,
-          eventCount: events.length,
-        });
+        const result = await getAuditTimelineHandler(cfg, paymentId);
+        return jsonResponse(result);
       } catch (err) {
         return errorResponse(
           `Failed to retrieve audit events: ${err instanceof Error ? err.message : String(err)}`,
@@ -405,7 +282,7 @@ export async function startStdioServer(config?: McpServerConfig) {
 }
 
 // ---------------------------------------------------------------------------
-// Direct execution (node packages/mcp-server/src/server.ts)
+// Direct execution
 // ---------------------------------------------------------------------------
 
 const isDirectRun = process.argv[1]

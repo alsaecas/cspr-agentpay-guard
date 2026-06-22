@@ -236,16 +236,16 @@ Setup implication: install `cargo-odra`, add `wasm32-unknown-unknown`, and updat
 
 ## Recommended Next Implementation Step
 
-Current step — Prompt 7: `packages/mcp-server` — agent-facing MCP tool surface.
+Current step — Prompt 8: `apps/agent` — autonomous agent demo runner.
 
 Completed in this step:
 
-1. MCP server with 7 tools: `agentpay_status`, `setup_demo`, `call_paid_resource`, `authorize_requirement`, `settle_payment`, `get_audit_timeline`.
-2. `call_paid_resource` performs the full 402 → authorize → retry → premium data flow against the paid API.
-3. Judge-readable timeline output on every `call_paid_resource` call.
-4. `PaidApiClient` HTTP module for clean separation from tool handlers.
-5. Auto-setup and auto-settle configuration for frictionless demos.
-6. config.ts with environment-driven defaults.
-7. 14 tests covering config, PaidApiClient (full flow, cross-lotId rejection, unreachable-host), and server creation.
+1. Self-contained agent demo that starts paid-api in-process and runs the full autonomous payment flow.
+2. Judge-readable terminal output with narrative, timeline, payment summary, and audit trail.
+3. MCP tool handlers extracted into `toolHandlers.ts` for reuse by both MCP server and agent demo.
+4. Agent config with environment-driven defaults (auto-start, auto-settle, target URL, port).
+5. Safe failure handling: unreachable paid-api, malformed responses.
+6. 10 tests covering config, full flow, premium data, settlement, cross-lotId rejection, and unreachable host.
+7. `pnpm demo:mock` still works with the new agent demo.
 
-Next step (Prompt 8): Agent demo — autonomous agent runner.
+Next step (Prompt 9): Dashboard — judge-facing audit UI.

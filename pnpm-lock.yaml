@@ -32,6 +32,12 @@ importers:
       '@cspr-agentpay/casper-adapter':
         specifier: workspace:*
         version: link:../../packages/casper-adapter
+      '@cspr-agentpay/mcp-server':
+        specifier: workspace:*
+        version: link:../../packages/mcp-server
+      '@cspr-agentpay/paid-api':
+        specifier: workspace:*
+        version: link:../paid-api
       '@cspr-agentpay/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
