@@ -28,16 +28,22 @@ async function setup() {
   return { srv, setupRes };
 }
 
+/**
+ * Call a premium endpoint without receipt → get the 402 requirement.
+ * Defaults to MAD-001; pass a different lotId to target another lot.
+ */
 async function get402Requirement(
   srv: request.Agent,
+  lotId = "MAD-001",
 ): Promise<PaymentRequirement> {
-  const res = await srv.get("/premium/parking-report/MAD-001").expect(402);
+  const res = await srv.get(`/premium/parking-report/${lotId}`).expect(402);
   expect(res.body.error).toBe("PAYMENT_REQUIRED");
   const requirement = res.body.paymentRequirement as PaymentRequirement;
   expect(requirement.requestHash).toMatch(/^[a-f0-9]{64}$/);
   return requirement;
 }
 
+/** Call /demo/authorize + return the escrowed receipt. */
 async function authorizeAndSubmit(
   srv: request.Agent,
   requirement: PaymentRequirement,
@@ -53,6 +59,10 @@ async function authorizeAndSubmit(
 }
 
 describe("paid-api", () => {
+  // -----------------------------------------------------------------------
+  // Health
+  // -----------------------------------------------------------------------
+
   it("GET /health returns ok", async () => {
     const res = await request(app()).get("/health").expect(200);
     expect(res.body.ok).toBe(true);
@@ -60,12 +70,20 @@ describe("paid-api", () => {
     expect(res.body.mode).toBe("mock");
   });
 
+  // -----------------------------------------------------------------------
+  // Before setup
+  // -----------------------------------------------------------------------
+
   it("GET /premium/parking-report before setup returns DEMO_NOT_INITIALIZED", async () => {
     const res = await request(app())
       .get("/premium/parking-report/MAD-001")
       .expect(503);
     expect(res.body.error).toBe("DEMO_NOT_INITIALIZED");
   });
+
+  // -----------------------------------------------------------------------
+  // Setup
+  // -----------------------------------------------------------------------
 
   it("POST /demo/setup creates merchant and policy", async () => {
     const res = await request(app()).post("/demo/setup").expect(200);
@@ -75,6 +93,10 @@ describe("paid-api", () => {
     expect(Array.isArray(res.body.auditEvents)).toBe(true);
     expect(res.body.auditEvents.length).toBeGreaterThanOrEqual(2);
   });
+
+  // -----------------------------------------------------------------------
+  // 402 Payment Required
+  // -----------------------------------------------------------------------
 
   it("402 without receipt returns valid PaymentRequirement", async () => {
     const { srv } = await setup();
@@ -94,6 +116,10 @@ describe("paid-api", () => {
     expect(r1.requestHash).not.toBe(r2.requestHash);
   });
 
+  // -----------------------------------------------------------------------
+  // Receipt validation — negative cases
+  // -----------------------------------------------------------------------
+
   it("malformed receipt returns 400", async () => {
     const { srv } = await setup();
     await srv
@@ -102,7 +128,7 @@ describe("paid-api", () => {
       .expect(400);
   });
 
-  it("receipt with wrong requestHash is rejected", async () => {
+  it("receipt with wrong requestHash is rejected (RECEIPT_NOT_FOUND)", async () => {
     const { srv } = await setup();
     const requirement = await get402Requirement(srv);
     const receipt = await authorizeAndSubmit(srv, requirement);
@@ -185,9 +211,42 @@ describe("paid-api", () => {
     expect(res.body.error).toBe("PAYMENT_NOT_ESCROWED");
   });
 
+  // -----------------------------------------------------------------------
+  // Request-bound receipt: cross-lotId rejection
+  // -----------------------------------------------------------------------
+
+  it("receipt for MAD-001 is rejected on BCN-001 (REQUEST_HASH_MISMATCH)", async () => {
+    const { srv } = await setup();
+    const requirement = await get402Requirement(srv, "MAD-001");
+    const receipt = await authorizeAndSubmit(srv, requirement);
+
+    // Try using the MAD-001 receipt on BCN-001.
+    const res = await srv
+      .get("/premium/parking-report/BCN-001")
+      .set("x-agentpay-receipt", JSON.stringify(receipt))
+      .expect(403);
+    expect(res.body.error).toBe("REQUEST_HASH_MISMATCH");
+  });
+
+  it("receipt for MAD-001 is rejected on VAL-001", async () => {
+    const { srv } = await setup();
+    const requirement = await get402Requirement(srv, "MAD-001");
+    const receipt = await authorizeAndSubmit(srv, requirement);
+
+    const res = await srv
+      .get("/premium/parking-report/VAL-001")
+      .set("x-agentpay-receipt", JSON.stringify(receipt))
+      .expect(403);
+    expect(res.body.error).toBe("REQUEST_HASH_MISMATCH");
+  });
+
+  // -----------------------------------------------------------------------
+  // Happy path: valid escrowed receipt → premium data
+  // -----------------------------------------------------------------------
+
   it("valid escrowed receipt returns premium report", async () => {
     const { srv } = await setup();
-    const requirement = await get402Requirement(srv);
+    const requirement = await get402Requirement(srv, "MAD-001");
     const receipt = await authorizeAndSubmit(srv, requirement);
 
     const res = await srv
@@ -200,29 +259,32 @@ describe("paid-api", () => {
     expect(res.body.responseHash).toMatch(/^[a-f0-9]{64}$/);
   });
 
-  it("different lotIds produce different responseHashes", async () => {
+  it("different lotIds produce different responseHashes (each with own receipt)", async () => {
     const { srv } = await setup();
 
-    const r1 = await get402Requirement(srv);
-    const rec1 = await authorizeAndSubmit(srv, r1);
-    const res1 = await srv
+    // MAD-001: get requirement + authorize separate receipt.
+    const reqMad = await get402Requirement(srv, "MAD-001");
+    const recMad = await authorizeAndSubmit(srv, reqMad);
+    const resMad = await srv
       .get("/premium/parking-report/MAD-001")
-      .set("x-agentpay-receipt", JSON.stringify(rec1))
+      .set("x-agentpay-receipt", JSON.stringify(recMad))
       .expect(200);
 
-    const r2 = await get402Requirement(srv);
-    const rec2 = await authorizeAndSubmit(srv, r2);
-    const res2 = await srv
+    // BCN-001: get requirement + authorize separate receipt.
+    const reqBcn = await get402Requirement(srv, "BCN-001");
+    const recBcn = await authorizeAndSubmit(srv, reqBcn);
+    const resBcn = await srv
       .get("/premium/parking-report/BCN-001")
-      .set("x-agentpay-receipt", JSON.stringify(rec2))
+      .set("x-agentpay-receipt", JSON.stringify(recBcn))
       .expect(200);
 
-    expect(res2.body.responseHash).not.toBe(res1.body.responseHash);
+    // Each receipt works on its own lot AND produces a different responseHash.
+    expect(resBcn.body.responseHash).not.toBe(resMad.body.responseHash);
   });
 
   it("premium endpoint marks fulfilled and allows re-read", async () => {
     const { srv } = await setup();
-    const requirement = await get402Requirement(srv);
+    const requirement = await get402Requirement(srv, "MAD-001");
     const receipt = await authorizeAndSubmit(srv, requirement);
 
     await srv
@@ -230,6 +292,7 @@ describe("paid-api", () => {
       .set("x-agentpay-receipt", JSON.stringify(receipt))
       .expect(200);
 
+    // Second access with same receipt — still works (fulfilled is acceptable).
     const res2 = await srv
       .get("/premium/parking-report/MAD-001")
       .set("x-agentpay-receipt", JSON.stringify(receipt))
@@ -237,9 +300,13 @@ describe("paid-api", () => {
     expect(res2.body.lotId).toBe("MAD-001");
   });
 
+  // -----------------------------------------------------------------------
+  // Settlement
+  // -----------------------------------------------------------------------
+
   it("settle fulfills a fulfilled payment", async () => {
     const { srv } = await setup();
-    const requirement = await get402Requirement(srv);
+    const requirement = await get402Requirement(srv, "MAD-001");
     const receipt = await authorizeAndSubmit(srv, requirement);
 
     await srv
@@ -257,7 +324,7 @@ describe("paid-api", () => {
 
   it("duplicate settlement is rejected (adapter throws 409)", async () => {
     const { srv } = await setup();
-    const requirement = await get402Requirement(srv);
+    const requirement = await get402Requirement(srv, "MAD-001");
     const receipt = await authorizeAndSubmit(srv, requirement);
 
     await srv
@@ -277,7 +344,7 @@ describe("paid-api", () => {
 
   it("non-fulfilled settlement is rejected (409)", async () => {
     const { srv } = await setup();
-    const requirement = await get402Requirement(srv);
+    const requirement = await get402Requirement(srv, "MAD-001");
     const receipt = await authorizeAndSubmit(srv, requirement);
 
     const res = await srv
@@ -285,6 +352,10 @@ describe("paid-api", () => {
       .expect(409);
     expect(res.body.error).toBe("INVALID_STATE_TRANSITION");
   });
+
+  // -----------------------------------------------------------------------
+  // Audit
+  // -----------------------------------------------------------------------
 
   it("GET /demo/audit returns ordered audit events", async () => {
     const { srv } = await setup();
@@ -297,21 +368,13 @@ describe("paid-api", () => {
     expect(types).toContain("policy_created");
   });
 
-  it("works for different lotIds", async () => {
-    const { srv } = await setup();
-    const requirement = await get402Requirement(srv);
-    const receipt = await authorizeAndSubmit(srv, requirement);
-
-    const res = await srv
-      .get("/premium/parking-report/BCN-001")
-      .set("x-agentpay-receipt", JSON.stringify(receipt))
-      .expect(200);
-    expect(res.body.lotId).toBe("BCN-001");
-  });
+  // -----------------------------------------------------------------------
+  // Demo: authorize & submit helper
+  // -----------------------------------------------------------------------
 
   it("POST /demo/authorize returns escrowed receipt and proof", async () => {
     const { srv } = await setup();
-    const requirement = await get402Requirement(srv);
+    const requirement = await get402Requirement(srv, "MAD-001");
 
     const res = await srv
       .post("/demo/authorize")
@@ -324,9 +387,13 @@ describe("paid-api", () => {
     expect(res.body.updatedPolicy.spentAmount).toBe(requirement.amount);
   });
 
+  // -----------------------------------------------------------------------
+  // Setup is idempotent (resets state)
+  // -----------------------------------------------------------------------
+
   it("POST /demo/setup resets state (2 audit events on fresh adapter)", async () => {
     const { srv } = await setup();
-    const requirement = await get402Requirement(srv);
+    const requirement = await get402Requirement(srv, "MAD-001");
     await authorizeAndSubmit(srv, requirement);
 
     const resetRes = await srv.post("/demo/setup").expect(200);

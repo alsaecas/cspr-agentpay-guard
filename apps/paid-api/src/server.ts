@@ -87,12 +87,47 @@ function generatePremiumReport(lotId: string): PremiumReport {
 }
 
 // ---------------------------------------------------------------------------
+// Canonical request-input builder
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a deterministic CreateRequestHashInput from the current HTTP request
+ * plus the fixed demo identity fields.
+ *
+ * Used both when issuing a PaymentRequirement and when verifying a receipt,
+ * so the hash formula never drifts between the two paths.
+ */
+function buildCanonicalRequestInput(input: {
+  method: string;
+  originalUrl: string;
+  port: number;
+  endpointId: string;
+  merchantId: string;
+  agentId: string;
+  nonce: string;
+  expiresAt: string;
+}): CreateRequestHashInput {
+  const url = `http://127.0.0.1:${input.port}${input.originalUrl}`;
+
+  return {
+    method: input.method,
+    url,
+    bodyHash: createBodyHash({}),
+    endpointId: input.endpointId,
+    merchantId: input.merchantId,
+    agentId: input.agentId,
+    nonce: input.nonce,
+    expiresAt: input.expiresAt,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Demo state (one instance per server process)
 // ---------------------------------------------------------------------------
 
 interface DemoState {
   adapter: CasperPaymentAdapter;
-  requirements: Map<string, { requirement: PaymentRequirement; request: CreateRequestHashInput }>;
+  requirements: Map<string, PaymentRequirement>;
   initialized: boolean;
 }
 
@@ -232,26 +267,21 @@ export function createPaidApiServer(config?: PaidApiConfig): express.Application
 
       if (!receiptHeader) {
         const method = req.method;
-        // Use a fixed host for consistent hash computation and policy-pattern matching.
-        // In a production deployment the Host header would be used, and policy patterns
-        // must be configured to match the deployed host:port.
-        const url = `http://127.0.0.1:${cfg.port}${req.originalUrl}`;
-        const bodyHash = createBodyHash({});
         const endpointId = "parking-report-v1";
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
         const issuedAt = new Date().toISOString();
         const nonce = `paid-api-${randomUUID()}`;
 
-        const request: CreateRequestHashInput = {
+        const request = buildCanonicalRequestInput({
           method,
-          url,
-          bodyHash,
+          originalUrl: req.originalUrl,
+          port: cfg.port,
           endpointId,
           merchantId: cfg.merchantId,
           agentId: cfg.agentId,
           nonce,
           expiresAt,
-        };
+        });
         const requestHash = createRequestHash(request);
 
         const requirement: PaymentRequirement = {
@@ -260,7 +290,7 @@ export function createPaidApiServer(config?: PaidApiConfig): express.Application
           merchantId: cfg.merchantId,
           merchantAccount: cfg.merchantAccount,
           method,
-          url,
+          url: request.url,
           endpointId,
           amount: "1000000000",
           currency: "CSPR",
@@ -272,7 +302,7 @@ export function createPaidApiServer(config?: PaidApiConfig): express.Application
           issuedAt,
         };
 
-        state.requirements.set(requestHash, { requirement, request });
+        state.requirements.set(requestHash, requirement);
 
         res.status(402).json({
           error: "PAYMENT_REQUIRED",
@@ -292,19 +322,35 @@ export function createPaidApiServer(config?: PaidApiConfig): express.Application
       }
 
       // Look up original requirement by requestHash.
-      const stored = state.requirements.get(receipt.requestHash);
-      if (!stored) {
+      const requirement = state.requirements.get(receipt.requestHash);
+      if (!requirement) {
         apiError(res, 404, "RECEIPT_NOT_FOUND", "No requirement was issued for this requestHash.");
         return;
       }
 
-      const { requirement, request } = stored;
-
-      // Recompute requestHash for the exact current request.
-      const currentRequestHash = createRequestHash(request);
+      // Rebuild the request-hash input from the CURRENT HTTP request, reusing
+      // the stored requirement's nonce, endpointId, and expiry.  This ensures
+      // the receipt is bound to the exact current URL — a receipt issued for
+      // /MAD-001 will not pass verification on /BCN-001.
+      const currentRequest = buildCanonicalRequestInput({
+        method: req.method,
+        originalUrl: req.originalUrl,
+        port: cfg.port,
+        endpointId: requirement.endpointId,
+        merchantId: cfg.merchantId,
+        agentId: cfg.agentId,
+        nonce: requirement.nonce,
+        expiresAt: requirement.expiresAt,
+      });
+      const currentRequestHash = createRequestHash(currentRequest);
 
       if (receipt.requestHash !== currentRequestHash) {
-        apiError(res, 403, "REQUEST_HASH_MISMATCH", "Receipt requestHash does not match the current request.");
+        apiError(
+          res,
+          403,
+          "REQUEST_HASH_MISMATCH",
+          "Receipt requestHash does not match the current request. A receipt issued for one URL cannot be used for another.",
+        );
         return;
       }
 

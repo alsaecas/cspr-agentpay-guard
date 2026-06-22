@@ -31,6 +31,8 @@ The server uses the `MockCasperPaymentAdapter` for a fully local, deterministic 
 
 ## Receipt Verification
 
+**Receipts are request-bound.** A receipt issued for one exact URL cannot be reused for another. The server rebuilds the `requestHash` from the current HTTP request (method, URL, endpointId, nonce, etc.) and compares it to the receipt's `requestHash`. Using a MAD-001 receipt on BCN-001 returns `REQUEST_HASH_MISMATCH`.
+
 Before releasing premium data, the server verifies:
 
 1. Receipt JSON parses and validates against `PaymentReceiptSchema`.
