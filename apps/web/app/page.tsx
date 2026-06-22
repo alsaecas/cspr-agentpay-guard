@@ -1,78 +1,75 @@
-import {
-  PROTOCOL_VERSION,
-  createBodyHash,
-  createRequestHash,
-} from "@cspr-agentpay/protocol";
-import { mockId } from "@cspr-agentpay/casper-adapter";
+import { NavBar } from "@/components/NavBar";
 
-const mode = process.env.NEXT_PUBLIC_AGENTPAY_MODE ?? "mock";
-const requestHash = createRequestHash({
-  method: "GET",
-  url: "https://api.example.test/premium/report?symbol=CSPR",
-  bodyHash: createBodyHash({}),
-  endpointId: "premium-report-cspr",
-  merchantId: "merchant_market_data_001",
-  agentId: "agent_research_001",
-  nonce: "dashboard-request-nonce",
-  expiresAt: "2030-01-01T00:00:00.000Z",
-});
-
-export default function DashboardPage() {
+export default function HomePage() {
   return (
-    <main className="shell">
-      <section className="toolbar">
-        <div>
-          <p className="eyebrow">CSPR AgentPay Guard</p>
-          <h1>Payment Firewall Dashboard</h1>
-        </div>
-        <span className="mode">mode: {mode}</span>
-      </section>
+    <div className="shell">
+      <NavBar />
 
-      <section className="grid">
-        <article className="panel">
-          <h2>Agent Policy</h2>
-          <dl>
-            <div>
-              <dt>Agent</dt>
-              <dd>agent_research_001</dd>
-            </div>
-            <div>
-              <dt>Merchant</dt>
-              <dd>merchant_market_data_001</dd>
-            </div>
-            <div>
-              <dt>Limit</dt>
-              <dd>1 CSPR per payment</dd>
-            </div>
-          </dl>
-        </article>
+      <div className="hero">
+        <h1>Secure Payments for Autonomous AI Agents on Casper</h1>
+        <p>
+          HTTP 402 payments with policy limits, request-bound receipts, escrow,
+          and audit trails. All visible through Casper.
+        </p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+          <a href="/demo" className="btn btn-primary">
+            Run Dashboard Demo
+          </a>
+          <a href="/audit" className="btn btn-ghost">
+            View Audit Trail
+          </a>
+        </div>
+      </div>
 
-        <article className="panel">
-          <h2>Mock Audit Trail</h2>
-          <ol>
-            <li>Paid API returns 402 Payment Required</li>
-            <li>Agent authorizes request-bound payment</li>
-            <li>Mock Casper adapter escrows payment</li>
-            <li>Receipt unlocks premium data</li>
-          </ol>
-        </article>
-      </section>
+      <h2>How It Works</h2>
+      <div className="grid-2">
+        <div className="panel">
+          <h3>1. Agent calls protected API</h3>
+          <p style={{ color: "var(--ink-dim)", margin: "8px 0 0" }}>
+            An autonomous AI agent requests premium data from a protected
+            resource.
+          </p>
+        </div>
+        <div className="panel">
+          <h3>2. API returns HTTP 402</h3>
+          <p style={{ color: "var(--ink-dim)", margin: "8px 0 0" }}>
+            The server responds with a PaymentRequirement — amount, merchant,
+            requestHash, and expiry.
+          </p>
+        </div>
+        <div className="panel">
+          <h3>3. Agent pays under policy</h3>
+          <p style={{ color: "var(--ink-dim)", margin: "8px 0 0" }}>
+            The agent checks its spending policy (merchant allowlist, per-payment
+            max, total budget) and authorizes exactly one request-bound payment.
+          </p>
+        </div>
+        <div className="panel">
+          <h3>4. Receipt unlocks premium data</h3>
+          <p style={{ color: "var(--ink-dim)", margin: "8px 0 0" }}>
+            Casper records the payment. The receipt is bound to the exact HTTP
+            request. The API verifies it and releases premium data.
+          </p>
+        </div>
+      </div>
 
-      <section className="panel wide">
-        <h2>Protocol Proof</h2>
-        <div className="proof-row">
-          <span>version</span>
-          <code>{PROTOCOL_VERSION}</code>
+      <div className="gap panel">
+        <div className="panel-header">
+          <h2>Quick Links</h2>
         </div>
-        <div className="proof-row">
-          <span>requestHash</span>
-          <code>{requestHash}</code>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          <a href="/policies" className="btn btn-ghost">View Policies</a>
+          <a href="/payments" className="btn btn-ghost">View Payments</a>
+          <a href="/merchants" className="btn btn-ghost">View Merchants</a>
+          <a href="/audit" className="btn btn-ghost">Audit Trail</a>
         </div>
-        <div className="proof-row">
-          <span>mock event</span>
-          <code>{mockId("event", requestHash)}</code>
-        </div>
-      </section>
-    </main>
+      </div>
+
+      <div className="gap" style={{ textAlign: "center", color: "var(--ink-dim)", fontSize: 13 }}>
+        All proofs use deterministic <code>mock-*</code> hashes. No real Casper funds are moved.
+        <br />
+        Terminal demo: <code>pnpm demo:mock</code>
+      </div>
+    </div>
   );
 }

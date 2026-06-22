@@ -42,9 +42,9 @@ The build is sequenced in numbered prompts:
 | 5 | Casper contract boundary & adapter skeleton | ✅ Complete |
 | 6 | `apps/paid-api` — HTTP 402 protected-resource flow | ✅ Complete |
 | 7 | `packages/mcp-server` — agent-facing tool surface | ✅ Complete |
-| **8** | **`apps/agent` — autonomous agent demo runner** | ← Current |
-| 9 | Dashboard — judge-facing audit UI | Next |
-| 10 | Real Casper Testnet proof & final polish | Planned |
+| 8 | `apps/agent` — autonomous agent demo runner | ✅ Complete |
+| **9** | **`apps/web` — judge-facing audit dashboard** | ← Current |
+| 10 | Real Casper Testnet proof & final polish | Next |
 
 ## MVP Demo Goal
 

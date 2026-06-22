@@ -2,7 +2,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "CSPR AgentPay Guard",
-  description: "Policy-controlled payment firewall for autonomous agents.",
+  description: "Policy-controlled payment firewall for autonomous AI agents.",
 };
 
 export default function RootLayout({
