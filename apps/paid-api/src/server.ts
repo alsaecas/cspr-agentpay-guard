@@ -202,10 +202,10 @@ export function createPaidApiServer(config?: PaidApiConfig): express.Application
         status: "active",
         casperAccount: cfg.merchantAccount,
         settlementAccount: cfg.merchantAccount,
-        allowedOrigins: ["http://localhost:4000", "http://127.0.0.1:4000"],
+        allowedOrigins: [`http://localhost:${cfg.port}`, `http://127.0.0.1:${cfg.port}`],
         allowedResourcePatterns: [
-          "GET http://localhost:4000/premium/parking-report/*",
-          "GET http://127.0.0.1:4000/premium/parking-report/*",
+          `GET http://localhost:${cfg.port}/premium/parking-report/*`,
+          `GET http://127.0.0.1:${cfg.port}/premium/parking-report/*`,
         ],
         createdAt,
       };
@@ -223,8 +223,8 @@ export function createPaidApiServer(config?: PaidApiConfig): express.Application
         budgetWindow: "demo-total",
         allowedMerchantIds: [cfg.merchantId],
         allowedResourcePatterns: [
-          "GET http://localhost:4000/premium/parking-report/*",
-          "GET http://127.0.0.1:4000/premium/parking-report/*",
+          `GET http://localhost:${cfg.port}/premium/parking-report/*`,
+          `GET http://127.0.0.1:${cfg.port}/premium/parking-report/*`,
         ],
         expiresAt: policyExpiresAt,
         policyNonce: "policy-nonce-paid-api-001",

@@ -236,16 +236,16 @@ Setup implication: install `cargo-odra`, add `wasm32-unknown-unknown`, and updat
 
 ## Recommended Next Implementation Step
 
-Current step — Prompt 6: `apps/paid-api` — HTTP 402 protected-resource flow.
+Current step — Prompt 7: `packages/mcp-server` — agent-facing MCP tool surface.
 
 Completed in this step:
 
-1. HTTP `402 Payment Required` endpoint serving premium parking-lot data.
-2. `PaymentRequirement` creation with canonical `requestHash` on every unpaid request.
-3. Full receipt verification: requestHash matching, merchant/endpoint/amount/currency validation, expiry check, escrow/fulfilled/settled status check, mock-proof validation, adapter lookup.
-4. `POST /demo/authorize` helper to authorize and escrow a payment.
-5. `POST /demo/settle/:paymentId` helper to settle a fulfilled payment.
-6. `GET /demo/audit` for audit trail visibility.
-7. 22 test cases covering health, 402 flow, receipt rejection scenarios, fulfillment, settlement, duplicate settlement, and audit event ordering.
+1. MCP server with 7 tools: `agentpay_status`, `setup_demo`, `call_paid_resource`, `authorize_requirement`, `settle_payment`, `get_audit_timeline`.
+2. `call_paid_resource` performs the full 402 → authorize → retry → premium data flow against the paid API.
+3. Judge-readable timeline output on every `call_paid_resource` call.
+4. `PaidApiClient` HTTP module for clean separation from tool handlers.
+5. Auto-setup and auto-settle configuration for frictionless demos.
+6. config.ts with environment-driven defaults.
+7. 14 tests covering config, PaidApiClient (full flow, cross-lotId rejection, unreachable-host), and server creation.
 
-Next step (Prompt 7): MCP server — agent-facing tool surface.
+Next step (Prompt 8): Agent demo — autonomous agent runner.

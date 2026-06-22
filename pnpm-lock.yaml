@@ -106,6 +106,10 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+    devDependencies:
+      '@cspr-agentpay/paid-api':
+        specifier: workspace:*
+        version: link:../../apps/paid-api
 
   packages/policy:
     dependencies:
