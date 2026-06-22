@@ -11,12 +11,16 @@ Build the MVP around a stable TypeScript protocol spine, pure policy package, an
 Recommended order:
 
 1. Completed locally: protocol types, deterministic hashes, pure policy checks, audit event types, and a deterministic in-memory `MockCasperPaymentAdapter` state machine.
-2. Next: build the paid API HTTP 402 flow on top of the mock adapter.
-3. Then add a real Casper Testnet adapter that can submit one visible Casper transaction or contract call and map it into the same receipt shape.
-4. Add a minimal Odra contract only after the mock flow is proven. The first contract should store `paymentId`, `requestHash`, amount, merchant, status, expiry, and emit Casper Event Standard events.
-5. Use CSPR.cloud as the read/index/streaming layer for dashboard proof.
-6. Use CSPR.click for policy owner wallet UX and optional funding/signing, not as the core autonomous-agent payment mechanism.
-7. Add MCP as an agent-facing tool surface only after the HTTP 402 flow works.
+2. Prompt 5 (current): Casper contract boundary documentation and adapter skeleton hardening.
+3. Prompt 6: build the paid API HTTP 402 flow on top of the mock adapter.
+4. Prompt 7: MCP server — agent-facing tool surface.
+5. Prompt 8: agent demo — autonomous agent runner.
+6. Prompt 9: dashboard — judge-facing audit UI.
+7. Prompt 10: real Casper Testnet proof and final polish. Add a real Casper Testnet adapter that can submit one visible Casper transaction or contract call and map it into the same receipt shape.
+8. Add a minimal Odra contract only after the mock flow is proven. The first contract should store `paymentId`, `requestHash`, amount, merchant, status, expiry, and emit Casper Event Standard events.
+9. Use CSPR.cloud as the read/index/streaming layer for dashboard proof.
+10. Use CSPR.click for policy owner wallet UX and optional funding/signing, not as the core autonomous-agent payment mechanism.
+11. Add MCP as an agent-facing tool surface only after the HTTP 402 flow works.
 
 ## Chosen Libraries
 
@@ -230,21 +234,28 @@ Setup implication: install `cargo-odra`, add `wasm32-unknown-unknown`, and updat
 - Whether CSPR.click `send()` supports the exact TransactionV1 or contract-call JSON shape needed by the dashboard funding flow across selected wallets.
 - Whether true on-chain escrow is feasible inside the hackathon timeline or should remain a stretch after on-chain payment-state proof.
 
-## Recommended First Implementation Step
+## Recommended Next Implementation Step
 
-Start with the protocol and adapter spine, not the contract.
+Current step — Prompt 5: Casper contract boundary documentation and real adapter skeleton hardening.
 
-Next task:
+Tasks for this step:
+
+1. Create `docs/casper-contract-boundary.md` documenting intended Casper modules (`AgentPolicyRegistry`, `MerchantRegistry`, `PaymentEscrow`), entrypoints, events, and adapter mapping.
+2. Refine `RealCasperTestnetAdapter` with method-specific error messages, environment variable validation, and a `getMissingEnvVars()` helper.
+3. Update `.env.example` files and contracts documentation.
+4. Add tests for the real adapter skeleton.
+
+Next step (Prompt 6):
 
 1. Build `apps/paid-api` into the real HTTP 402 protected-resource flow.
 2. Have it create `PaymentRequirement` objects with canonical `requestHash`.
 3. Verify mock receipts through the adapter state machine before returning premium data.
 4. Emit/read adapter audit events for the later dashboard.
 
-Acceptance for that step:
+Acceptance for Prompt 6:
 
 - No real Casper calls yet.
 - Mock receipts use the same fields expected from real mode.
 - Tests prove the security invariants before app UI or Odra work begins.
 
-After that, build the local 402 demo. Only then add the Odra/Casper Testnet proof path.
+After that, build the MCP server (Prompt 7), agent demo (Prompt 8), dashboard (Prompt 9), and finally add the Odra/Casper Testnet proof path (Prompt 10).

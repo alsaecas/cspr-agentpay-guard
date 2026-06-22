@@ -26,14 +26,25 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
   const adapter = new MockCasperPaymentAdapter({
     seedDemoData: false,
   });
-  const now = new Date("2026-06-03T00:00:00.000Z");
-  const expiresAt = new Date("2026-06-03T00:05:00.000Z").toISOString();
+
+  // Use dynamic relative timestamps so the demo always runs against the
+  // current wall clock.  Offsets preserve the same relative spacing that
+  // the fixed-date fixture used for deterministic output verification.
+  const baseNow = new Date();
+  const policyExpiresAt = new Date(
+    baseNow.getTime() + 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const requirementExpiresAt = new Date(
+    baseNow.getTime() + 5 * 60 * 1000,
+  ).toISOString();
+
   const agentId = process.env.AGENT_ID ?? "agent_research_001";
   const merchantId = process.env.MERCHANT_ID ?? "merchant_market_data_001";
   const merchantAccount = "mock-merchant-account";
   const endpointId = "premium-report-cspr";
   const amount = "1000000000";
   const requestNonce = "mock-requirement-nonce-001";
+
   const policy: AgentPolicy = {
     version: PROTOCOL_VERSION,
     policyId: "policy_demo_agent_001",
@@ -47,9 +58,9 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
     budgetWindow: "demo-total",
     allowedMerchantIds: [merchantId],
     allowedResourcePatterns: ["GET https://api.example.test/premium/*"],
-    expiresAt: "2026-06-04T00:00:00.000Z",
+    expiresAt: policyExpiresAt,
     policyNonce: "policy-nonce-001",
-    createdAt: now.toISOString(),
+    createdAt: baseNow.toISOString(),
   };
   const merchant: Merchant = {
     version: PROTOCOL_VERSION,
@@ -60,7 +71,7 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
     settlementAccount: merchantAccount,
     allowedOrigins: ["https://api.example.test"],
     allowedResourcePatterns: ["GET https://api.example.test/premium/*"],
-    createdAt: now.toISOString(),
+    createdAt: baseNow.toISOString(),
   };
 
   await adapter.registerMerchant(merchant);
@@ -74,7 +85,7 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
     merchantId,
     agentId,
     nonce: requestNonce,
-    expiresAt,
+    expiresAt: requirementExpiresAt,
   };
   const requestHash = createRequestHash(request);
 
@@ -92,8 +103,8 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
     nonce: requestNonce,
     termsHash: blake2b256Hex("mock terms"),
     escrowMode: "authorize_then_settle",
-    expiresAt,
-    issuedAt: now.toISOString(),
+    expiresAt: requirementExpiresAt,
+    issuedAt: baseNow.toISOString(),
   };
 
   const authorizationResult = await adapter.authorizePayment({
@@ -101,20 +112,20 @@ export async function runMockPaymentFlow(): Promise<MockPaymentFlowResult> {
     requirement,
     request,
     authorizationNonce: "mock-payment-nonce-001",
-    now: new Date("2026-06-03T00:00:10.000Z"),
+    now: new Date(baseNow.getTime() + 10_000),
   });
   const receipt = await adapter.submitPayment({
     paymentId: authorizationResult.authorization.paymentId,
-    now: new Date("2026-06-03T00:00:20.000Z"),
+    now: new Date(baseNow.getTime() + 20_000),
   });
   await adapter.markFulfilled({
     paymentId: authorizationResult.authorization.paymentId,
     responseBody: { symbol: "CSPR", signal: "premium-placeholder" },
-    now: new Date("2026-06-03T00:00:25.000Z"),
+    now: new Date(baseNow.getTime() + 25_000),
   });
   const settlement = await adapter.settlePayment({
     paymentId: authorizationResult.authorization.paymentId,
-    now: new Date("2026-06-03T00:00:30.000Z"),
+    now: new Date(baseNow.getTime() + 30_000),
   });
   const auditEvents = await adapter.listAuditEvents();
 

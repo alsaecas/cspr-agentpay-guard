@@ -28,11 +28,23 @@ This repository now contains the project knowledge base plus the core TypeScript
 
 - `packages/protocol` defines canonical types, deterministic hashes, validation schemas, proof objects, policy decisions, and audit event types.
 - `packages/policy` implements pure policy checks for allowlists, resource scope, expiry, per-payment limits, total budgets, destination matching, and request-hash matching.
-- `packages/casper-adapter` includes a faithful in-memory mock state machine with audit events, nonce replay protection, payment ID uniqueness, fulfillment, settlement, and duplicate-settlement rejection.
+- `packages/casper-adapter` includes a faithful in-memory mock state machine with audit events, nonce replay protection, payment ID uniqueness, fulfillment, settlement, and duplicate-settlement rejection. The real Casper Testnet adapter is a scaffold with clear error messages for each unimplemented method.
 
-Mock mode is now a trustworthy local simulator for the product thesis. The real Casper Testnet adapter remains a compatible skeleton until the paid API flow is proven.
+Mock mode is now a trustworthy local simulator for the product thesis. The real Casper Testnet adapter remains a compatible skeleton.
 
-The next recommended implementation task is `apps/paid-api`: build the HTTP `402 Payment Required` protected-resource flow on top of the protocol, policy engine, and mock adapter.
+## Implementation Plan (Prompt Sequence)
+
+The build is sequenced in numbered prompts:
+
+| Prompt | Task | Status |
+|---|---|---|
+| 1–4 | Protocol types, hashes, policy engine, mock adapter | ✅ Complete |
+| **5** | **Casper contract boundary & adapter skeleton** | ← Current |
+| 6 | `apps/paid-api` — HTTP 402 protected-resource flow | Next |
+| 7 | MCP server — agent-facing tool surface | Planned |
+| 8 | Agent demo — autonomous agent runner | Planned |
+| 9 | Dashboard — judge-facing audit UI | Planned |
+| 10 | Real Casper Testnet proof & final polish | Planned |
 
 ## MVP Demo Goal
 
@@ -53,6 +65,7 @@ The winning 3-minute demo should show:
 - [docs/product-brief.md](docs/product-brief.md): Product thesis, target user, MVP scope, non-goals, and stretch goals.
 - [docs/protocol-spec.md](docs/protocol-spec.md): Protocol objects, deterministic hash formulas, state transitions, and error cases.
 - [docs/threat-model.md](docs/threat-model.md): Replay, receipt reuse, duplicate settlement, malicious merchant, overspending, spoofing, and mock-vs-real risks.
+- [docs/casper-contract-boundary.md](docs/casper-contract-boundary.md): Casper smart contract modules, entrypoints, event schema, and adapter-to-contract mapping.
 - [docs/demo-script.md](docs/demo-script.md): 3-minute judge-facing demo script.
 - [docs/judging-alignment.md](docs/judging-alignment.md): Feature mapping to Casper Buildathon judging value.
 
@@ -67,6 +80,7 @@ The implementation must preserve these core invariants:
 - Requirement, authorization, receipt nonce, and payment ID replay are rejected.
 - Mock mode and real Casper mode share the same protocol surface.
 - Mock mode is clearly labeled and never presented as real Casper settlement.
+- Real Casper adapter must not fake chain success — it throws clear errors until implementation is complete.
 
 ## License
 
