@@ -43,8 +43,50 @@ The build is sequenced in numbered prompts:
 | 6 | `apps/paid-api` — HTTP 402 protected-resource flow | ✅ Complete |
 | 7 | `packages/mcp-server` — agent-facing tool surface | ✅ Complete |
 | 8 | `apps/agent` — autonomous agent demo runner | ✅ Complete |
-| **9** | **`apps/web` — judge-facing audit dashboard** | ← Current |
-| 10 | Real Casper Testnet proof & final polish | Next |
+| 9 | `apps/web` — judge-facing audit dashboard | ✅ Complete |
+| **10** | **Casper Testnet proof path & final polish** | ← Current |
+
+## How to Demo
+
+### Demo A — Reliable local mock demo (terminal)
+```bash
+pnpm install && pnpm test
+pnpm demo:mock
+```
+
+### Demo B — Dashboard demo (browser)
+```bash
+# Terminal 1
+pnpm --filter @cspr-agentpay/paid-api dev
+# Terminal 2
+pnpm --filter @cspr-agentpay/web dev
+# Browser: http://localhost:3000/demo — click Run AgentPay Demo
+```
+
+### Demo C — Optional Casper Testnet proof (CLI)
+```bash
+pnpm proof:testnet:dry-run     # always works, no credentials
+pnpm proof:testnet              # requires env vars + deployed contract
+```
+
+### What Is Real vs Mock
+
+| Feature | Status |
+|---|---|
+| Protocol types, hashes, schemas | ✅ Real |
+| Policy engine (pure function) | ✅ Real |
+| Mock adapter state machine | Mock-only |
+| Paid API HTTP 402 flow | Mock-only |
+| MCP server tools | Mock-only |
+| Agent demo | Mock-only |
+| Dashboard | Mock-mode display + Testnet card |
+| `proof:testnet:dry-run` | ✅ Works |
+| `proof:testnet` | Graceful exit (env var instructions) |
+| Real Casper deploy | ⬜ Pending contract deployment |
+| Odra contracts | ⬜ Scaffold only |
+| Production escrow/custody | ⬜ Not implemented |
+
+**No production escrow or custody exists. All mock proofs are clearly labeled.**
 
 ## MVP Demo Goal
 

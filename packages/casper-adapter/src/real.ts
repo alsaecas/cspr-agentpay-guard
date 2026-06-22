@@ -98,6 +98,107 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
   }
 
   // ---------------------------------------------------------------------------
+  // Prompt 10: Testnet proof support (not production escrow)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Build a dry-run CasperProof payload WITHOUT submitting to the chain.
+   * Always safe — no credentials needed.
+   *
+   * Returns a CasperProof that WOULD be submitted if env is configured.
+   * The proof.kind is "transaction-v1" when a contract hash is available,
+   * otherwise falls back to a documented placeholder.
+   */
+  static buildProofDryRun(input: {
+    paymentId: string;
+    requestHash: string;
+    policyId: string;
+    merchantId: string;
+    status: string;
+    receiptHash?: string;
+    env?: NodeJS.ProcessEnv;
+  }): {
+    proof: { kind: "transaction-v1" | "legacy-deploy"; transactionHash?: string | undefined; deployHash?: string | undefined };
+    payload: Record<string, string>;
+    missingEnvVars: string[];
+  } {
+    const env = input.env ?? process.env;
+    const missing = RealCasperTestnetAdapter.getMissingEnvVars(env);
+
+    const payload: Record<string, string> = {
+      paymentId: input.paymentId,
+      requestHash: input.requestHash,
+      policyId: input.policyId,
+      merchantId: input.merchantId,
+      status: input.status,
+    };
+    if (input.receiptHash) {
+      payload.receiptHash = input.receiptHash;
+    }
+
+    const contractHash = env.CASPER_AGENTPAY_CONTRACT_HASH;
+    const placeholderHash = "0".repeat(64);
+
+    const proof = {
+      kind: "transaction-v1" as const,
+      transactionHash: contractHash ? placeholderHash : undefined,
+    };
+
+    return { proof, payload, missingEnvVars: missing };
+  }
+
+  /**
+   * Record an AgentPay proof on Casper Testnet.
+   *
+   * THIS IS A SKELETON — it does NOT submit real transactions yet.
+   * It validates env vars and returns a dry-run proof.
+   * When real contract deployment is complete, this method will submit
+   * a TransactionV1 to the Casper Testnet RPC and return the tx hash.
+   */
+  static async recordAgentPayProof(input: {
+    paymentId: string;
+    requestHash: string;
+    policyId: string;
+    merchantId: string;
+    status: string;
+    receiptHash?: string;
+    env?: NodeJS.ProcessEnv;
+  }): Promise<{
+    proof: { kind: "transaction-v1" | "legacy-deploy"; transactionHash?: string | undefined };
+    submitted: boolean;
+    message: string;
+  }> {
+    const env = input.env ?? process.env;
+    const missing = RealCasperTestnetAdapter.getMissingEnvVars(env);
+
+    if (missing.length > 0) {
+      return {
+        proof: {
+          kind: "transaction-v1",
+          transactionHash: undefined,
+        },
+        submitted: false,
+        message:
+          `Cannot submit to Casper Testnet. Missing env vars: ${missing.join(", ")}. ` +
+          `Set them in .env or run with pnpm proof:testnet:dry-run to validate payload.`,
+      };
+    }
+
+    // Placeholder: real deploy submission would go here using casper-js-sdk.
+    // For now, return a dry-run proof with clear messaging.
+    const dryRun = RealCasperTestnetAdapter.buildProofDryRun(input);
+
+    return {
+      proof: dryRun.proof,
+      submitted: false,
+      message:
+        "recordAgentPayProof is a skeleton. Real Casper Testnet transaction submission is pending Odra contract deployment. " +
+        "Use pnpm proof:testnet:dry-run to validate payloads. " +
+        `Payload: ${JSON.stringify(dryRun.payload)}`,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
   // Environment validation
   // ---------------------------------------------------------------------------
 

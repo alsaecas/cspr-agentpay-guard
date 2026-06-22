@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { NavBar } from "@/components/NavBar";
 import { ProofCard } from "@/components/ProofCard";
+import { TestnetProofCard } from "@/components/TestnetProofCard";
 import { Timeline } from "@/components/Timeline";
 import type { DemoRunResult } from "@/lib/demoFlow";
 
@@ -134,6 +135,10 @@ export default function DemoPage() {
           <ProofCard proof={result.proof} />
         </div>
       )}
+
+      <div className="gap">
+        <TestnetProofCard />
+      </div>)
 
       {result?.premiumReport && (
         <div className="gap panel">

@@ -11,6 +11,8 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "demo:mock": "pnpm --filter @cspr-agentpay/agent demo:mock",
     "demo": "pnpm --filter @cspr-agentpay/agent demo",
+    "proof:testnet": "tsx packages/casper-adapter/scripts/proof-testnet.ts",
+    "proof:testnet:dry-run": "tsx packages/casper-adapter/scripts/proof-testnet.ts --dry-run",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

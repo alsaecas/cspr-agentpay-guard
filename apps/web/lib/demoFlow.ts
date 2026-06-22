@@ -102,8 +102,11 @@ export async function executeDemoFlow(): Promise<DemoRunResult> {
       return { ...result, error: "Authorization failed" };
     }
 
-    // 5. Retry with receipt
-    const s5 = step("Agent retries with request-bound receipt");
+    // 5. Escrowed
+    ok(step("Mock Casper payment escrowed"));
+
+    // 6. Retry with receipt
+    const s6 = step("Agent retries with request-bound receipt");
     const retryRes = await fetch(cfg.targetUrl, {
       headers: {
         "X-AgentPay-Receipt": JSON.stringify(authBody.receipt),
@@ -111,18 +114,20 @@ export async function executeDemoFlow(): Promise<DemoRunResult> {
       },
     });
     if (retryRes.status !== 200) {
-      fail(s5, `Retry got ${retryRes.status}`);
+      fail(s6, `Retry got ${retryRes.status}`);
       return { ...result, error: "Receipt retry failed" };
     }
     const premiumBody = await retryRes.json();
     result.premiumReport = premiumBody as Record<string, unknown>;
-    ok(s5);
+    ok(s6);
 
-    // 6. Fulfilled
+    // 7. Premium data returned
+    ok(step("Premium parking data returned"));
+
+    // 8. Fulfilled
     ok(step("Payment fulfilled"));
-    ok(step("Mock Casper payment escrowed"));
 
-    // 7. Settle
+    // 9. Settle
     const settleStep = step("Payment settled");
     if (cfg.autoSettle && authBody.receipt) {
       try {
@@ -139,7 +144,7 @@ export async function executeDemoFlow(): Promise<DemoRunResult> {
       ok(settleStep, "Skipped (autoSettle=false)");
     }
 
-    // 8. Audit
+    // 10. Audit
     const auditStep = step("Audit trail updated");
     try {
       const auditBody = (await api.getAuditEvents()) as unknown;
