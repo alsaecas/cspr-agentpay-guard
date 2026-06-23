@@ -201,19 +201,21 @@ Local tools observed:
 
 - Node `v26.0.0`
 - npm `11.12.1`
-- rustc `1.84.1`
+- rustc `1.96.0` (nightly; `1.84.1` stable was original)
 - cargo `1.84.1`
-- `cargo odra` not installed
+- `cargo-odra 0.1.7` installed
+- `wasm32-unknown-unknown` target installed
 - local `casper-client` reports `2.0.0`, while crates.io has `casper-client 5.0.1`
+- Contract compiles with Odra 2.8.1 (resolved from 2.7.2)
 
-Setup implication: install `cargo-odra`, add `wasm32-unknown-unknown`, and update `casper-client` before real contract work.
+Setup implication: nightly Rust and `cargo-odra` are now installed. Update `casper-client` before real contract deployment work. Build with `pnpm contract:build`.
 
 ## Risks
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Odra docs show `2.6.0`, while crates.io has `2.7.2` | Generated templates or examples may not match latest crates | Pin versions after `cargo odra new`; if latest fails, pin to docs version and record it. |
-| `cargo odra` not installed locally | Cannot build or test contracts yet | Install `cargo-odra --locked` during contract setup, not during this docs spike. |
+| Odra version resolved to 2.8.1 (not 2.7.2) | Cargo.toml must match resolved version | Updated Cargo.toml to 2.8.1; contract compiles. |
+| `cargo-odra` missing | Cannot build contracts | Installed `cargo-odra 0.1.7`. |
 | Local `casper-client` version is old | CLI examples may fail or use deprecated commands | Update to `casper-client 5.0.1` or use `casper-js-sdk` for app transactions. |
 | Casper 2.x deploy vs transaction terminology | Receipt schema may mislabel real proofs | Add an internal `CasperProof` union and update protocol docs before implementation if renaming fields. |
 | Odra payable escrow may require proxy/cargo purse handling | Actual CSPR escrow can consume deadline time | Make on-chain event/state proof the first real target; keep true payable escrow as stretch. |
@@ -228,12 +230,12 @@ Setup implication: install `cargo-odra`, add `wasm32-unknown-unknown`, and updat
 
 ## Unknowns To Resolve Before Real Mode
 
-- Whether Odra `2.7.2` and `cargo-odra 0.1.7` are fully compatible for a fresh Casper backend project.
-- Exact CSPR.cloud event shape for custom Odra CES events emitted by this contract on Testnet.
-- Whether CSPR.cloud Testnet streaming can be used reliably with the available access tier during the hackathon.
-- Whether `ODRA_CASPER_LIVENET_EVENTS_URL` should use `https://node.testnet.cspr.cloud/events`, `https://node-sse.testnet.cspr.cloud/events/main`, or another CSPR.cloud-specific URL for Odra Livenet.
-- Whether CSPR.click `send()` supports the exact TransactionV1 or contract-call JSON shape needed by the dashboard funding flow across selected wallets.
-- Whether true on-chain escrow is feasible inside the hackathon timeline or should remain a stretch after on-chain payment-state proof.
+- ✅ Odra 2.8.1 + `cargo-odra 0.1.7` confirmed compatible. Contract compiles.
+- ⬜ Exact CSPR.cloud event shape for custom Odra CES events — pending deployed contract.
+- ⬜ Whether CSPR.cloud Testnet streaming works with available access tier — pending deployment.
+- ⬜ ODRA_CASPER_LIVENET_EVENTS_URL exact value — pending deployment testing.
+- ⬜ CSPR.click `send()` for TransactionV1 — pending wallet integration.
+- ⬜ True on-chain escrow feasibility — stretch goal; proof recorder is audit anchor only.
 
 ## Odra Version Note
 

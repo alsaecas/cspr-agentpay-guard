@@ -6,7 +6,7 @@
 
 ## One-Liner
 
-Autonomous AI agents pay for protected APIs through HTTP 402 with policy limits, request-bound receipts, escrow, and audit trails — all anchored on Casper.
+Autonomous AI agents pay for protected APIs through HTTP 402 with policy limits, request-bound receipts, escrow, and audit trails — with a Casper proof-recorder contract ready for Testnet anchoring.
 
 ## Problem
 
