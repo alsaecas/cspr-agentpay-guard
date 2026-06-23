@@ -1,23 +1,23 @@
 # Technical Spike: Casper Integration
 
 Investigation date: 2026-06-03
+Last updated: 2026-06-23 (Prompt 13B)
 
 Scope: identify the current best package choices and integration strategy for the Casper path. This is not an implementation plan for production custody. The project remains mock-first and real-Casper-second as defined in `AGENTS.md`.
 
-## Executive Recommendation
+## Current Status — All 13 Prompts Complete
 
-Build the MVP around a stable TypeScript protocol spine, pure policy package, and full `CasperPaymentAdapter` interface before touching chain integration.
-
-Recommended order:
-
-1. Completed locally: protocol types, deterministic hashes, pure policy checks, audit event types, and a deterministic in-memory `MockCasperPaymentAdapter` state machine.
-2. Prompt 5 (current): Casper contract boundary documentation and adapter skeleton hardening.
-3. Prompt 6: build the paid API HTTP 402 flow on top of the mock adapter.
-4. Prompt 7: MCP server — agent-facing tool surface.
-5. Prompt 8: agent demo — autonomous agent runner.
-6. Prompt 9: dashboard — judge-facing audit UI.
-7. Prompt 10: real Casper Testnet proof and final polish. Add a real Casper Testnet adapter that can submit one visible Casper transaction or contract call and map it into the same receipt shape.
-8. Add a minimal Odra contract only after the mock flow is proven. The first contract should store `paymentId`, `requestHash`, amount, merchant, status, expiry, and emit Casper Event Standard events.
+1. ✅ Prompt 1–4: protocol types, deterministic hashes, pure policy checks, audit event types, mock state machine.
+2. ✅ Prompt 5: Casper contract boundary documentation, adapter skeleton.
+3. ✅ Prompt 6 + 6B: paid-api HTTP 402 flow + request-bound receipt repair.
+4. ✅ Prompt 7: MCP server (6 tools).
+5. ✅ Prompt 8: agent demo (self-contained terminal).
+6. ✅ Prompt 9: dashboard (6 pages, Next.js, dark theme).
+7. ✅ Prompt 10: proof dry-run + dashboard Testnet card.
+8. ✅ Prompt 11: `AgentPayProofRecorder` Odra contract (source, compiles).
+9. ✅ Prompt 12: contract build/deploy scripts + submission docs.
+10. ✅ Prompt 13: final documentation polish.
+11. ⬜ Optional: real Casper Testnet contract deployment (credentials pending).
 9. Use CSPR.cloud as the read/index/streaming layer for dashboard proof.
 10. Use CSPR.click for policy owner wallet UX and optional funding/signing, not as the core autonomous-agent payment mechanism.
 11. Add MCP as an agent-facing tool surface only after the HTTP 402 flow works.
@@ -234,16 +234,15 @@ Setup implication: install `cargo-odra`, add `wasm32-unknown-unknown`, and updat
 - Whether CSPR.click `send()` supports the exact TransactionV1 or contract-call JSON shape needed by the dashboard funding flow across selected wallets.
 - Whether true on-chain escrow is feasible inside the hackathon timeline or should remain a stretch after on-chain payment-state proof.
 
-## Recommended Next Implementation Step
+## Odra Version Note
 
-Current step — Prompt 13: final consistency polish.
+The Cargo.toml originally specified `odra = "2.7.2"` but Cargo resolved to `2.8.1` (semver-compatible). The `AgentPayProofRecorder` contract compiles against Odra 2.8.1 with nightly Rust. The Cargo.toml has been updated to `2.8.1` to match the resolved version.
 
-The project is feature-complete. Remaining work:
+## Optional Next Steps
 
-1. Fix stale documentation references.
-2. Ensure all real vs mock claims are accurate.
-3. Reformat markdown for DoraHacks reviewer readability.
-4. Optional: deploy `AgentPayProofRecorder` to Casper Testnet if credentials become available.
-5. Optional: submit a real proof transaction via `pnpm proof:testnet`.
-
-See `docs/submission.md`, `docs/video-script.md`, and `docs/final-checklist.md` for submission artifacts.
+1. Deploy `AgentPayProofRecorder` to Casper Testnet (`pnpm contract:deploy:testnet`).
+2. Submit a real proof transaction (`pnpm proof:testnet`).
+3. Add CSPR.cloud event reads for indexed proof events.
+4. Add CSPR.click wallet integration for policy owner funding.
+5. Production-grade escrow and settlement.
+6. Multi-merchant demo.

@@ -17,6 +17,7 @@
     "contract:build": "cd contracts/agentpay-guard && cargo odra build",
     "contract:test": "cd contracts/agentpay-guard && cargo test --lib",
     "contract:deploy:testnet": "cd contracts/agentpay-guard && cargo odra deploy --backend casper --env casper-test",
+    "docs:check": "bash scripts/docs-check.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

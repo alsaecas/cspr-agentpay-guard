@@ -2,7 +2,7 @@
 
 CSPR AgentPay Guard is a policy-controlled payment firewall for autonomous AI agents. Agents can pay for protected APIs, data, compute, or other agents through HTTP 402-style flows while Casper enforces budgets, merchant allowlists, request-bound receipts, escrow, expiry, replay protection, and audit trails.
 
-Built for the Casper Agentic Buildathon 2026, this project focuses on proving that Casper can power safe machine-to-machine commerce for autonomous systems. The intended demo shows an AI agent autonomously paying for a protected resource, with a visible Casper Testnet transaction or event path.
+Built for the Casper Agentic Buildathon 2026, this project focuses on proving that Casper can power safe machine-to-machine commerce for autonomous systems. The local mock demo shows the full end-to-end flow. The optional Testnet path provides a deployable proof-recorder Odra contract and dry-run; real deployment is pending credentials.
 
 ## Hackathon Alignment
 
@@ -12,7 +12,6 @@ This repo is scoped around those signals:
 
 - AI-native autonomous agent behavior.
 - Machine-to-machine payment through HTTP `402 Payment Required`.
-- Casper Testnet payment or escrow proof.
 - Odra smart contract path for real settlement.
 - Optional CSPR.click, CSPR.cloud, and MCP integrations after the core demo works.
 - Security and compliance framing for controlled agent spending.
@@ -28,7 +27,7 @@ This repository now contains the project knowledge base plus the core TypeScript
 
 - `packages/protocol` defines canonical types, deterministic hashes, validation schemas, proof objects, policy decisions, and audit event types.
 - `packages/policy` implements pure policy checks for allowlists, resource scope, expiry, per-payment limits, total budgets, destination matching, and request-hash matching.
-- `packages/casper-adapter` includes a faithful in-memory mock state machine with audit events, nonce replay protection, payment ID uniqueness, fulfillment, settlement, and duplicate-settlement rejection. The real Casper Testnet adapter is a scaffold with clear error messages for each unimplemented method.
+- `packages/casper-adapter` includes a faithful in-memory mock state machine with audit events, nonce replay protection, payment ID uniqueness, fulfillment, settlement, and duplicate-settlement rejection. The real Casper Testnet adapter validates env vars and performs dry-run proof payloads; real submission is pending contract deployment.
 
 Mock mode is now a trustworthy local simulator for the product thesis. The `AgentPayProofRecorder` Odra contract is ready for Casper Testnet deployment.
 
@@ -48,7 +47,7 @@ The build is sequenced in numbered prompts:
 | 10 | Casper Testnet proof dry-run & dashboard card | ✅ Complete |
 | 11 | `AgentPayProofRecorder` Odra contract source | ✅ Complete |
 | 12 | Contract scripts & submission docs | ✅ Complete |
-| **13** | **Final consistency polish** | ← Current |
+| 13 | Final consistency polish | ✅ Complete |
 | — | Optional: Real Casper Testnet deploy (credentials pending) | Future |
 
 ## How to Demo
@@ -93,19 +92,18 @@ pnpm proof:testnet              # requires env vars + deployed contract
 | CSPR.cloud event reads | ⬜ Pending deployed contract events |
 | CSPR.click wallet | ⬜ Not implemented |
 | Production escrow/custody | ⬜ Not implemented |
-| Production escrow/custody | ⬜ Not implemented |
 
 **No production escrow or custody exists. All mock proofs are clearly labeled.**
 
 ## MVP Demo Goal
 
-The winning 3-minute demo should show:
+The local mock demo shows:
 
 1. A user creates a policy for an autonomous agent.
 2. The agent calls a paid API.
 3. The API returns `402 Payment Required`.
 4. The agent checks policy and authorizes payment.
-5. Casper records payment, escrow, or settlement.
+5. The mock adapter records the payment state machine.
 6. The API verifies the request-bound receipt and returns premium data.
 7. The merchant settles.
 8. The dashboard shows the audit trail.
@@ -131,7 +129,7 @@ The implementation must preserve these core invariants:
 - Requirement, authorization, receipt nonce, and payment ID replay are rejected.
 - Mock mode and real Casper mode share the same protocol surface.
 - Mock mode is clearly labeled and never presented as real Casper settlement.
-- Real Casper adapter must not fake chain success — it throws clear errors until implementation is complete.
+- The real Casper adapter validates env vars but does not fake chain success.
 
 ## License
 

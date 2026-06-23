@@ -6,7 +6,7 @@
 
 ## 0:20–0:45 | The Solution
 
-"Narration: CSPR AgentPay Guard solves this. It is a Casper-powered payment firewall for autonomous agents. I give my agent a spending policy: which merchants, what endpoints, per-payment max, total budget. The agent can pay autonomously, but only within those limits. And Casper records every event."
+"Narration: CSPR AgentPay Guard solves this. It is a Casper-powered payment firewall for autonomous agents. I give my agent a spending policy: which merchants, what endpoints, per-payment max, total budget. The agent can pay autonomously, but only within those limits. Every event is recorded with a full audit trail."
 
 ## 0:45–1:45 | Live Agent Demo
 
@@ -20,7 +20,7 @@
 
 "Show: authorization step"
 
-"Casper records the payment — in mock mode we get deterministic local proofs. The agent retries with the receipt. The API verifies it's request-bound. Premium data is released."
+"The mock adapter records the payment — deterministic local proofs with clear mock labels. The agent retries with the receipt. The API verifies it's request-bound. Premium data is released."
 
 "Show: premium report with revenue, occupancy, confidence score"
 
@@ -54,7 +54,7 @@ This is the infrastructure for safe machine-to-machine commerce."
 
 - "HTTP 402 Payment Required"
 - "Policy check: merchant allowlist ✓, per-payment limit ✓, budget ✓"
-- "Casper Testnet: proof recorded" (mock mode)
+- "Mock Casper: payment escrowed" (mock mode)
 - "Receipt is request-bound — cannot be reused"
 - "Premium data: revenue, occupancy, confidence"
 - "MODE: MOCK" badge always visible

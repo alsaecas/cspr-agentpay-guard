@@ -14,7 +14,7 @@ AI agents increasingly need to buy APIs, data, compute, and services. Today's ch
 
 ## Solution
 
-CSPR AgentPay Guard is a Casper-powered payment firewall. An agent calls a paid API, receives HTTP 402 Payment Required, checks its spending policy (merchant allowlist, per-payment max, total budget), authorizes exactly one request-bound payment, retries with a receipt, and receives premium data. Casper records the event. The merchant settles. The dashboard shows the full audit trail.
+CSPR AgentPay Guard is a Casper-powered payment firewall. An agent calls a paid API, receives HTTP 402 Payment Required, checks its spending policy (merchant allowlist, per-payment max, total budget), authorizes exactly one request-bound payment, retries with a receipt, and receives premium data. The mock adapter records the full payment state machine. The merchant settles. The dashboard shows the full audit trail. An on-chain proof recorder contract is ready for Testnet deployment.
 
 ## Architecture
 
@@ -22,7 +22,7 @@ CSPR AgentPay Guard is a Casper-powered payment firewall. An agent calls a paid 
 Agent → GET /premium/parking-report/MAD-001
          ← 402 Payment Required + PaymentRequirement
 Agent → Check policy → Authorize payment
-         → Casper Testnet records proof
+         → Mock adapter escrows payment
          → Retry with X-AgentPay-Receipt
          ← 200 Premium data + responseHash
 Agent → Print recommendation + audit trail
