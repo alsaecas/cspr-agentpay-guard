@@ -44,7 +44,8 @@ The build is sequenced in numbered prompts:
 | 7 | `packages/mcp-server` — agent-facing tool surface | ✅ Complete |
 | 8 | `apps/agent` — autonomous agent demo runner | ✅ Complete |
 | 9 | `apps/web` — judge-facing audit dashboard | ✅ Complete |
-| **10** | **Casper Testnet proof path & final polish** | ← Current |
+| 10 | Casper Testnet proof path & final polish | ✅ Complete |
+| **11** | **Real on-chain proof recorder contract** | ← Current |
 
 ## How to Demo
 

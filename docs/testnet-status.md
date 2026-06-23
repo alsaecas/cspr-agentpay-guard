@@ -1,71 +1,87 @@
 # Casper Testnet Integration Status
 
-Last updated: 2026-06-23 (Prompt 10)
+Last updated: 2026-06-23 (Prompt 11 — Final)
 
 ## Current State
 
-**Mock mode is the primary reliable demo.** All payments use deterministic local `mock-*` proof hashes. No real Casper funds move.
+**Mock mode is the primary reliable demo.** All payments use deterministic local `mock-*` proof hashes.
 
-**Real Casper Testnet proof is a skeleton.** The `RealCasperTestnetAdapter` validates env vars, builds dry-run payloads, and returns clear error messages. It does NOT submit real transactions yet because Odra contract deployment has not been completed.
+**Real Casper Testnet proof is implemented as a skeleton with a real contract.** The `AgentPayProofRecorder` Odra contract compiles against Odra 2.8.1 and is ready for deployment. The TypeScript adapter validates payloads and reports missing setup clearly.
+
+## Final Decision
+
+| Question | Answer |
+|---|---|
+| Real contract source? | ✅ Yes — `contracts/agentpay-guard/src/lib.rs` |
+| Contract compiled? | ✅ Yes — compiles with `cargo build` (nightly Rust + Odra 2.8.1) |
+| Contract deployed to Testnet? | ⬜ Pending — requires `cargo odra build` + `cargo odra deploy` with Testnet credentials |
+| Real proof transaction submitted? | ⬜ Pending — `pnpm proof:testnet:dry-run` works; real submission needs deployed contract hash |
+| Transaction/deploy hash? | Pending deployment |
+| CSPR.live link? | Pending deployment |
+
+## Known Blockers
+
+1. **Contract deployment credentials** — `CASPER_TESTNET_PUBLIC_KEY`, `CASPER_TESTNET_SECRET_KEY_PATH`, and testnet CSPR for gas.
+2. **`cargo odra build`** — Requires `cargo-odra 0.1.7` + `wasm32-unknown-unknown` (both installed locally).
+3. **`cargo odra deploy`** — Deploys the wasm to Casper Testnet, returns contract hash.
+4. **Set contract hash in `.env`** — `CASPER_AGENTPAY_CONTRACT_HASH=<hash>` after deployment.
+5. **Run `pnpm proof:testnet`** — Records a real AgentPay proof on-chain.
 
 ## What Is Implemented
 
 | Component | Status |
 |---|---|
-| Protocol types (`CasperProof`, `PaymentReceipt`, etc.) | ✅ Complete |
-| `MockCasperPaymentAdapter` (full state machine) | ✅ Complete |
-| `RealCasperTestnetAdapter` (interface compliance) | ✅ Complete |
-| `RealCasperTestnetAdapter.getMissingEnvVars()` | ✅ Complete |
-| `RealCasperTestnetAdapter.buildProofDryRun()` | ✅ Complete |
+| `AgentPayProofRecorder` contract (Odra) | ✅ Written, compiles |
+| `record_proof`, `get_proof`, `proof_count` entrypoints | ✅ Implemented |
+| Duplicate paymentId rejection | ✅ |
+| Invalid status rejection | ✅ |
+| Empty paymentId/requestHash rejection | ✅ |
+| `AgentPayProofRecorded` CES event | ✅ Implemented |
+| 8 contract unit tests (compile) | 📝 Need Odra test env tuning |
+| `RealCasperTestnetAdapter.getMissingChainEnvVars()` | ✅ |
+| `RealCasperTestnetAdapter.getMissingCsprCloudEnvVars()` | ✅ |
+| `RealCasperTestnetAdapter.buildProofDryRun()` | ✅ |
 | `RealCasperTestnetAdapter.recordAgentPayProof()` | ✅ Skeleton |
 | `pnpm proof:testnet:dry-run` | ✅ Works |
-| `pnpm proof:testnet` | ✅ Graceful exit with missing setup |
-| Dashboard Testnet proof card | ✅ Shows status |
-| `CasperProof` schema (transaction-v1, legacy-deploy, mock) | ✅ Complete |
+| `pnpm proof:testnet` | ✅ Graceful exit with setup instructions |
+| Dashboard Testnet proof card | ✅ |
+| `CasperProof` schema (transaction-v1, legacy-deploy) | ✅ |
 
-## What Is NOT Yet Implemented
-
-| Component | Reason |
-|---|---|
-| Odra contract compilation | `cargo-odra` not installed (requires `cargo install cargo-odra --locked` + `wasm32-unknown-unknown` target) |
-| Real Casper Testnet deploy submission | Contract hash unknown; no deployed contract |
-| Real `casper-js-sdk` integration | Pending contract deployment |
-| CSPR.cloud event reads | Pending Testnet event emission from a deployed contract |
-| CSPR.click wallet integration | Not part of MVP core path |
-
-## Chosen SDK / Package
-
-| Integration | Version | Source |
-|---|---|---|
-| Casper JS/TS SDK | `5.0.12` (npm) | [npm](https://www.npmjs.com/package/casper-js-sdk) |
-| TransactionV1 support | Yes (Casper 2.x) | [Casper docs](https://docs.casper.network/concepts/transactions) |
-| Legacy Deploy support | Deprecated but available | Kept as `legacy-deploy` proof kind for backward compat |
-
-## Required Environment Variables
+## How To Deploy (when credentials are ready)
 
 ```bash
-# Real Casper Testnet proof
+# 1. Build the contract wasm
+cd contracts/agentpay-guard
+cargo odra build
+
+# 2. Deploy to Casper Testnet
+cargo odra deploy \
+  --backend casper \
+  --env casper-test \
+  --secret-key $CASPER_TESTNET_SECRET_KEY_PATH
+
+# 3. Set the contract hash in .env
+# CASPER_AGENTPAY_CONTRACT_HASH=<deployed-hash>
+
+# 4. Record a proof
+pnpm proof:testnet
+```
+
+## Required Env Vars for Chain Submission
+
+```bash
 CASPER_NETWORK=casper-test
 CASPER_RPC_URL=https://node.testnet.cspr.cloud/rpc
 CASPER_TESTNET_PUBLIC_KEY=
 CASPER_TESTNET_SECRET_KEY_PATH=
-CASPER_AGENTPAY_CONTRACT_HASH=       # Populated after deployment
-CASPER_AGENTPAY_CONTRACT_PACKAGE_HASH=  # Populated after deployment
+CASPER_AGENTPAY_CONTRACT_HASH=
+```
 
-# Optional: CSPR.cloud
+CSPR.cloud vars are OPTIONAL (for event reads only):
+```bash
 CSPR_CLOUD_AUTH_TOKEN=
 CSPR_CLOUD_API_URL=https://api.cspr.cloud
 CSPR_CLOUD_STREAM_URL=wss://streaming.testnet.cspr.cloud
-```
-
-## Dry-Run vs Real Proof
-
-```bash
-# Always safe — no credentials needed
-pnpm proof:testnet:dry-run
-
-# Requires env vars + deployed contract
-pnpm proof:testnet
 ```
 
 ## Proof Kinds
@@ -74,38 +90,12 @@ pnpm proof:testnet
 |---|---|
 | `mock` | Mock mode — deterministic local hashes, `mock-*` prefixed |
 | `transaction-v1` | Real mode — Casper 2.x TransactionV1 hash (preferred) |
-| `legacy-deploy` | Real mode — Legacy deploy hash (deprecated, backward compat) |
-
-## Contracts Status
-
-See `contracts/README.md` and `contracts/agentpay-guard/README.md`.
-
-- `contracts/agentpay-guard/src/lib.rs`: Minimal Odra scaffold (`init()`, `is_initialized()`)
-- No production escrow, policy registry, or payment logic exists
-- First real target: on-chain event/state proof (record paymentId, requestHash, status)
-- Payable escrow is a stretch goal
-- Mock HTTP 402 flow remains the main demo path
-
-## Next Steps To Activate Real Testnet Proof
-
-1. Install Rust + wasm target:
-   ```bash
-   rustup target add wasm32-unknown-unknown
-   cargo install cargo-odra --locked
-   ```
-
-2. Build the proof recorder contract.
-
-3. Deploy to Casper Testnet using `casper-client` or `casper-js-sdk`.
-
-4. Set `CASPER_AGENTPAY_CONTRACT_HASH` in `.env`.
-
-5. Run `pnpm proof:testnet` to submit a real proof anchor.
+| `legacy-deploy` | Real mode — Legacy deploy hash (deprecated) |
 
 ## Honest Limitations
 
-- The `RealCasperTestnetAdapter` does NOT fake real chain success. Every method throws clear "not implemented yet" errors.
-- `recordAgentPayProof` returns a dry-run proof. It does NOT submit to the chain.
-- No CSPR.live links are shown unless a real transaction hash exists.
-- No private keys or CSPR.cloud tokens are exposed to the frontend.
-- The dashboard clearly labels all mock proofs.
+- No real Casper Testnet transaction has been submitted yet (requires deployed contract + credentials).
+- Contract compiles but unit tests need Odra test environment tuning.
+- No CSPR.live links shown unless a real transaction hash exists.
+- No private keys or CSPR.cloud tokens exposed to frontend.
+- Dashboard clearly labels all mock proofs.

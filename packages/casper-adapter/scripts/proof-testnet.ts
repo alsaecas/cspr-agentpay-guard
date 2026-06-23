@@ -53,8 +53,8 @@ console.log(`Network:   ${network}`);
 console.log(`RPC URL:   ${rpcUrl}`);
 console.log("");
 
-// Check env
-const missing = RealCasperTestnetAdapter.getMissingEnvVars();
+// Check chain env vars (CSPR.cloud is optional)
+const missing = RealCasperTestnetAdapter.getMissingChainEnvVars();
 if (missing.length > 0) {
   console.log("⚠ Missing environment variables:");
   for (const name of missing) {

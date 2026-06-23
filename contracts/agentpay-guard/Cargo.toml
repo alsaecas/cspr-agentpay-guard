@@ -1,6 +1,6 @@
 [package]
 name = "agentpay_guard"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
 
@@ -13,3 +13,5 @@ odra-test = "2.7.2"
 [features]
 default = []
 
+[lib]
+crate-type = ["cdylib", "rlib"]

@@ -123,7 +123,7 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
     missingEnvVars: string[];
   } {
     const env = input.env ?? process.env;
-    const missing = RealCasperTestnetAdapter.getMissingEnvVars(env);
+    const missing = RealCasperTestnetAdapter.getMissingChainEnvVars(env);
 
     const payload: Record<string, string> = {
       paymentId: input.paymentId,
@@ -169,7 +169,7 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
     message: string;
   }> {
     const env = input.env ?? process.env;
-    const missing = RealCasperTestnetAdapter.getMissingEnvVars(env);
+    const missing = RealCasperTestnetAdapter.getMissingChainEnvVars(env);
 
     if (missing.length > 0) {
       return {
@@ -184,8 +184,7 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
       };
     }
 
-    // Placeholder: real deploy submission would go here using casper-js-sdk.
-    // For now, return a dry-run proof with clear messaging.
+    // Placeholder: real deploy submission would go here using casper-js-sdk or casper-client.
     const dryRun = RealCasperTestnetAdapter.buildProofDryRun(input);
 
     return {
@@ -203,9 +202,41 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
   // ---------------------------------------------------------------------------
 
   /**
+   * Required env vars for chain submission (no CSPR.cloud needed).
+   */
+  static getMissingChainEnvVars(
+    env: NodeJS.ProcessEnv = process.env,
+  ): string[] {
+    const required: string[] = [
+      "CASPER_TESTNET_PUBLIC_KEY",
+      "CASPER_TESTNET_SECRET_KEY_PATH",
+      "CASPER_RPC_URL",
+      "CASPER_AGENTPAY_CONTRACT_HASH",
+    ];
+
+    return required.filter((name) => !env[name]);
+  }
+
+  /**
+   * Required env vars for CSPR.cloud event reads (optional).
+   */
+  static getMissingCsprCloudEnvVars(
+    env: NodeJS.ProcessEnv = process.env,
+  ): string[] {
+    const required: string[] = [
+      "CSPR_CLOUD_AUTH_TOKEN",
+      "CSPR_CLOUD_API_URL",
+    ];
+
+    return required.filter((name) => !env[name]);
+  }
+
+  /**
    * Returns the names of required environment variables that are missing
    * or empty. Does not throw. Useful for early diagnostics before
    * attempting any real Casper Testnet operation.
+   *
+   * Includes CSPR.cloud vars for backward compatibility.
    */
   static getMissingEnvVars(
     env: NodeJS.ProcessEnv = process.env,
