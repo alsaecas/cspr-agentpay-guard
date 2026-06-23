@@ -18,15 +18,16 @@ Scope: identify the current best package choices and integration strategy for th
 9. ✅ Prompt 12: contract build/deploy scripts + submission docs.
 10. ✅ Prompt 13: final documentation polish.
 11. ⬜ Optional: real Casper Testnet contract deployment (credentials pending).
-9. Use CSPR.cloud as the read/index/streaming layer for dashboard proof.
-10. Use CSPR.click for policy owner wallet UX and optional funding/signing, not as the core autonomous-agent payment mechanism.
-11. Add MCP as an agent-facing tool surface only after the HTTP 402 flow works.
+
+## Odra Version Note
+
+The Cargo.toml originally specified `odra = "2.7.2"` but Cargo resolved to `2.8.1` (semver-compatible). The `AgentPayProofRecorder` contract compiles against Odra 2.8.1 with nightly Rust. The Cargo.toml has been updated to `2.8.1` to match the resolved version.
 
 ## Chosen Libraries
 
 | Integration | Choice | Version checked | Link | Why |
 | --- | --- | --- | --- | --- |
-| Odra smart contracts | `cargo-odra`, `odra`, `odra-build`, `odra-casper-livenet-env` | `cargo-odra 0.1.7`, Odra crates `2.7.2` from crates.io | [Odra docs](https://odra.dev/docs/), [odra crate](https://crates.io/crates/odra), [odra-casper-livenet-env](https://crates.io/crates/odra-casper-livenet-env) | Odra is the Casper-native Rust smart contract framework, supports Casper backend builds, Livenet deployment, payable patterns, and CES-style events. |
+| Odra smart contracts | `cargo-odra`, `odra`, `odra-build`, `odra-casper-livenet-env` | `cargo-odra 0.1.7`, Odra crates `2.8.1` (resolved from `2.7.2`) | [Odra docs](https://odra.dev/docs/) | Odra is the Casper-native Rust smart contract framework. The `AgentPayProofRecorder` contract uses Odra 2.8.1.
 | Casper Testnet deploys / transactions | `casper-client` CLI plus `casper-js-sdk` for backend transaction submission | `casper-client 5.0.1` available on crates.io; local machine currently has `Casper client 2.0.0` | [Casper transactions docs](https://docs.casper.network/concepts/transactions), [Odra Casper backend](https://odra.dev/docs/backends/casper/) | CLI is the safest fallback for contract deployment. SDK is better for app-controlled Testnet payment/receipt flows. |
 | Casper JS/TS SDK | `casper-js-sdk` | `5.0.12` npm latest; `5.0.16-beta2` condor tag exists | [npm](https://www.npmjs.com/package/casper-js-sdk), [SDK docs](https://casper-ecosystem.github.io/casper-js-sdk/), [Casper SDK docs](https://docs.casper.network/sdk) | Official ecosystem package for keys, signing, RPC, TransactionV1, transfers, contract calls, and event streaming. Use stable latest, not beta. |
 | CSPR.click | `@make-software/csprclick-ui`, `@make-software/csprclick-core-types`, `styled-components`; avoid `@make-software/csprclick-core-client` unless required by compile-time examples | UI `2.0.5`, core types `2.0.3`, styled-components `6.4.2`; core client `1.11.0` | [CSPR.click React docs](https://docs.cspr.click/cspr.click-sdk/react), [CSPR.click changelog](https://docs.cspr.click/documentation/changelog), [npm UI](https://www.npmjs.com/package/@make-software/csprclick-ui) | Best fit for wallet connection, user approval, and demo funding. Changelog says types moved to core-types, so treat core-client as deprecated/conditional. |
