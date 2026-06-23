@@ -5,10 +5,10 @@ edition = "2021"
 publish = false
 
 [dependencies]
-odra = "2.7.2"
+odra = "2.8.1"
 
 [dev-dependencies]
-odra-test = "2.7.2"
+odra-test = "2.8.1"
 
 [features]
 default = []

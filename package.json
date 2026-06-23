@@ -13,6 +13,10 @@
     "demo": "pnpm --filter @cspr-agentpay/agent demo",
     "proof:testnet": "tsx packages/casper-adapter/scripts/proof-testnet.ts",
     "proof:testnet:dry-run": "tsx packages/casper-adapter/scripts/proof-testnet.ts --dry-run",
+    "contract:check": "bash contracts/agentpay-guard/scripts/check.sh",
+    "contract:build": "cd contracts/agentpay-guard && cargo odra build",
+    "contract:test": "cd contracts/agentpay-guard && cargo test --lib",
+    "contract:deploy:testnet": "cd contracts/agentpay-guard && cargo odra deploy --backend casper --env casper-test",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
