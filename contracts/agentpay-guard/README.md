@@ -1,61 +1,65 @@
-# AgentPay Guard Contract
+# AgentPay Guard — Proof Recorder Contract
 
-Odra contract placeholder for the future Casper Testnet proof path.
+Odra smart contract for anchoring AgentPay proofs on Casper Testnet.
 
 ## Current Status
 
-- **Scaffold only.** `lib.rs` contains a minimal module with `init()` and `is_initialized()`.
-- No production escrow, policy registration, or payment logic yet.
-- The first real target is on-chain event/state proof — recording `paymentId`, `requestHash`, and status — not production custody.
-- Payable escrow is a stretch goal.
-- The mock HTTP 402 flow remains the main demo path until Testnet proof is added.
+- ✅ **Contract source complete.** `lib.rs` contains the full `AgentPayProofRecorder`.
+- ✅ **Compiles** with Odra 2.8.1 (nightly Rust required).
+- ⬜ **Not deployed to Casper Testnet** — pending credentials.
+- ⬜ **Not production escrow or custody** — this is an audit anchor, not payable escrow.
 
-## First Real Implementation
+## Entrypoints
 
-The first real implementation should stay narrow:
+| Entrypoint | Description |
+|---|---|
+| `init()` | Initialize the proof recorder. Must be called once after deployment. |
+| `record_proof(payment_id, request_hash, policy_id, merchant_id, status, receipt_hash)` | Record an AgentPay proof. See validation rules below. |
+| `get_proof(payment_id)` | Retrieve a stored proof by paymentId. Returns `None` if not found. |
+| `proof_count()` | Return the total number of recorded proofs. |
 
-1. Record `paymentId` and `requestHash` on-chain.
-2. Record payment status transitions.
-3. Reject duplicate settlement by checking stored `paymentId` status.
-4. Emit Casper Event Standard (CES) events that CSPR.cloud can index.
-5. Map adapter methods to contract entrypoints as defined in `docs/casper-contract-boundary.md`.
+## Accepted Statuses
 
-## Planned Entrypoints
+- `authorized`
+- `escrowed`
+- `fulfilled`
+- `settled`
 
-See the full contract boundary document (`docs/casper-contract-boundary.md`) for detailed input/output specs.
+## Validation Rules
 
-**AgentPolicyRegistry:**
+- **Empty `paymentId`** → rejected.
+- **Empty `requestHash`** → rejected.
+- **Duplicate `paymentId`** → rejected.
+- **Invalid status** (anything outside the 4 accepted values) → rejected.
 
-- `create_policy(policy)` — store a new agent policy
-- `revoke_policy(policy_id)` — revoke a policy
-- `get_policy(policy_id)` — read a stored policy
+## Events
 
-**MerchantRegistry:**
+The contract emits `AgentPayProofRecorded` with:
+- `payment_id`, `request_hash`, `policy_id`, `merchant_id`, `status`, `receipt_hash` (optional), `actor` (caller address), `recorded_at` (block time).
 
-- `register_merchant(merchant)` — register a merchant
-- `get_merchant(merchant_id)` — read a stored merchant
-
-**PaymentEscrow:**
-
-- `authorize_payment(input)` — validate policy/merchant/budget, create authorization
-- `submit_payment(payment_id)` — transition to escrowed
-- `mark_fulfilled(payment_id)` — record fulfillment
-- `settle_payment(payment_id)` — finalize settlement
-- `expire_payment(payment_id)` — expire a non-terminal payment
-- `get_payment(payment_id)` — read a stored payment
-
-## Building
+## Build, Test, Deploy
 
 ```bash
-cargo odra build
+# Check tooling
+pnpm contract:check
+
+# Build wasm
+pnpm contract:build
+
+# Run unit tests
+pnpm contract:test
+
+# Deploy to Casper Testnet (requires credentials)
+pnpm contract:deploy:testnet
 ```
 
-## Testing
+## Deployment Requirements
 
-```bash
-cargo odra test
-```
+- Rust nightly (`rustup default nightly`)
+- `cargo-odra` 0.1.7+ (`cargo install cargo-odra --locked`)
+- `wasm32-unknown-unknown` target (`rustup target add wasm32-unknown-unknown`)
+- `CASPER_TESTNET_SECRET_KEY_PATH` in `.env`
 
-## Deploying to Casper Testnet
+## Disclaimer
 
-This is a scaffold — deployment instructions will be added when a real contract exists.
+**This contract is an audit anchor. It does NOT handle CSPR payments, escrow, or custody. Payable escrow is future work. All mock-mode demo paths remain unchanged and reliable.**

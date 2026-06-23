@@ -30,7 +30,7 @@ This repository now contains the project knowledge base plus the core TypeScript
 - `packages/policy` implements pure policy checks for allowlists, resource scope, expiry, per-payment limits, total budgets, destination matching, and request-hash matching.
 - `packages/casper-adapter` includes a faithful in-memory mock state machine with audit events, nonce replay protection, payment ID uniqueness, fulfillment, settlement, and duplicate-settlement rejection. The real Casper Testnet adapter is a scaffold with clear error messages for each unimplemented method.
 
-Mock mode is now a trustworthy local simulator for the product thesis. The real Casper Testnet adapter remains a compatible skeleton.
+Mock mode is now a trustworthy local simulator for the product thesis. The `AgentPayProofRecorder` Odra contract is ready for Casper Testnet deployment.
 
 ## Implementation Plan (Prompt Sequence)
 
@@ -41,11 +41,15 @@ The build is sequenced in numbered prompts:
 | 1–4 | Protocol types, hashes, policy engine, mock adapter | ✅ Complete |
 | 5 | Casper contract boundary & adapter skeleton | ✅ Complete |
 | 6 | `apps/paid-api` — HTTP 402 protected-resource flow | ✅ Complete |
+| 6B | Request-bound receipt verification repair | ✅ Complete |
 | 7 | `packages/mcp-server` — agent-facing tool surface | ✅ Complete |
 | 8 | `apps/agent` — autonomous agent demo runner | ✅ Complete |
 | 9 | `apps/web` — judge-facing audit dashboard | ✅ Complete |
-| 10 | Casper Testnet proof path & final polish | ✅ Complete |
-| **11** | **Real on-chain proof recorder contract** | ← Current |
+| 10 | Casper Testnet proof dry-run & dashboard card | ✅ Complete |
+| 11 | `AgentPayProofRecorder` Odra contract source | ✅ Complete |
+| 12 | Contract scripts & submission docs | ✅ Complete |
+| **13** | **Final consistency polish** | ← Current |
+| — | Optional: Real Casper Testnet deploy (credentials pending) | Future |
 
 ## How to Demo
 
@@ -76,15 +80,19 @@ pnpm proof:testnet              # requires env vars + deployed contract
 |---|---|
 | Protocol types, hashes, schemas | ✅ Real |
 | Policy engine (pure function) | ✅ Real |
+| `AgentPayProofRecorder` Odra contract source | ✅ Real (compiles) |
+| Contract build/deploy scripts | ✅ Real |
+| `proof:testnet:dry-run` | ✅ Real (no credentials) |
 | Mock adapter state machine | Mock-only |
 | Paid API HTTP 402 flow | Mock-only |
 | MCP server tools | Mock-only |
 | Agent demo | Mock-only |
 | Dashboard | Mock-mode display + Testnet card |
-| `proof:testnet:dry-run` | ✅ Works |
-| `proof:testnet` | Graceful exit (env var instructions) |
-| Real Casper deploy | ⬜ Pending contract deployment |
-| Odra contracts | ⬜ Scaffold only |
+| Real Casper Testnet contract deployed | ⬜ Pending credentials |
+| Real proof transaction submitted | ⬜ Pending deployment |
+| CSPR.cloud event reads | ⬜ Pending deployed contract events |
+| CSPR.click wallet | ⬜ Not implemented |
+| Production escrow/custody | ⬜ Not implemented |
 | Production escrow/custody | ⬜ Not implemented |
 
 **No production escrow or custody exists. All mock proofs are clearly labeled.**

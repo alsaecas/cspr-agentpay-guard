@@ -236,19 +236,14 @@ Setup implication: install `cargo-odra`, add `wasm32-unknown-unknown`, and updat
 
 ## Recommended Next Implementation Step
 
-Current step — Prompt 9: `apps/web` — judge-facing audit dashboard.
+Current step — Prompt 13: final consistency polish.
 
-Completed in this step:
+The project is feature-complete. Remaining work:
 
-1. Dark-themed "agent operations center" UI with 6 pages: Home, Demo, Policies, Payments, Merchants, Audit.
-2. `/demo` page with "Run AgentPay Demo" button that executes the full 402 → authorize → retry → settle flow via paid-api API routes.
-3. Visual timeline component showing each demo step with done/error/running states.
-4. Status badges (authorized, escrowed, fulfilled, settled, rejected, expired).
-5. Proof card component with mock-mode warning.
-6. API routes (/api/agentpay/health, setup, run-demo, audit, config) that proxy paid-api calls (no CORS issues).
-7. Payments table and audit trail with paymentId filtering.
-8. `lib/agentpayConfig.ts`, `lib/paidApiClient.ts`, `lib/demoFlow.ts` for clean separation.
-9. `next build` succeeds with all pages as static content.
-10. Unreachable paid-api handled gracefully with helpful messages.
+1. Fix stale documentation references.
+2. Ensure all real vs mock claims are accurate.
+3. Reformat markdown for DoraHacks reviewer readability.
+4. Optional: deploy `AgentPayProofRecorder` to Casper Testnet if credentials become available.
+5. Optional: submit a real proof transaction via `pnpm proof:testnet`.
 
-Next step (Prompt 10): Real Casper Testnet proof & final polish.
+See `docs/submission.md`, `docs/video-script.md`, and `docs/final-checklist.md` for submission artifacts.
