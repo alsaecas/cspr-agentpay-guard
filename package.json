@@ -18,12 +18,16 @@
     "contract:test": "cd contracts/agentpay-guard && cargo test --lib",
     "contract:deploy:testnet": "bash contracts/agentpay-guard/scripts/deploy-testnet.sh",
     "docs:check": "bash scripts/docs-check.sh",
+    "video:prep": "bash scripts/video-prep.sh",
+    "video:record": "tsx scripts/record-demo-video.ts",
+    "video:check": "tsx scripts/record-demo-video.ts --check",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@cspr-agentpay/casper-adapter": "workspace:*",
     "@types/node": "^24.10.1",
+    "playwright": "^1.61.1",
     "prettier": "^3.7.4",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",

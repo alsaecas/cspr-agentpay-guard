@@ -70,6 +70,7 @@ for f in \
   README.md \
   docs/submission.md \
   docs/video-script.md \
+  docs/video-shot-list.md \
   docs/final-checklist.md \
   docs/testnet-status.md \
   docs/technical-spike.md \
@@ -90,6 +91,7 @@ echo "Line counts:"
 check_min_lines "README.md"                             80
 check_min_lines "docs/submission.md"                   80
 check_min_lines "docs/video-script.md"                 60
+check_min_lines "docs/video-shot-list.md"              50
 check_min_lines "docs/final-checklist.md"              60
 check_min_lines "docs/testnet-status.md"               60
 check_min_lines "docs/technical-spike.md"             100

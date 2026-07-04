@@ -2,6 +2,58 @@
 
 Use this script for the final DoraHacks recording. The real Casper Testnet proof path is complete; keep the mock/local flow and real Testnet proof clearly distinguished.
 
+## Automated Browser Recording
+
+Start the local API and dashboard in separate terminals:
+
+```bash
+pnpm --filter @cspr-agentpay/paid-api dev
+pnpm --filter @cspr-agentpay/web dev
+```
+
+Prepare the recording:
+
+```bash
+pnpm video:prep
+```
+
+Record the silent browser clip:
+
+```bash
+pnpm video:record
+```
+
+Output:
+
+```text
+artifacts/video/cspr-agentpay-browser-demo.webm
+```
+
+Editing plan:
+
+- Import the WebM into Canva, CapCut, or iMovie.
+- Add a title card.
+- Add the voiceover below.
+- Add captions for "mock payment execution" and "real Casper Testnet proof transaction".
+- Export the final video.
+- Upload to YouTube as Unlisted.
+
+## Voiceover For Automated Browser Footage
+
+"CSPR AgentPay Guard is a policy-controlled payment firewall for autonomous AI agents. The problem is simple: agents increasingly need to buy APIs, data, compute, and services, but unrestricted wallet access is unsafe, and manual checkout breaks autonomy."
+
+"This demo shows an HTTP 402 payment flow. The agent requests a protected parking revenue report. The gateway responds with Payment Required and includes a request-specific PaymentRequirement: merchant, amount, resource, expiry, nonce, and request hash."
+
+"The agent does not blindly pay. It evaluates an AgentPolicy first. The policy checks the merchant allowlist, resource scope, per-payment limit, total budget, expiry, and replay fields. Only after those deterministic checks pass does the agent authorize one request-bound payment."
+
+"In the browser dashboard, the payment execution path is mock mode. That is intentional for the repeatable demo: no real CSPR moves in the local HTTP 402 flow. The mock adapter uses the same proof object shape and state transitions as the real adapter, so the dashboard can show authorization, escrowed state, fulfillment, settlement, and audit records without claiming local mock hashes are Casper transactions."
+
+"Next, the payments page shows the lifecycle for the generated payment. The receipt is bound to the exact request hash, so it cannot be reused for a different URL, method, or body. The audit page shows the backend-derived event trail: setup, 402 requirement, policy authorization, receipt retry, premium data release, fulfillment, and settlement."
+
+"The Casper Testnet component is real. CSPR AgentPay Guard deploys an Odra AgentPayProofRecorder contract to Casper Testnet. The first CSPR.live page is the real contract deployment transaction. The second CSPR.live page is a real record_proof transaction submitted to that deployed contract. It records paymentId, requestHash, policyId, merchantId, status, and optional receiptHash on-chain."
+
+"The important distinction is this: browser payment execution is mock mode, clearly labeled and safe for demo repetition. The Casper Testnet proof transaction is real and publicly verifiable. This project does not claim production escrow, custody, or real CSPR settlement. It demonstrates controlled autonomous spending, request-bound receipts, replay protection, and a visible Casper proof anchor for AgentPay events."
+
 ## 0:00-0:20 | Problem
 
 Narration:

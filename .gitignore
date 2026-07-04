@@ -29,6 +29,10 @@ target/
 .ruff_cache/
 coverage/
 
+# Generated recording artifacts
+artifacts/video/*.webm
+artifacts/video/*.webm.tmp
+
 # OS and editor files
 .DS_Store
 .idea/
