@@ -13,7 +13,7 @@ if [ -f "$ROOT/.env" ]; then
 fi
 
 CASPER_NETWORK="${CASPER_NETWORK:-casper-test}"
-CASPER_RPC_URL="${CASPER_RPC_URL:-https://node.testnet.cspr.cloud/rpc}"
+CASPER_RPC_URL="${CASPER_RPC_URL:-https://node.testnet.casper.network/rpc}"
 CASPER_DEPLOY_GAS_MOTES="${CASPER_DEPLOY_GAS_MOTES:-50000000000}"
 
 missing=()
@@ -58,6 +58,39 @@ if ! command -v casper-client >/dev/null 2>&1; then
   echo "casper-client is not installed."
   echo "Install it, then re-run pnpm contract:deploy:testnet."
   exit 1
+fi
+
+set +e
+account_output="$(
+  casper-client get-account \
+    --node-address "$CASPER_RPC_URL" \
+    --public-key "$CASPER_TESTNET_PUBLIC_KEY" 2>&1
+)"
+account_status=$?
+set -e
+
+if [ "$account_status" -ne 0 ]; then
+  if printf '%s\n' "$account_output" | grep -qi "No such account"; then
+    echo "Cannot deploy AgentPayProofRecorder to Casper Testnet."
+    echo "The configured Testnet account does not exist on-chain yet."
+    echo ""
+    echo "Public key:"
+    echo "  $CASPER_TESTNET_PUBLIC_KEY"
+    echo ""
+    echo "Fund this account with Casper Testnet tokens, then re-run:"
+    echo "  pnpm contract:deploy:testnet"
+    echo ""
+    echo "Faucet:"
+    echo "  https://testnet.cspr.live/tools/faucet"
+    echo ""
+    echo "Note: the CSPR.live faucet requires signing in with Casper Wallet."
+    exit 1
+  fi
+
+  echo "Cannot deploy AgentPayProofRecorder to Casper Testnet."
+  echo "Could not confirm the configured account on Casper Testnet."
+  echo "$account_output"
+  exit "$account_status"
 fi
 
 echo "Deploying AgentPayProofRecorder to Casper Testnet..."

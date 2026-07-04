@@ -69,8 +69,8 @@ Copy `.env.example` to `.env` and fill only local secrets. Never commit `.env` o
 
 ```bash
 CASPER_NETWORK=casper-test
-CASPER_RPC_URL=https://node.testnet.cspr.cloud/rpc
-CASPER_NODE_SSE_URL=https://node-sse.testnet.cspr.cloud/events/main
+CASPER_RPC_URL=https://node.testnet.casper.network/rpc
+CASPER_NODE_SSE_URL=
 
 CASPER_TESTNET_PUBLIC_KEY=<public_key_hex>
 CASPER_TESTNET_SECRET_KEY_PATH=/absolute/path/to/secret_key.pem
@@ -85,7 +85,7 @@ CASPER_AGENTPAY_CONTRACT_PACKAGE_HASH=<set after deployment>
 ## Manual Steps To Finish Testnet
 
 1. Create or choose a Casper Testnet keypair.
-2. Fund the account from the Casper Testnet faucet.
+2. Fund the account from the Casper Testnet faucet. The CSPR.live faucet requires signing in with Casper Wallet.
 3. Set `CASPER_TESTNET_PUBLIC_KEY` and `CASPER_TESTNET_SECRET_KEY_PATH` in `.env`.
 4. Run `pnpm contract:check`.
 5. Run `pnpm contract:build`.

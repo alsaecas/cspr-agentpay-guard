@@ -78,7 +78,7 @@ console.log("");
 
 const network = process.env.CASPER_NETWORK ?? "casper-test";
 const rpcUrl =
-  process.env.CASPER_RPC_URL ?? "https://node.testnet.cspr.cloud/rpc";
+  process.env.CASPER_RPC_URL ?? "https://node.testnet.casper.network/rpc";
 
 console.log(`Network:   ${network}`);
 console.log(`RPC URL:   ${rpcUrl}`);

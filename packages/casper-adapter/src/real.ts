@@ -39,7 +39,7 @@ type TestnetProof =
       deployHash?: string | undefined;
     };
 
-const DEFAULT_CASPER_RPC_URL = "https://node.testnet.cspr.cloud/rpc";
+const DEFAULT_CASPER_RPC_URL = "https://node.testnet.casper.network/rpc";
 const DEFAULT_CASPER_NETWORK = "casper-test";
 const DEFAULT_PROOF_GAS_MOTES = "5000000000";
 const HEX_64 = /^[0-9a-fA-F]{64}$/;
@@ -428,7 +428,7 @@ export function loadRealCasperConfigFromEnv(
 ): RealCasperAdapterConfig {
   const config: RealCasperAdapterConfig = {
     network: env.CASPER_NETWORK ?? "casper-test",
-    rpcUrl: env.CASPER_RPC_URL ?? "https://node.testnet.cspr.cloud/rpc",
+    rpcUrl: env.CASPER_RPC_URL ?? DEFAULT_CASPER_RPC_URL,
   };
 
   if (env.CASPER_TESTNET_SECRET_KEY_PATH) {

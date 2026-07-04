@@ -159,8 +159,8 @@ AGENTPAY_DEMO_SEED=agentpay-demo
 
 # Casper network
 CASPER_NETWORK=casper-test
-CASPER_RPC_URL=https://node.testnet.cspr.cloud/rpc
-CASPER_NODE_SSE_URL=https://node-sse.testnet.cspr.cloud/events/main
+CASPER_RPC_URL=https://node.testnet.casper.network/rpc
+CASPER_NODE_SSE_URL=
 CASPER_PAYMENT_GAS_MOTES=100000000
 CASPER_PAYMENT_AMOUNT_MOTES=1000000000
 
@@ -174,8 +174,8 @@ CASPER_MERCHANT_ACCOUNT_HASH=
 # Odra livenet
 ODRA_CASPER_LIVENET_ENV=casper-test
 ODRA_CASPER_LIVENET_SECRET_KEY_PATH=
-ODRA_CASPER_LIVENET_NODE_ADDRESS=https://node.testnet.cspr.cloud
-ODRA_CASPER_LIVENET_EVENTS_URL=https://node-sse.testnet.cspr.cloud/events/main
+ODRA_CASPER_LIVENET_NODE_ADDRESS=https://node.testnet.casper.network/rpc
+ODRA_CASPER_LIVENET_EVENTS_URL=
 ODRA_CASPER_LIVENET_CHAIN_NAME=casper-test
 ODRA_CASPER_LIVENET_TTL=
 

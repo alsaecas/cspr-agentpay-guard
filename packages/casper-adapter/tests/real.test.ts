@@ -386,7 +386,7 @@ describe("RealCasperTestnetAdapter", () => {
   it("loads config from env with defaults", () => {
     const config = loadRealCasperConfigFromEnv({});
     expect(config.network).toBe("casper-test");
-    expect(config.rpcUrl).toBe("https://node.testnet.cspr.cloud/rpc");
+    expect(config.rpcUrl).toBe("https://node.testnet.casper.network/rpc");
   });
 
   it("loads config from env with custom values", () => {

@@ -91,8 +91,8 @@ Copy `.env.example` to `.env` for local real-mode work. Never commit `.env` or P
 ```bash
 AGENTPAY_MODE=mock
 CASPER_NETWORK=casper-test
-CASPER_RPC_URL=https://node.testnet.cspr.cloud/rpc
-CASPER_NODE_SSE_URL=https://node-sse.testnet.cspr.cloud/events/main
+CASPER_RPC_URL=https://node.testnet.casper.network/rpc
+CASPER_NODE_SSE_URL=
 
 CASPER_TESTNET_PUBLIC_KEY=<public_key_hex>
 CASPER_TESTNET_SECRET_KEY_PATH=/absolute/path/to/secret_key.pem
@@ -104,6 +104,7 @@ CASPER_PROOF_GAS_MOTES=5000000000
 ```
 
 Optional CSPR.cloud variables are reserved for future event indexing and are not required for the current proof submission path.
+The committed default RPC uses Casper Association's public Testnet node. CSPR.cloud node endpoints require an access token, so only use them when you have configured CSPR.cloud credentials.
 
 ## What Is Real vs Mock
 
