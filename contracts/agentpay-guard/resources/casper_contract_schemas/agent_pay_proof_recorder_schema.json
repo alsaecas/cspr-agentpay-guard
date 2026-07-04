@@ -1,0 +1,170 @@
+{
+  "casper_contract_schema_version": 1,
+  "toolchain": "rustc 1.98.0-nightly (91fe22da8 2026-06-21)",
+  "authors": [],
+  "repository": null,
+  "homepage": null,
+  "contract_name": "AgentPayProofRecorder",
+  "contract_version": "0.2.0",
+  "types": [
+    {
+      "struct": {
+        "name": "ProofRecord",
+        "description": null,
+        "members": [
+          {
+            "name": "payment_id",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "request_hash",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "policy_id",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "merchant_id",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "status",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "receipt_hash",
+            "description": null,
+            "ty": {
+              "Option": "String"
+            }
+          },
+          {
+            "name": "recorded_by",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "recorded_at",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "entry_points": [
+    {
+      "name": "record_proof",
+      "description": "Record an AgentPay proof. Rejects duplicates, empty IDs, and invalid statuses.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "payment_id",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        },
+        {
+          "name": "request_hash",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        },
+        {
+          "name": "policy_id",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        },
+        {
+          "name": "merchant_id",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        },
+        {
+          "name": "status",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        },
+        {
+          "name": "receipt_hash",
+          "description": null,
+          "ty": {
+            "Option": "String"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "get_proof",
+      "description": "Retrieve a stored proof by paymentId.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "payment_id",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "ProofRecord"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "proof_count",
+      "description": "Return the total number of recorded proofs.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "U64",
+      "is_contract_context": true,
+      "access": "public"
+    }
+  ],
+  "events": [],
+  "call": {
+    "wasm_file_name": "AgentPayProofRecorder.wasm",
+    "description": "Initialize the proof recorder.",
+    "arguments": [
+      {
+        "name": "odra_cfg_package_hash_key_name",
+        "description": "The arg name for the package hash key name.",
+        "ty": "String",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_allow_key_override",
+        "description": "If true and the key specified in odra_cfg_package_hash_key_name already exists, it will be overwritten.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_is_upgradable",
+        "description": "The arg name for the contract upgradeability setting.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_is_upgrade",
+        "description": "The arg name for telling the installer that the contract is being upgraded.",
+        "ty": "Bool",
+        "optional": false
+      }
+    ]
+  }
+}

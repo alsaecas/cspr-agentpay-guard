@@ -1,97 +1,135 @@
-# Submission — CSPR AgentPay Guard
+# DoraHacks Submission — CSPR AgentPay Guard
 
-## Project Title
+## Title
 
-**CSPR AgentPay Guard** — Policy-Controlled Payment Firewall for Autonomous AI Agents
+CSPR AgentPay Guard
 
 ## One-Liner
 
-Autonomous AI agents pay for protected APIs through HTTP 402 with policy limits, request-bound receipts, escrow, and audit trails — with a Casper proof-recorder contract ready for Testnet anchoring.
+A policy-controlled payment firewall that lets autonomous AI agents pay for protected APIs through HTTP 402, request-bound receipts, spending limits, replay protection, and a Casper Testnet proof-recorder path.
 
 ## Problem
 
-AI agents increasingly need to buy APIs, data, compute, and services. Today's choices are unsafe: give agents unrestricted wallet access, require human checkout, or use centralized prepaid balances. Agents need payment autonomy, but owners need enforceable limits, replay protection, and audit trails.
+AI agents need to buy APIs, data, compute, and services without stopping for a human checkout every time. Giving an agent unrestricted wallet access is unsafe, while centralized prepaid balances do not provide a transparent, verifiable audit trail. Owners need autonomous payment with enforceable limits and proofs.
 
 ## Solution
 
-CSPR AgentPay Guard is a Casper-powered payment firewall. An agent calls a paid API, receives HTTP 402 Payment Required, checks its spending policy (merchant allowlist, per-payment max, total budget), authorizes exactly one request-bound payment, retries with a receipt, and receives premium data. The mock adapter records the full payment state machine. The merchant settles. The dashboard shows the full audit trail. An on-chain proof recorder contract is ready for Testnet deployment.
+CSPR AgentPay Guard demonstrates a safe machine-to-machine payment flow:
+
+1. An agent requests a protected API resource.
+2. The gateway returns `402 Payment Required` with a `PaymentRequirement`.
+3. The agent evaluates an `AgentPolicy`.
+4. The policy engine checks merchant allowlist, resource scope, amount, total budget, expiry, nonce, and `requestHash`.
+5. The agent submits a payment/proof through the Casper adapter.
+6. The agent retries with a request-bound receipt.
+7. The paid API verifies the receipt and returns premium data.
+8. The dashboard shows the policy decision, receipt, proof metadata, and audit trail.
+
+The local prototype uses a deterministic mock Casper adapter so the full user journey is reliable for judging. The Casper Testnet component is an Odra `AgentPayProofRecorder` contract that records proof data on-chain when deployed; it is an audit anchor, not payable escrow.
 
 ## Architecture
 
-```
-Agent → GET /premium/parking-report/MAD-001
-         ← 402 Payment Required + PaymentRequirement
-Agent → Check policy → Authorize payment
-         → Mock adapter escrows payment
-         → Retry with X-AgentPay-Receipt
-         ← 200 Premium data + responseHash
-Agent → Print recommendation + audit trail
+```text
+apps/agent
+  -> apps/paid-api gateway
+  <- 402 PaymentRequirement
+  -> packages/policy authorization
+  -> packages/casper-adapter
+       mock: deterministic local proof state machine
+       testnet: casper-client proof deploy to AgentPayProofRecorder
+  -> apps/paid-api with X-AgentPay-Receipt
+  <- premium data
+  -> apps/web dashboard audit trail
 ```
 
 ## Demo Commands
 
 ```bash
-# Full local mock demo (terminal)
+pnpm install
+pnpm docs:check
+pnpm typecheck
+pnpm test
 pnpm demo:mock
+```
 
-# Dashboard demo
-# Terminal 1: pnpm --filter @cspr-agentpay/paid-api dev
-# Terminal 2: pnpm --filter @cspr-agentpay/web dev
-# Browser: http://localhost:3000/demo → Run AgentPay Demo
+Dashboard:
 
-# Testnet proof dry-run (always works)
+```bash
+pnpm --filter @cspr-agentpay/paid-api dev
+pnpm --filter @cspr-agentpay/web dev
+# open http://localhost:3000/demo
+```
+
+Casper Testnet readiness:
+
+```bash
 pnpm proof:testnet:dry-run
-
-# Contract check
 pnpm contract:check
+pnpm contract:build
+pnpm contract:deploy:testnet
+pnpm proof:testnet
 ```
 
 ## What Is Real vs Mock
 
 | Feature | Status |
 |---|---|
-| Protocol types, hashes, schemas | ✅ Real (shared by both modes) |
-| Policy engine (pure function) | ✅ Real |
-| Mock adapter (full state machine) | ✅ Mock-only |
-| Paid API HTTP 402 flow | ✅ Mock-only |
-| MCP server (6 tools) | ✅ Mock-only |
-| Agent demo (terminal) | ✅ Mock-only |
-| Dashboard (6 pages, dark theme) | ✅ Mock-mode display |
-| `pnpm proof:testnet:dry-run` | ✅ Works (no credentials) |
-| `pnpm proof:testnet` | ✅ Graceful exit with setup instructions |
-| `AgentPayProofRecorder` Odra contract | ✅ Source complete, compiles |
-| Contract compilation (`cargo check`) | ✅ Passes (Odra 2.8.1, nightly Rust) |
-| Contract deployment to Casper Testnet | ⬜ Pending credentials + `cargo odra deploy` |
-| Real Casper Testnet transaction | ⬜ Pending deployment |
-| CSPR.click wallet | ⬜ Not implemented |
-| CSPR.cloud event reads | ⬜ Pending deployed contract events |
-| Production escrow/custody | ⬜ Not implemented |
+| Protocol types, deterministic serialization, hashes, schemas | Real |
+| Policy checks for allowlist, resource, amount, budget, expiry | Real |
+| HTTP 402 paid API flow | Real local prototype |
+| Request-bound receipt verification | Real local prototype |
+| Replay and duplicate settlement tests | Real local prototype |
+| Mock Casper adapter | Mock, clearly labeled |
+| Dashboard audit UI | Real UI over local demo/audit records |
+| AgentPayProofRecorder Odra contract source | Real |
+| Generated wasm and schema artifacts | Real |
+| `proof:testnet:dry-run` | Real dry-run; no transaction submitted |
+| Real Casper Testnet deployment | Pending credentials and Testnet gas |
+| Real Casper Testnet proof transaction | Pending deployed contract hash |
+| CSPR.click integration | Not implemented |
+| CSPR.cloud indexing | Not implemented |
+| Production escrow, custody, or settlement | Not implemented |
 
 ## Testnet Proof Status
 
-The `AgentPayProofRecorder` Odra contract compiles and is ready for deployment. It records `paymentId`, `requestHash`, `policyId`, `merchantId`, `status`, and optional `receiptHash` on-chain with duplicate rejection, status validation, and CES event emission.
+State: **Deployment pending credentials and Testnet gas**.
 
-See `docs/testnet-status.md` for exact deployment steps.
+Confirmed locally:
+
+- `pnpm proof:testnet:dry-run` passes and prints the exact proof fields.
+- `pnpm contract:check` passes with Rust nightly, cargo-odra, wasm target, Binaryen, WABT, and `casper-client`.
+- `pnpm contract:build` passes and produces `contracts/agentpay-guard/wasm/AgentPayProofRecorder.wasm`.
+- `pnpm contract:deploy:testnet` exists and fails safely when Testnet credentials are missing.
+- `pnpm proof:testnet` exists and fails safely when credentials or contract hash are missing.
+
+Pending:
+
+- Contract hash: pending
+- Deployment transaction link: pending
+- Proof transaction link: pending
+
+Do not present this as a real Casper Testnet transaction yet. The repository is ready for a human with a funded Testnet key to deploy the contract and submit the first proof.
 
 ## Security Invariants
 
-- Receipts valid only for the exact request represented by `requestHash` (BLAKE2b-256).
-- Payments identified by deterministic `paymentId`.
-- Policies enforce merchant allowlists, per-payment limits, total budgets, expiry, and resource scope.
-- Duplicate settlement rejected.
-- Requirement, authorization, receipt nonce, and payment ID replay rejected.
-- Mock mode and real Casper mode share the same protocol surface.
-- Mock mode clearly labeled; never presented as real Casper settlement.
+- Receipts are valid only for the exact request represented by `requestHash`.
+- Payment authorization is bound to one policy, agent, merchant, requirement, and request hash.
+- Merchant allowlists are enforced before payment authorization.
+- Per-payment and total budget limits are enforced before authorization.
+- Expired policies, requirements, authorizations, and receipts fail closed.
+- Replay protection is enforced by `paymentId`, requirement nonce, receipt nonce, and receipt status.
+- Duplicate settlement is rejected.
+- Mock proofs are visibly labeled and never presented as Casper transactions.
 
-## Future Roadmap
+## Roadmap
 
-1. Deploy `AgentPayProofRecorder` to Casper Testnet.
-2. Submit a real proof via `pnpm proof:testnet`.
-3. Read indexed events from CSPR.cloud.
-4. Add CSPR.click wallet for policy owner funding.
-5. Production-grade escrow and settlement.
-6. Multi-merchant demo.
+1. Deploy `AgentPayProofRecorder` to Casper Testnet with a funded Testnet key.
+2. Submit one real proof transaction through `pnpm proof:testnet`.
+3. Record the contract hash, deployment link, and proof link in the docs.
+4. Add CSPR.cloud event reads after a real contract exists.
+5. Add CSPR.click only for policy owner setup/funding, not per-payment human checkout.
+6. Explore production-grade escrow as future work after the proof-recorder demo is complete.
 
 ## No Production Escrow Disclaimer
 
-**This project does not implement production escrow, custody, or real CSPR settlement. All mock proofs use deterministic `mock-*` hashes. The `AgentPayProofRecorder` contract is an audit anchor — not a payable escrow contract.**
+CSPR AgentPay Guard does not implement production escrow, custody, or real CSPR settlement. The Casper contract is an audit/proof anchor for AgentPay proof fields. Mock-mode `mock-*` hashes are deterministic local artifacts, not Casper transactions.

@@ -733,6 +733,8 @@ The real adapter requires these environment variables before any contract call:
 | `PAYMENT_ESCROW_HASH` | Adapter | `PaymentEscrow` contract hash (if separate). |
 | `CASPER_RPC_URL` | Adapter | Casper Testnet RPC endpoint. |
 | `CASPER_NODE_SSE_URL` | Adapter | Casper SSE endpoint for event streaming. |
+| `CASPER_DEPLOY_GAS_MOTES` | Deploy script | Gas for installing `AgentPayProofRecorder`. |
+| `CASPER_PROOF_GAS_MOTES` | Proof script | Gas for calling `record_proof`. |
 | `CSPR_CLOUD_AUTH_TOKEN` | Adapter | CSPR.cloud authorization token. |
 | `CSPR_CLOUD_API_URL` | Adapter | CSPR.cloud REST API base URL. |
 | `CSPR_CLOUD_STREAM_URL` | Adapter | CSPR.cloud WebSocket stream URL. |
@@ -743,7 +745,7 @@ The `RealCasperTestnetAdapter.getMissingEnvVars(env)` static method reports whic
 
 ## 8. Current Status
 
-- **Contracts (`contracts/agentpay-guard`):** Scaffold only. A minimal Odra module with `init()` and `is_initialized()`. No production escrow, policy, or payment logic exists yet.
-- **Real adapter (`RealCasperTestnetAdapter`):** Skeleton that satisfies the `CasperPaymentAdapter` interface. Every method throws a clear "not implemented yet" error with guidance to use mock mode.
+- **Contracts (`contracts/agentpay-guard`):** `AgentPayProofRecorder` is implemented and builds to `wasm/AgentPayProofRecorder.wasm`. It records AgentPay proof fields and rejects duplicate `payment_id` values. It is not production escrow or custody.
+- **Real adapter (`RealCasperTestnetAdapter`):** The broad payment adapter methods still fail closed outside the proof-recorder path. The `recordAgentPayProof` helper can submit a legacy Casper deploy with `casper-client put-deploy` when a deployed contract hash and funded Testnet key are configured.
 - **Mock adapter (`MockCasperPaymentAdapter`):** Fully functional local payment state machine that implements the identical interface with deterministic mock proofs.
-- **Next step:** Prompt 6 — build `apps/paid-api` HTTP 402 protected-resource flow on top of the mock adapter. Real contract deployment follows after the HTTP 402 flow is proven.
+- **Current blocker:** Real Casper Testnet deployment and the first proof transaction require external credentials, faucet funds, and a deployed contract hash. No real hashes are documented yet.

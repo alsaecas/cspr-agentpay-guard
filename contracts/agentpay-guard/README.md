@@ -5,7 +5,7 @@ Odra smart contract for anchoring AgentPay proofs on Casper Testnet.
 ## Current Status
 
 - ✅ **Contract source complete.** `lib.rs` contains the full `AgentPayProofRecorder`.
-- ✅ **Compiles** with Odra 2.8.1 (nightly Rust required).
+- ✅ **Builds** with Odra 2.8.1 and generates wasm/schema artifacts.
 - ⬜ **Not deployed to Casper Testnet** — pending credentials.
 - ⬜ **Not production escrow or custody** — this is an audit anchor, not payable escrow.
 
@@ -34,8 +34,10 @@ Odra smart contract for anchoring AgentPay proofs on Casper Testnet.
 
 ## Events
 
-The contract emits `AgentPayProofRecorded` with:
+The contract source emits `AgentPayProofRecorded` with:
 - `payment_id`, `request_hash`, `policy_id`, `merchant_id`, `status`, `receipt_hash` (optional), `actor` (caller address), `recorded_at` (block time).
+
+Event indexing has not been verified on CSPR.cloud because no real Testnet deployment exists yet.
 
 ## Build, Test, Deploy
 
@@ -53,12 +55,22 @@ pnpm contract:test
 pnpm contract:deploy:testnet
 ```
 
+Generated artifacts:
+
+- `wasm/AgentPayProofRecorder.wasm`
+- `resources/casper_contract_schemas/agent_pay_proof_recorder_schema.json`
+- `resources/legacy/agent_pay_proof_recorder_schema.json`
+
 ## Deployment Requirements
 
 - Rust nightly (`rustup default nightly`)
 - `cargo-odra` 0.1.7+ (`cargo install cargo-odra --locked`)
 - `wasm32-unknown-unknown` target (`rustup target add wasm32-unknown-unknown`)
-- `CASPER_TESTNET_SECRET_KEY_PATH` in `.env`
+- Binaryen (`brew install binaryen`) for `wasm-opt`
+- WABT (`brew install wabt`) for `wasm-strip`
+- `casper-client`
+- `CASPER_TESTNET_PUBLIC_KEY` and `CASPER_TESTNET_SECRET_KEY_PATH` in `.env`
+- funded Casper Testnet account for gas
 
 ## Disclaimer
 

@@ -24,7 +24,7 @@ describe("RealCasperTestnetAdapter — proof path", () => {
       env: {},
     });
 
-    expect(result.proof.kind).toBe("transaction-v1");
+    expect(result.proof.kind).toBe("legacy-deploy");
     expect(result.payload.paymentId).toBe(sampleProofInput.paymentId);
     expect(result.payload.requestHash).toBe(sampleProofInput.requestHash);
     expect(result.payload.status).toBe("escrowed");
@@ -32,16 +32,30 @@ describe("RealCasperTestnetAdapter — proof path", () => {
     expect(result.missingEnvVars.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("buildProofDryRun proof schema fails with missing transactionHash", () => {
+  it("buildProofDryRun proof schema fails with missing deployHash", () => {
     const result = RealCasperTestnetAdapter.buildProofDryRun({
       ...sampleProofInput,
       env: {},
     });
 
-    // Empty env means no contract hash → transactionHash is undefined.
-    // Schema validation fails because transactionHash is required for transaction-v1.
+    // Dry-run means no real deploy hash is available.
+    // Schema validation fails because deployHash is required for legacy-deploy.
     const parseResult = CasperProofSchema.safeParse(result.proof);
     expect(parseResult.success).toBe(false);
+  });
+
+  it("buildProofDryRun never creates a placeholder hash", () => {
+    const result = RealCasperTestnetAdapter.buildProofDryRun({
+      ...sampleProofInput,
+      env: {
+        CASPER_AGENTPAY_CONTRACT_HASH: "f".repeat(64),
+      },
+    });
+
+    expect(result.proof.kind).toBe("legacy-deploy");
+    expect(
+      "deployHash" in result.proof ? result.proof.deployHash : undefined,
+    ).toBeUndefined();
   });
 
   it("buildProofDryRun does not produce mock proof", () => {
@@ -66,11 +80,10 @@ describe("RealCasperTestnetAdapter — proof path", () => {
     expect(result.submitted).toBe(false);
     expect(result.message).toContain("Cannot submit");
     expect(result.message).toContain("Missing env vars");
-    expect(result.proof.kind).toBe("transaction-v1");
+    expect(result.proof.kind).toBe("legacy-deploy");
   });
 
   it("recordAgentPayProof does not fake real success", async () => {
-    // Even with fake env vars, the method is a skeleton and returns submitted=false.
     const result = await RealCasperTestnetAdapter.recordAgentPayProof({
       ...sampleProofInput,
       env: {
@@ -82,9 +95,12 @@ describe("RealCasperTestnetAdapter — proof path", () => {
       },
     });
 
-    // Even with all vars set, the skeleton does not submit.
     expect(result.submitted).toBe(false);
-    expect(result.message).toContain("skeleton");
+    expect(result.message).toContain("Secret key file not found");
+    expect(result.proof.kind).toBe("legacy-deploy");
+    expect(
+      "deployHash" in result.proof ? result.proof.deployHash : undefined,
+    ).toBeUndefined();
   });
 
   // -----------------------------------------------------------------------
@@ -95,7 +111,6 @@ describe("RealCasperTestnetAdapter — proof path", () => {
     const missing = RealCasperTestnetAdapter.getMissingEnvVars({});
     expect(missing).toContain("CASPER_TESTNET_PUBLIC_KEY");
     expect(missing).toContain("CASPER_TESTNET_SECRET_KEY_PATH");
-    expect(missing).toContain("CASPER_RPC_URL");
     expect(missing).toContain("CSPR_CLOUD_AUTH_TOKEN");
     expect(missing).toContain("CASPER_AGENTPAY_CONTRACT_HASH");
   });
@@ -122,7 +137,6 @@ describe("RealCasperTestnetAdapter — proof path", () => {
       RealCasperTestnetAdapter.assertEnvReady({
         CASPER_TESTNET_PUBLIC_KEY: "pk",
         CASPER_TESTNET_SECRET_KEY_PATH: "/tmp/key",
-        CASPER_RPC_URL: "https://rpc",
         CSPR_CLOUD_AUTH_TOKEN: "token",
         CASPER_AGENTPAY_CONTRACT_HASH: "hash",
       }),
@@ -198,6 +212,6 @@ describe("RealCasperTestnetAdapter — proof path", () => {
     const result = RealCasperTestnetAdapter.buildProofDryRun({
       ...sampleProofInput,
     });
-    expect(result.proof.kind).not.toBe("mock");
+    expect(result.proof.kind).toBe("legacy-deploy");
   });
 });

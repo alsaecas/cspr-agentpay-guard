@@ -44,9 +44,9 @@ describe("RealCasperTestnetAdapter", () => {
     ] as const;
 
     for (const method of methods) {
-      expect(typeof (adapter as unknown as Record<string, unknown>)[method]).toBe(
-        "function",
-      );
+      expect(
+        typeof (adapter as unknown as Record<string, unknown>)[method],
+      ).toBe("function");
     }
   });
 
@@ -77,9 +77,9 @@ describe("RealCasperTestnetAdapter", () => {
   });
 
   it("throws a method-specific error for revokePolicy", async () => {
-    await expect(
-      stubAdapter().revokePolicy("test-policy"),
-    ).rejects.toThrow(/revokePolicy.*not implemented/);
+    await expect(stubAdapter().revokePolicy("test-policy")).rejects.toThrow(
+      /revokePolicy.*not implemented/,
+    );
   });
 
   it("throws a method-specific error for registerMerchant", async () => {
@@ -161,15 +161,15 @@ describe("RealCasperTestnetAdapter", () => {
   });
 
   it("throws a method-specific error for getPolicy", async () => {
-    await expect(
-      stubAdapter().getPolicy("test-policy"),
-    ).rejects.toThrow(/getPolicy.*not implemented/);
+    await expect(stubAdapter().getPolicy("test-policy")).rejects.toThrow(
+      /getPolicy.*not implemented/,
+    );
   });
 
   it("throws a method-specific error for getMerchant", async () => {
-    await expect(
-      stubAdapter().getMerchant("test-merchant"),
-    ).rejects.toThrow(/getMerchant.*not implemented/);
+    await expect(stubAdapter().getMerchant("test-merchant")).rejects.toThrow(
+      /getMerchant.*not implemented/,
+    );
   });
 
   it("throws a method-specific error for getPayment", async () => {
@@ -202,19 +202,17 @@ describe("RealCasperTestnetAdapter", () => {
       expect.arrayContaining([
         "CASPER_TESTNET_PUBLIC_KEY",
         "CASPER_TESTNET_SECRET_KEY_PATH",
-        "CASPER_RPC_URL",
         "CSPR_CLOUD_AUTH_TOKEN",
         "CASPER_AGENTPAY_CONTRACT_HASH",
       ]),
     );
-    expect(missing.length).toBeGreaterThanOrEqual(5);
+    expect(missing.length).toBeGreaterThanOrEqual(4);
   });
 
   it("reports empty missing env vars when all are present", () => {
     const missing = RealCasperTestnetAdapter.getMissingEnvVars({
       CASPER_TESTNET_PUBLIC_KEY: "pk",
       CASPER_TESTNET_SECRET_KEY_PATH: "/tmp/key.pem",
-      CASPER_RPC_URL: "https://node.testnet.cspr.cloud/rpc",
       CSPR_CLOUD_AUTH_TOKEN: "token-abc",
       CASPER_AGENTPAY_CONTRACT_HASH: "hash-abc",
     });
@@ -232,7 +230,6 @@ describe("RealCasperTestnetAdapter", () => {
       RealCasperTestnetAdapter.assertEnvReady({
         CASPER_TESTNET_PUBLIC_KEY: "pk",
         CASPER_TESTNET_SECRET_KEY_PATH: "/tmp/key.pem",
-        CASPER_RPC_URL: "https://node.testnet.cspr.cloud/rpc",
         CSPR_CLOUD_AUTH_TOKEN: "token-abc",
         CASPER_AGENTPAY_CONTRACT_HASH: "hash-abc",
       }),

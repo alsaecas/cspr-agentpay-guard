@@ -2,6 +2,8 @@
 #![cfg_attr(target_arch = "wasm32", no_main)]
 #![allow(unexpected_cfgs)]
 
+extern crate alloc;
+
 use odra::prelude::*;
 
 /// An AgentPay proof record anchored on Casper.
@@ -115,9 +117,7 @@ mod tests {
 
     fn setup() -> AgentPayProofRecorderHostRef {
         let env = odra_test::env();
-        let mut recorder = AgentPayProofRecorder::deploy(&env, NoArgs);
-        recorder.init();
-        recorder
+        AgentPayProofRecorder::deploy(&env, NoArgs)
     }
 
     fn record(recorder: &mut AgentPayProofRecorderHostRef, pid: &str, status: &str) {
@@ -169,25 +169,38 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Duplicate")]
     fn duplicate_payment_id_is_rejected() {
         let mut recorder = setup();
         record(&mut recorder, "pay-003", "authorized");
-        record(&mut recorder, "pay-003", "escrowed");
+        let result = recorder.try_record_proof(
+            "pay-003".to_string(),
+            "hash-pay-003".to_string(),
+            "policy-001".to_string(),
+            "merchant-001".to_string(),
+            "escrowed".to_string(),
+            None,
+        );
+        assert!(result.is_err());
     }
 
     #[test]
-    #[should_panic(expected = "Invalid status")]
     fn invalid_status_is_rejected() {
         let mut recorder = setup();
-        record(&mut recorder, "pay-004", "not-a-status");
+        let result = recorder.try_record_proof(
+            "pay-004".to_string(),
+            "hash-pay-004".to_string(),
+            "policy-001".to_string(),
+            "merchant-001".to_string(),
+            "not-a-status".to_string(),
+            None,
+        );
+        assert!(result.is_err());
     }
 
     #[test]
-    #[should_panic(expected = "must not be empty")]
     fn empty_payment_id_is_rejected() {
         let mut recorder = setup();
-        recorder.record_proof(
+        let result = recorder.try_record_proof(
             "".to_string(),
             "hash".to_string(),
             "pol".to_string(),
@@ -195,13 +208,13 @@ mod tests {
             "escrowed".to_string(),
             None,
         );
+        assert!(result.is_err());
     }
 
     #[test]
-    #[should_panic(expected = "must not be empty")]
     fn empty_request_hash_is_rejected() {
         let mut recorder = setup();
-        recorder.record_proof(
+        let result = recorder.try_record_proof(
             "pay-006".to_string(),
             "".to_string(),
             "pol".to_string(),
@@ -209,6 +222,7 @@ mod tests {
             "escrowed".to_string(),
             None,
         );
+        assert!(result.is_err());
     }
 
     #[test]

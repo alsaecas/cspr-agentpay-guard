@@ -4,6 +4,9 @@ import type {
   Merchant,
   PaymentReceipt,
 } from "@cspr-agentpay/protocol";
+import { access } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 import type {
   AuthorizePaymentInput,
@@ -23,6 +26,75 @@ import type {
 
 const NOT_IMPLEMENTED_MESSAGE =
   "is not implemented yet. Use mock mode or complete contract deployment." as const;
+
+const execFileAsync = promisify(execFile);
+
+type TestnetProof =
+  | {
+      kind: "transaction-v1";
+      transactionHash?: string | undefined;
+    }
+  | {
+      kind: "legacy-deploy";
+      deployHash?: string | undefined;
+    };
+
+const DEFAULT_CASPER_RPC_URL = "https://node.testnet.cspr.cloud/rpc";
+const DEFAULT_CASPER_NETWORK = "casper-test";
+const DEFAULT_PROOF_GAS_MOTES = "5000000000";
+const HEX_64 = /^[0-9a-fA-F]{64}$/;
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function normalizeContractHash(hash: string): string {
+  return hash.startsWith("hash-") ? hash.slice("hash-".length) : hash;
+}
+
+function getProofGasMotes(env: NodeJS.ProcessEnv): string {
+  return (
+    env.CASPER_PROOF_GAS_MOTES ??
+    env.CASPER_PAYMENT_GAS_MOTES ??
+    DEFAULT_PROOF_GAS_MOTES
+  );
+}
+
+function buildSessionArg(
+  name: string,
+  type: "string" | "opt_string",
+  value: string | undefined,
+): string {
+  if (type === "opt_string" && !value) {
+    return `${name}:opt_string=null`;
+  }
+
+  const escaped = (value ?? "").replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+  return `${name}:${type}='${escaped}'`;
+}
+
+function extractDeployHash(output: string): string | undefined {
+  const jsonMatch = output.match(/"deploy_hash"\s*:\s*"([0-9a-fA-F]{64})"/);
+  if (jsonMatch?.[1]) {
+    return jsonMatch[1];
+  }
+
+  const textMatch = output.match(/\b([0-9a-fA-F]{64})\b/);
+  return textMatch?.[1];
+}
+
+function truncateOutput(output: string): string {
+  const trimmed = output.trim();
+  if (trimmed.length <= 1200) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, 1200)}...`;
+}
 
 export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
   readonly mode = "casper-testnet" as const;
@@ -118,7 +190,7 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
     receiptHash?: string;
     env?: NodeJS.ProcessEnv;
   }): {
-    proof: { kind: "transaction-v1" | "legacy-deploy"; transactionHash?: string | undefined; deployHash?: string | undefined };
+    proof: TestnetProof;
     payload: Record<string, string>;
     missingEnvVars: string[];
   } {
@@ -136,13 +208,7 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
       payload.receiptHash = input.receiptHash;
     }
 
-    const contractHash = env.CASPER_AGENTPAY_CONTRACT_HASH;
-    const placeholderHash = "0".repeat(64);
-
-    const proof = {
-      kind: "transaction-v1" as const,
-      transactionHash: contractHash ? placeholderHash : undefined,
-    };
+    const proof = { kind: "legacy-deploy" as const };
 
     return { proof, payload, missingEnvVars: missing };
   }
@@ -150,10 +216,9 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
   /**
    * Record an AgentPay proof on Casper Testnet.
    *
-   * THIS IS A SKELETON — it does NOT submit real transactions yet.
-   * It validates env vars and returns a dry-run proof.
-   * When real contract deployment is complete, this method will submit
-   * a TransactionV1 to the Casper Testnet RPC and return the tx hash.
+   * Uses the locally installed casper-client to submit a legacy deploy
+   * calling AgentPayProofRecorder.record_proof. It returns submitted=false
+   * for missing configuration or CLI failures and never fabricates a hash.
    */
   static async recordAgentPayProof(input: {
     paymentId: string;
@@ -164,7 +229,7 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
     receiptHash?: string;
     env?: NodeJS.ProcessEnv;
   }): Promise<{
-    proof: { kind: "transaction-v1" | "legacy-deploy"; transactionHash?: string | undefined };
+    proof: TestnetProof;
     submitted: boolean;
     message: string;
   }> {
@@ -174,8 +239,7 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
     if (missing.length > 0) {
       return {
         proof: {
-          kind: "transaction-v1",
-          transactionHash: undefined,
+          kind: "legacy-deploy",
         },
         submitted: false,
         message:
@@ -184,16 +248,113 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
       };
     }
 
-    // Placeholder: real deploy submission would go here using casper-js-sdk or casper-client.
-    const dryRun = RealCasperTestnetAdapter.buildProofDryRun(input);
+    const secretKeyPath = env.CASPER_TESTNET_SECRET_KEY_PATH;
+    if (!secretKeyPath || !(await pathExists(secretKeyPath))) {
+      return {
+        proof: {
+          kind: "legacy-deploy",
+        },
+        submitted: false,
+        message:
+          `Cannot submit to Casper Testnet. Secret key file not found at ` +
+          `CASPER_TESTNET_SECRET_KEY_PATH. Set it to an absolute path for a funded Testnet key.`,
+      };
+    }
+
+    const contractHash = normalizeContractHash(
+      env.CASPER_AGENTPAY_CONTRACT_HASH ?? "",
+    );
+    if (!HEX_64.test(contractHash)) {
+      return {
+        proof: {
+          kind: "legacy-deploy",
+        },
+        submitted: false,
+        message:
+          "Cannot submit to Casper Testnet. CASPER_AGENTPAY_CONTRACT_HASH must be a 64-character hex hash, with or without the hash- prefix.",
+      };
+    }
+
+    const casperClient = env.CASPER_CLIENT_BIN ?? "casper-client";
+    const args = [
+      "put-deploy",
+      "--node-address",
+      env.CASPER_RPC_URL ?? DEFAULT_CASPER_RPC_URL,
+      "--secret-key",
+      secretKeyPath,
+      "--chain-name",
+      env.CASPER_NETWORK ?? DEFAULT_CASPER_NETWORK,
+      "--payment-amount",
+      getProofGasMotes(env),
+      "--session-hash",
+      contractHash,
+      "--session-entry-point",
+      "record_proof",
+      "--session-arg",
+      buildSessionArg("payment_id", "string", input.paymentId),
+      "--session-arg",
+      buildSessionArg("request_hash", "string", input.requestHash),
+      "--session-arg",
+      buildSessionArg("policy_id", "string", input.policyId),
+      "--session-arg",
+      buildSessionArg("merchant_id", "string", input.merchantId),
+      "--session-arg",
+      buildSessionArg("status", "string", input.status),
+      "--session-arg",
+      buildSessionArg("receipt_hash", "opt_string", input.receiptHash),
+    ];
+
+    let stdout = "";
+    let stderr = "";
+    try {
+      const result = await execFileAsync(casperClient, args, {
+        env: {
+          ...process.env,
+          ...env,
+        },
+        maxBuffer: 1024 * 1024,
+      });
+      stdout = result.stdout;
+      stderr = result.stderr;
+    } catch (error) {
+      const err = error as {
+        message?: string;
+        stdout?: string;
+        stderr?: string;
+      };
+      const details = truncateOutput(
+        [err.stderr, err.stdout, err.message].filter(Boolean).join("\n"),
+      );
+      return {
+        proof: {
+          kind: "legacy-deploy",
+        },
+        submitted: false,
+        message:
+          "casper-client failed before returning a deploy hash. No fake proof was recorded." +
+          (details ? ` Details: ${details}` : ""),
+      };
+    }
+
+    const deployHash = extractDeployHash(`${stdout}\n${stderr}`);
+    if (!deployHash) {
+      return {
+        proof: {
+          kind: "legacy-deploy",
+        },
+        submitted: false,
+        message:
+          "casper-client finished but no deploy hash was found in its output. No proof hash will be reported.",
+      };
+    }
 
     return {
-      proof: dryRun.proof,
-      submitted: false,
-      message:
-        "recordAgentPayProof is a skeleton. Real Casper Testnet transaction submission is pending Odra contract deployment. " +
-        "Use pnpm proof:testnet:dry-run to validate payloads. " +
-        `Payload: ${JSON.stringify(dryRun.payload)}`,
+      proof: {
+        kind: "legacy-deploy",
+        deployHash,
+      },
+      submitted: true,
+      message: "Submitted AgentPay proof to Casper Testnet with casper-client.",
     };
   }
 
@@ -210,7 +371,6 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
     const required: string[] = [
       "CASPER_TESTNET_PUBLIC_KEY",
       "CASPER_TESTNET_SECRET_KEY_PATH",
-      "CASPER_RPC_URL",
       "CASPER_AGENTPAY_CONTRACT_HASH",
     ];
 
@@ -223,10 +383,7 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
   static getMissingCsprCloudEnvVars(
     env: NodeJS.ProcessEnv = process.env,
   ): string[] {
-    const required: string[] = [
-      "CSPR_CLOUD_AUTH_TOKEN",
-      "CSPR_CLOUD_API_URL",
-    ];
+    const required: string[] = ["CSPR_CLOUD_AUTH_TOKEN", "CSPR_CLOUD_API_URL"];
 
     return required.filter((name) => !env[name]);
   }
@@ -238,13 +395,10 @@ export class RealCasperTestnetAdapter implements CasperPaymentAdapter {
    *
    * Includes CSPR.cloud vars for backward compatibility.
    */
-  static getMissingEnvVars(
-    env: NodeJS.ProcessEnv = process.env,
-  ): string[] {
+  static getMissingEnvVars(env: NodeJS.ProcessEnv = process.env): string[] {
     const required: string[] = [
       "CASPER_TESTNET_PUBLIC_KEY",
       "CASPER_TESTNET_SECRET_KEY_PATH",
-      "CASPER_RPC_URL",
       "CSPR_CLOUD_AUTH_TOKEN",
       "CASPER_AGENTPAY_CONTRACT_HASH",
     ];

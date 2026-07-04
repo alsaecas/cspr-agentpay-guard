@@ -36,7 +36,7 @@ AI agents are moving from chat-only workflows to action-taking systems. They can
 Casper fits this project because it can provide:
 
 - Accountable transaction history for machine-to-machine payments.
-- Smart contract enforcement for budgets, escrow, receipt status, settlement, and replay protection.
+- Smart contract proof anchoring for AgentPay decisions, with production escrow and settlement left as future work.
 - Upgrade-friendly contract patterns suitable for evolving payment policy.
 - Casper Testnet visibility for hackathon judges.
 - Odra smart contracts for a fast Rust-based implementation path.
@@ -49,9 +49,9 @@ This is not a generic dApp. It is an AI-native commerce primitive with a demo ju
 - An agent wants premium data.
 - The API demands payment.
 - The agent checks its policy and pays autonomously.
-- Casper records the event.
+- Casper Testnet can anchor the AgentPay proof data once the proof recorder is deployed.
 - The API releases the protected data.
-- The merchant settles.
+- The mock merchant settles in the local demo.
 - The dashboard proves the entire chain of custody.
 
 The winning angle is that Casper becomes the safety layer for autonomous agent spending.
@@ -101,4 +101,3 @@ Good stretch goals after the MVP:
 - Signed merchant responses.
 - Policy simulation before payment.
 - Exportable audit report.
-

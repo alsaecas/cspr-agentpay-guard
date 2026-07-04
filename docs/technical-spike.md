@@ -1,11 +1,11 @@
 # Technical Spike: Casper Integration
 
 Investigation date: 2026-06-03
-Last updated: 2026-06-23 (Prompt 13B)
+Last updated: 2026-07-04
 
 Scope: identify the current best package choices and integration strategy for the Casper path. This is not an implementation plan for production custody. The project remains mock-first and real-Casper-second as defined in `AGENTS.md`.
 
-## Current Status — All 13 Prompts Complete
+## Current Status
 
 1. ✅ Prompt 1–4: protocol types, deterministic hashes, pure policy checks, audit event types, mock state machine.
 2. ✅ Prompt 5: Casper contract boundary documentation, adapter skeleton.
@@ -17,18 +17,20 @@ Scope: identify the current best package choices and integration strategy for th
 8. ✅ Prompt 11: `AgentPayProofRecorder` Odra contract (source, compiles).
 9. ✅ Prompt 12: contract build/deploy scripts + submission docs.
 10. ✅ Prompt 13: final documentation polish.
-11. ⬜ Optional: real Casper Testnet contract deployment (credentials pending).
+11. ✅ Contract manifest, wasm build, and schema generation repaired.
+12. ✅ Guarded `casper-client` deploy/proof scripts added.
+13. ⬜ Real Casper Testnet contract deployment (credentials and Testnet gas pending).
 
 ## Odra Version Note
 
-The Cargo.toml originally specified `odra = "2.7.2"` but Cargo resolved to `2.8.1` (semver-compatible). The `AgentPayProofRecorder` contract compiles against Odra 2.8.1 with nightly Rust. The Cargo.toml has been updated to `2.8.1` to match the resolved version.
+The contract uses Odra `2.8.1` with `cargo-odra 0.1.7`. `odra-build` resolved to `2.8.2`, which is compatible for the generated build/schema helpers. The current `pnpm contract:build` command produces `wasm/AgentPayProofRecorder.wasm`.
 
 ## Chosen Libraries
 
 | Integration | Choice | Version checked | Link | Why |
 | --- | --- | --- | --- | --- |
-| Odra smart contracts | `cargo-odra`, `odra`, `odra-build`, `odra-casper-livenet-env` | `cargo-odra 0.1.7`, Odra crates `2.8.1` (resolved from `2.7.2`) | [Odra docs](https://odra.dev/docs/) | Odra is the Casper-native Rust smart contract framework. The `AgentPayProofRecorder` contract uses Odra 2.8.1.
-| Casper Testnet deploys / transactions | `casper-client` CLI plus `casper-js-sdk` for backend transaction submission | `casper-client 5.0.1` available on crates.io; local machine currently has `Casper client 2.0.0` | [Casper transactions docs](https://docs.casper.network/concepts/transactions), [Odra Casper backend](https://odra.dev/docs/backends/casper/) | CLI is the safest fallback for contract deployment. SDK is better for app-controlled Testnet payment/receipt flows. |
+| Odra smart contracts | `cargo-odra`, `odra`, `odra-build` | `cargo-odra 0.1.7`, Odra `2.8.1` | [Odra docs](https://odra.dev/docs/) | Odra is the Casper-native Rust smart contract framework. The proof-recorder contract builds to wasm.
+| Casper Testnet deploys / transactions | `casper-client` CLI; future `casper-js-sdk` | local `Casper client 2.0.0` | [Casper transactions docs](https://docs.casper.network/concepts/transactions), [Odra Casper backend](https://odra.dev/docs/backends/casper/) | The current ready path uses legacy deploys: deploy wasm, then call `record_proof` by contract hash. SDK/TransactionV1 can replace this later.
 | Casper JS/TS SDK | `casper-js-sdk` | `5.0.12` npm latest; `5.0.16-beta2` condor tag exists | [npm](https://www.npmjs.com/package/casper-js-sdk), [SDK docs](https://casper-ecosystem.github.io/casper-js-sdk/), [Casper SDK docs](https://docs.casper.network/sdk) | Official ecosystem package for keys, signing, RPC, TransactionV1, transfers, contract calls, and event streaming. Use stable latest, not beta. |
 | CSPR.click | `@make-software/csprclick-ui`, `@make-software/csprclick-core-types`, `styled-components`; avoid `@make-software/csprclick-core-client` unless required by compile-time examples | UI `2.0.5`, core types `2.0.3`, styled-components `6.4.2`; core client `1.11.0` | [CSPR.click React docs](https://docs.cspr.click/cspr.click-sdk/react), [CSPR.click changelog](https://docs.cspr.click/documentation/changelog), [npm UI](https://www.npmjs.com/package/@make-software/csprclick-ui) | Best fit for wallet connection, user approval, and demo funding. Changelog says types moved to core-types, so treat core-client as deprecated/conditional. |
 | CSPR.cloud REST/index reads | Native `fetch` for REST, `ws` for backend WebSocket streams, CSPR.click proxy only for frontend experiments | `ws 8.21.0` | [CSPR.cloud docs](https://docs.cspr.cloud/), [CSPR.cloud getting started](https://docs.cspr.cloud/documentation/getting-started), [contract events stream](https://docs.cspr.cloud/streaming-api/contract-level-events) | CSPR.cloud provides indexed REST, Testnet node RPC, WebSocket streaming, contract-level events, and authorization headers. No dedicated npm client is needed for MVP. |
@@ -205,18 +207,22 @@ Local tools observed:
 - cargo `1.84.1`
 - `cargo-odra 0.1.7` installed
 - `wasm32-unknown-unknown` target installed
-- local `casper-client` reports `2.0.0`, while crates.io has `casper-client 5.0.1`
-- Contract compiles with Odra 2.8.1 (resolved from 2.7.2)
+- `wasm-opt` version 130 installed
+- `wasm-strip` version 1.0.41 installed
+- local `casper-client` reports `2.0.0`
+- Contract builds with Odra 2.8.1 and generated Odra manifest/helpers
+- Contract schema generated under `resources/casper_contract_schemas/`
 
-Setup implication: nightly Rust and `cargo-odra` are now installed. Update `casper-client` before real contract deployment work. Build with `pnpm contract:build`.
+Setup implication: nightly Rust, `cargo-odra`, the wasm target, Binaryen, WABT, and `casper-client` are available locally. Real deployment still needs a funded Testnet secret key.
 
 ## Risks
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Odra version resolved to 2.8.1 (not 2.7.2) | Cargo.toml must match resolved version | Updated Cargo.toml to 2.8.1; contract compiles. |
+| Odra build metadata missing | `cargo odra build` does not recognize the crate | Added `Odra.toml`, build helpers, schema helpers, and contract-local wasm linker config. |
 | `cargo-odra` missing | Cannot build contracts | Installed `cargo-odra 0.1.7`. |
-| Local `casper-client` version is old | CLI examples may fail or use deprecated commands | Update to `casper-client 5.0.1` or use `casper-js-sdk` for app transactions. |
+| Binaryen/WABT missing | `cargo odra build` fails after wasm generation | `contract:check` now verifies `wasm-opt` and `wasm-strip`; install with `brew install binaryen wabt`. |
+| Local `casper-client` is legacy | Proof path emits legacy deploy hashes, not TransactionV1 hashes | Proof schema supports `legacy-deploy`; docs label it honestly. |
 | Casper 2.x deploy vs transaction terminology | Receipt schema may mislabel real proofs | Add an internal `CasperProof` union and update protocol docs before implementation if renaming fields. |
 | Odra payable escrow may require proxy/cargo purse handling | Actual CSPR escrow can consume deadline time | Make on-chain event/state proof the first real target; keep true payable escrow as stretch. |
 | CSPR.click docs and changelog disagree on `core-client` | Frontend install may be noisy or outdated | Start with UI plus core-types. Add core-client only if current code requires it. |
@@ -230,16 +236,14 @@ Setup implication: nightly Rust and `cargo-odra` are now installed. Update `casp
 
 ## Unknowns To Resolve Before Real Mode
 
-- ✅ Odra 2.8.1 + `cargo-odra 0.1.7` confirmed compatible. Contract compiles.
+- ✅ Odra 2.8.1 + `cargo-odra 0.1.7` confirmed compatible. `pnpm contract:build` passes.
+- ✅ Legacy `casper-client put-deploy` proof path implemented for deployed contract hashes.
+- ⬜ Real Testnet deploy hash and contract hash — pending funded key.
 - ⬜ Exact CSPR.cloud event shape for custom Odra CES events — pending deployed contract.
 - ⬜ Whether CSPR.cloud Testnet streaming works with available access tier — pending deployment.
 - ⬜ ODRA_CASPER_LIVENET_EVENTS_URL exact value — pending deployment testing.
 - ⬜ CSPR.click `send()` for TransactionV1 — pending wallet integration.
 - ⬜ True on-chain escrow feasibility — stretch goal; proof recorder is audit anchor only.
-
-## Odra Version Note
-
-The Cargo.toml originally specified `odra = "2.7.2"` but Cargo resolved to `2.8.1` (semver-compatible). The `AgentPayProofRecorder` contract compiles against Odra 2.8.1 with nightly Rust. The Cargo.toml has been updated to `2.8.1` to match the resolved version.
 
 ## Optional Next Steps
 
