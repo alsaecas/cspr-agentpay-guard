@@ -4,7 +4,7 @@ Last updated: 2026-07-04
 
 ## GitHub / Submission
 
-- [ ] GitHub repo public: `https://github.com/alsaecas/cspr-agentpay-guard`
+- [x] GitHub repo public: `https://github.com/alsaecas/cspr-agentpay-guard`
 - [x] README complete
 - [x] DoraHacks paste-ready submission doc complete: `docs/submission.md`
 - [x] Testnet status doc complete: `docs/testnet-status.md`
@@ -47,8 +47,8 @@ pnpm proof:testnet:dry-run      # pass
 pnpm contract:check             # pass
 pnpm contract:build             # pass
 pnpm contract:test              # pass, 8 tests
-pnpm contract:deploy:testnet    # ready; fails safely without credentials
-pnpm proof:testnet              # ready; requires credentials + contract hash
+pnpm contract:deploy:testnet    # pass; deployed on Casper Testnet
+pnpm proof:testnet              # pass; submitted one record_proof call
 ```
 
 Status:
@@ -60,11 +60,12 @@ Status:
 - [x] Dry-run proof works without credentials
 - [x] Deploy script fails safely when credentials are missing
 - [x] Proof script fails safely when credentials or contract hash are missing
-- [ ] Contract deployed to Casper Testnet: pending funded Testnet key
-- [ ] Contract hash documented: pending
-- [ ] Deployment transaction link documented: pending
-- [ ] Proof transaction submitted: pending deployed contract hash
-- [ ] Proof transaction link documented: pending
+- [x] Contract deployed to Casper Testnet: `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c`
+- [x] Contract hash documented: `2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01`
+- [x] Package hash documented: `d5587b9875c2e1090d65dd20bdd8eade6f3f8d97792525ecffc3b90506aef010`
+- [x] Deployment transaction link documented: `https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c`
+- [x] Proof transaction submitted: `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409`
+- [x] Proof transaction link documented: `https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409`
 
 ## Real vs Mock Safety
 
@@ -83,18 +84,11 @@ Status:
 - Repository: `https://github.com/alsaecas/cspr-agentpay-guard`
 - Video: pending
 - Live demo: pending / optional hosted dashboard
-- Testnet deployment: pending credentials and Testnet gas
+- Testnet deployment: complete with deployment/proof links in `docs/testnet-status.md`
 - README: complete
 - Submission narrative: `docs/submission.md`
 
 ## Remaining Manual Steps
 
-1. Make the GitHub repository public.
-2. Create/fund a Casper Testnet key.
-3. Set `CASPER_TESTNET_PUBLIC_KEY` and `CASPER_TESTNET_SECRET_KEY_PATH` in `.env`.
-4. Run `pnpm contract:deploy:testnet`.
-5. Copy the real deployment hash and contract hash into docs.
-6. Run `pnpm proof:testnet`.
-7. Copy the real proof hash/link into docs.
-8. Record the demo video using `docs/video-script.md`.
-9. Submit DoraHacks.
+1. Record the demo video using `docs/video-script.md`.
+2. Submit DoraHacks.

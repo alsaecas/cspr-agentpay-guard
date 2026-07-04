@@ -16,7 +16,7 @@ AI agents increasingly need to buy data, APIs, compute, and services. Today the 
 
 CSPR AgentPay Guard places a payment firewall between the agent and the paid resource. The gateway issues a request-specific `PaymentRequirement`, the agent evaluates an `AgentPolicy`, a Casper-compatible adapter records the payment/proof state, and the paid API releases premium data only after a valid request-bound receipt is presented.
 
-In mock mode, the full journey is deterministic and demoable without funds. In Testnet mode, the `AgentPayProofRecorder` contract can record proof fields on Casper so judges can verify an on-chain transaction path once a funded Testnet key is supplied.
+In mock mode, the full journey is deterministic and demoable without funds. In Testnet mode, the deployed `AgentPayProofRecorder` contract records proof fields on Casper so judges can verify the on-chain transaction path.
 
 ## Architecture
 
@@ -82,7 +82,7 @@ pnpm contract:deploy:testnet     # requires funded Testnet key; never fakes depl
 pnpm proof:testnet               # requires deployed contract hash + funded Testnet key
 ```
 
-`proof:testnet` uses `casper-client put-deploy` to call `record_proof` on an already deployed `AgentPayProofRecorder` contract. In this environment, real deployment and proof submission are pending external credentials and Testnet gas.
+`proof:testnet` uses `casper-client put-deploy` to call `record_proof` on the deployed `AgentPayProofRecorder` contract. The committed docs include the successful Testnet deployment and proof transaction hashes; local reproduction still requires your own funded Testnet key.
 
 ## Environment Variables
 
@@ -99,7 +99,7 @@ CASPER_TESTNET_SECRET_KEY_PATH=/absolute/path/to/secret_key.pem
 CASPER_AGENTPAY_CONTRACT_HASH=<contract_hash_after_deployment>
 CASPER_AGENTPAY_CONTRACT_PACKAGE_HASH=<package_hash_after_deployment>
 
-CASPER_DEPLOY_GAS_MOTES=50000000000
+CASPER_DEPLOY_GAS_MOTES=500000000000
 CASPER_PROOF_GAS_MOTES=5000000000
 ```
 
@@ -119,17 +119,17 @@ The committed default RPC uses Casper Association's public Testnet node. CSPR.cl
 | `AgentPayProofRecorder` Odra contract source | Real |
 | Generated contract wasm and schema | Real, built locally |
 | `pnpm proof:testnet:dry-run` | Real dry-run, no transaction submitted |
-| `pnpm contract:deploy:testnet` | Ready, pending funded Testnet credentials |
-| `pnpm proof:testnet` | Ready for deployed contract hash + funded key |
-| Real Casper Testnet deployment hash | Pending external credentials/faucet |
-| Real Casper Testnet proof transaction hash | Pending deployed contract |
+| `pnpm contract:deploy:testnet` | Real deploy path, executed on Testnet |
+| `pnpm proof:testnet` | Real proof path, executed on Testnet |
+| Real Casper Testnet deployment hash | `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c` |
+| Real Casper Testnet proof transaction hash | `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409` |
 | CSPR.click wallet integration | Not implemented |
 | CSPR.cloud event indexing | Not implemented |
 | Production escrow/custody/settlement | Not implemented |
 
 ## Testnet Deployment Status
 
-State: **Ready but pending external credentials and Testnet gas**.
+State: **Deployed on Casper Testnet with one proof transaction submitted**.
 
 | Item | Status |
 |---|---|
@@ -137,18 +137,19 @@ State: **Ready but pending external credentials and Testnet gas**.
 | Contract tooling check | Done |
 | Contract wasm build | Done |
 | Proof dry-run | Done |
-| Contract deployed to Casper Testnet | Pending |
-| Contract hash | Pending |
-| Deployment transaction link | Pending |
-| Proof transaction link | Pending |
+| Contract deployed to Casper Testnet | Done |
+| Contract hash | `2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01` |
+| Package hash | `d5587b9875c2e1090d65dd20bdd8eade6f3f8d97792525ecffc3b90506aef010` |
+| Deployment transaction link | [CSPR.live deploy](https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c) |
+| Proof transaction link | [CSPR.live proof](https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409) |
 
-Placeholders:
+Real Testnet values:
 
-- Contract hash: pending
-- Deployment transaction: pending
-- Proof transaction: pending
+- Contract hash: `2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01`
+- Deployment transaction: `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c`
+- Proof transaction: `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409`
 
-Do not present this repository as having a real Casper Testnet deployment until those values are real hashes from a funded Testnet account.
+These hashes are the real Casper Testnet anchors for the current proof-recorder deployment and first AgentPay proof call.
 
 ## Security Invariants
 

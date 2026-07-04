@@ -1,6 +1,6 @@
 # Video Script — 3-Minute Demo
 
-Do not record the video until the final DoraHacks submission pass. This script is ready for either state: real Testnet proof complete, or proof pending credentials.
+Use this script for the final DoraHacks recording. The real Casper Testnet proof path is complete; keep the mock/local flow and real Testnet proof clearly distinguished.
 
 ## 0:00-0:20 | Problem
 
@@ -73,7 +73,7 @@ Show:
 
 ## 2:15-2:45 | Casper Testnet Proof Step
 
-Always show:
+Show:
 
 ```bash
 pnpm proof:testnet:dry-run
@@ -81,28 +81,19 @@ pnpm contract:check
 pnpm contract:build
 ```
 
-Narration if real Testnet transaction is still pending:
+Narration:
 
-"The Casper component is an Odra AgentPayProofRecorder contract. It records paymentId, requestHash, policyId, merchantId, status, and optional receiptHash on-chain. In this recording, deployment is pending a funded Testnet key, so I am not presenting a fake transaction. The dry-run shows the exact proof payload, and the build produces the wasm artifact ready for deployment."
+"The Casper component is deployed on Testnet. It is an Odra AgentPayProofRecorder contract that records paymentId, requestHash, policyId, merchantId, status, and optional receiptHash on-chain. Now I submit one AgentPay proof transaction to the deployed contract and open the CSPR.live Testnet page for the real hash."
 
-Narration if real Testnet transaction exists:
-
-"The Casper component is deployed on Testnet. Now I submit one AgentPay proof transaction to the deployed AgentPayProofRecorder contract and open the CSPR.live Testnet page for the real hash."
-
-Show if real:
+Show:
 
 ```bash
 pnpm proof:testnet
 ```
 
-Then open the real CSPR.live Testnet link.
+Then open `docs/testnet-status.md` and the real CSPR.live Testnet proof link:
 
-Show if pending:
-
-- `docs/testnet-status.md`
-- output from `pnpm proof:testnet:dry-run`
-- output from `pnpm contract:build`
-- pending credentials note
+https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409
 
 ## 2:45-3:00 | Close
 
@@ -113,8 +104,9 @@ Narration:
 Final on-screen text:
 
 - "Mock local flow: complete"
+- "Casper Testnet proof: complete"
 - "Odra proof recorder: built"
-- "Casper Testnet proof: real link if completed, otherwise pending funded credentials"
+- "Casper Testnet proof: real CSPR.live link"
 - "No production escrow or custody"
 
 ## Recording Checklist
@@ -123,5 +115,4 @@ Final on-screen text:
 - Keep mock mode labels visible.
 - Do not show `.env` or secret key paths if they reveal local secrets.
 - Do not show a `mock-*` hash on CSPR.live.
-- If no real Testnet transaction exists, say "pending credentials and Testnet gas" explicitly.
-- If a real transaction exists, show the real CSPR.live Testnet page and update docs before recording.
+- Show the real CSPR.live Testnet proof page from `docs/testnet-status.md`.

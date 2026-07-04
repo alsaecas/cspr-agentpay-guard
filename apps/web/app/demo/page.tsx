@@ -138,7 +138,7 @@ export default function DemoPage() {
 
       <div className="gap">
         <TestnetProofCard />
-      </div>)
+      </div>
 
       {result?.premiumReport && (
         <div className="gap panel">

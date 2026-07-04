@@ -19,7 +19,7 @@ Scope: identify the current best package choices and integration strategy for th
 10. ✅ Prompt 13: final documentation polish.
 11. ✅ Contract manifest, wasm build, and schema generation repaired.
 12. ✅ Guarded `casper-client` deploy/proof scripts added.
-13. ⬜ Real Casper Testnet contract deployment (credentials and Testnet gas pending).
+13. ✅ Real Casper Testnet contract deployment and first `record_proof` call complete.
 
 ## Odra Version Note
 
@@ -90,10 +90,17 @@ The mock adapter should be good enough for the 3-minute demo even when Testnet, 
 
 Minimum real Testnet path:
 
-1. Submit a real Casper Testnet transaction or contract call through `casper-js-sdk` or `casper-client`.
-2. Display the returned transaction/deploy hash in the dashboard.
-3. Read confirmation through Casper RPC or CSPR.cloud.
-4. Show a CSPR.live/Testnet link.
+1. ✅ Submit a real Casper Testnet transaction or contract call through `casper-client`.
+2. ✅ Display the returned deploy hash in docs and the Testnet proof path.
+3. ✅ Read confirmation through Casper RPC.
+4. ✅ Show a CSPR.live/Testnet link.
+
+Current real Testnet values:
+
+- Contract hash: `2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01`
+- Package hash: `d5587b9875c2e1090d65dd20bdd8eade6f3f8d97792525ecffc3b90506aef010`
+- Deployment deploy hash: `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c`
+- Proof deploy hash: `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409`
 
 Preferred real Testnet path:
 
@@ -238,18 +245,17 @@ Setup implication: nightly Rust, `cargo-odra`, the wasm target, Binaryen, WABT, 
 
 - ✅ Odra 2.8.1 + `cargo-odra 0.1.7` confirmed compatible. `pnpm contract:build` passes.
 - ✅ Legacy `casper-client put-deploy` proof path implemented for deployed contract hashes.
-- ⬜ Real Testnet deploy hash and contract hash — pending funded key.
-- ⬜ Exact CSPR.cloud event shape for custom Odra CES events — pending deployed contract.
-- ⬜ Whether CSPR.cloud Testnet streaming works with available access tier — pending deployment.
-- ⬜ ODRA_CASPER_LIVENET_EVENTS_URL exact value — pending deployment testing.
+- ✅ Real Testnet deploy hash and contract hash documented in `docs/testnet-status.md`.
+- ⬜ Exact CSPR.cloud event shape for custom Odra CES events — pending CSPR.cloud indexing work.
+- ⬜ Whether CSPR.cloud Testnet streaming works with available access tier — pending CSPR.cloud credentials/testing.
+- ⬜ ODRA_CASPER_LIVENET_EVENTS_URL exact value — not required for the current `casper-client` proof path.
 - ⬜ CSPR.click `send()` for TransactionV1 — pending wallet integration.
 - ⬜ True on-chain escrow feasibility — stretch goal; proof recorder is audit anchor only.
 
 ## Optional Next Steps
 
-1. Deploy `AgentPayProofRecorder` to Casper Testnet (`pnpm contract:deploy:testnet`).
-2. Submit a real proof transaction (`pnpm proof:testnet`).
-3. Add CSPR.cloud event reads for indexed proof events.
-4. Add CSPR.click wallet integration for policy owner funding.
+1. Add CSPR.cloud event reads for indexed proof events.
+2. Add CSPR.click wallet integration for policy owner funding.
+3. Explore production escrow after the proof-recorder demo is judged.
 5. Production-grade escrow and settlement.
 6. Multi-merchant demo.

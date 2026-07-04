@@ -120,6 +120,12 @@ code {
   border: 1px solid var(--accent);
 }
 
+.badge-real {
+  background: #102a18;
+  color: #30d060;
+  border: 1px solid #30d060;
+}
+
 .badge-warn {
   background: var(--warn-soft);
   color: var(--warn);
@@ -152,6 +158,28 @@ code {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.proof-grid div {
+  min-width: 0;
+}
+
+.proof-grid dt {
+  color: var(--ink-dim);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.proof-grid dd {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Grids */
@@ -369,6 +397,7 @@ code {
 /* Responsive */
 @media (max-width: 720px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .proof-grid { grid-template-columns: 1fr; }
   .nav { flex-wrap: wrap; gap: 10px; }
   .hero h1 { font-size: 28px; }
   .kv { grid-template-columns: 100px minmax(0, 1fr); }
