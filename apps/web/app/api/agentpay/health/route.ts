@@ -4,6 +4,17 @@ import { NextResponse } from "next/server";
 export async function GET() {
   const cfg = loadDashboardConfig();
 
+  if (cfg.demoBackend === "self-contained") {
+    return NextResponse.json({
+      reachable: true,
+      mode: cfg.mode,
+      backend: cfg.demoBackend,
+      publicBaseUrl: cfg.publicBaseUrl,
+      paidApiBaseUrl: cfg.paidApiBaseUrl,
+      hint: "Standalone Next.js API routes are serving the demo flow.",
+    });
+  }
+
   let reachable = false;
   let mode = "unknown";
   try {

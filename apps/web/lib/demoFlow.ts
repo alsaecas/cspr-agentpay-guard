@@ -1,5 +1,9 @@
-import { loadDashboardConfig } from "./agentpayConfig";
+import {
+  loadDashboardConfig,
+  type AgentPayDashboardConfig,
+} from "./agentpayConfig";
 import * as api from "./paidApiClient";
+import { executeSelfContainedDemoFlow } from "./selfContainedDemo";
 
 export interface DemoStep {
   label: string;
@@ -25,6 +29,16 @@ export interface DemoRunResult {
 
 export async function executeDemoFlow(): Promise<DemoRunResult> {
   const cfg = loadDashboardConfig();
+  if (cfg.demoBackend === "self-contained") {
+    return executeSelfContainedDemoFlow(cfg);
+  }
+
+  return executeExternalDemoFlow(cfg);
+}
+
+async function executeExternalDemoFlow(
+  cfg: AgentPayDashboardConfig,
+): Promise<DemoRunResult> {
   const steps: DemoStep[] = [];
 
   const step = (label: string): DemoStep => {
@@ -65,7 +79,6 @@ export async function executeDemoFlow(): Promise<DemoRunResult> {
 
     // 2. Call unprotected
     const s2 = step("Agent calls protected resource");
-    const resourcePath = cfg.targetUrl.replace(cfg.paidApiBaseUrl, "");
     const unpaid = await fetch(cfg.targetUrl);
     if (unpaid.status !== 402) {
       fail(s2, `Expected 402, got ${unpaid.status}`);

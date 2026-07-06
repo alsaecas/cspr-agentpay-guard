@@ -58,19 +58,17 @@ The terminal demo starts the paid API in-process, triggers a `402`, authorizes u
 ## Dashboard Demo
 
 ```bash
-# Terminal 1
-pnpm --filter @cspr-agentpay/paid-api dev
-
-# Terminal 2
 pnpm --filter @cspr-agentpay/web dev
 
 # Browser
 open http://localhost:3000/demo
 ```
 
-Click **Run AgentPay Demo** on the demo page. The dashboard is a local UI for the mock flow and Testnet proof status; it does not claim that mock hashes are real Casper transactions.
+Click **Run AgentPay Demo** on the demo page. The dashboard runs a Vercel-safe, self-contained mock AgentPay flow through Next.js API routes, so the public website does not need a separate Express API server. The dashboard is a UI for the mock flow and Testnet proof status; it does not claim that mock hashes are real Casper transactions.
 
-Hosted dashboard: pending / optional. A hosted dashboard is useful for judges, but it does not satisfy the Casper Testnet on-chain requirement by itself.
+Optional two-server local mode is still available by setting `AGENTPAY_DEMO_BACKEND=external` and running `pnpm --filter @cspr-agentpay/paid-api dev` alongside the web app.
+
+Hosted dashboard: [https://cspr-agentpay-guard.vercel.app](https://cspr-agentpay-guard.vercel.app). A hosted dashboard is useful for judges, but it does not satisfy the Casper Testnet on-chain requirement by itself.
 
 ## Casper Testnet Commands
 
@@ -115,7 +113,7 @@ The committed default RPC uses Casper Association's public Testnet node. CSPR.cl
 | Paid API HTTP 402 behavior and receipt verification | Real local prototype |
 | Request-bound receipt rejection and replay protections | Real local prototype |
 | Mock Casper adapter state machine | Mock, clearly labeled |
-| Dashboard audit trail | Real UI over local mock/demo state |
+| Dashboard audit trail | Real UI over mock/demo state, Vercel-ready through Next.js API routes |
 | `AgentPayProofRecorder` Odra contract source | Real |
 | Generated contract wasm and schema | Real, built locally |
 | `pnpm proof:testnet:dry-run` | Real dry-run, no transaction submitted |
@@ -167,6 +165,7 @@ These hashes are the real Casper Testnet anchors for the current proof-recorder 
 ## Submission Notes
 
 - GitHub repository: `https://github.com/alsaecas/cspr-agentpay-guard`
+- Live demo: `https://cspr-agentpay-guard.vercel.app`
 - Demo video: pending; see `docs/video-script.md`.
 - DoraHacks submission text: see `docs/submission.md`.
 - Final status checklist: see `docs/final-checklist.md`.

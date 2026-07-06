@@ -1,0 +1,30 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.secret
+secrets/
+keys/
+
+# Dependencies and build outputs
+node_modules/
+.pnpm-store/
+.next/
+.turbo/
+dist/
+build/
+out/
+target/
+*.tsbuildinfo
+
+# Local/generated artifacts
+artifacts/
+output/
+coverage/
+
+# OS/editor noise
+.DS_Store
+.idea/
+.vscode/

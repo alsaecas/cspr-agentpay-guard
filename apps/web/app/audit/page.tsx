@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { NavBar } from "@/components/NavBar";
 import { StatusBadge } from "@/components/StatusBadge";
+import { loadCachedAuditEvents } from "@/lib/demoRunCache";
 
 interface AuditEvent {
   eventId: string;
@@ -26,9 +27,17 @@ export default function AuditPage() {
       .then(async (res) => {
         if (!res.ok) throw new Error("Audit fetch failed");
         const body = (await res.json()) as { auditEvents?: AuditEvent[] };
-        setEvents(body.auditEvents ?? []);
+        const apiEvents = body.auditEvents ?? [];
+        setEvents(apiEvents.length > 0 ? apiEvents : loadCachedAuditEvents());
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed"));
+      .catch((err) => {
+        const cachedEvents = loadCachedAuditEvents();
+        if (cachedEvents.length > 0) {
+          setEvents(cachedEvents);
+          return;
+        }
+        setError(err instanceof Error ? err.message : "Failed");
+      });
   }, []);
 
   const filtered = filter
@@ -114,7 +123,13 @@ export default function AuditPage() {
                     <td>
                       {e.status ? <StatusBadge status={e.status} /> : "—"}
                     </td>
-                    <td style={{ maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <td
+                      style={{
+                        maxWidth: 280,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {e.message}
                     </td>
                   </tr>

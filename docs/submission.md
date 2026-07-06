@@ -55,10 +55,13 @@ pnpm demo:mock
 Dashboard:
 
 ```bash
-pnpm --filter @cspr-agentpay/paid-api dev
 pnpm --filter @cspr-agentpay/web dev
 # open http://localhost:3000/demo
 ```
+
+The dashboard also runs as a Vercel-ready standalone web app: Next.js API routes execute the mock 402/payment/audit flow by default, while the separate `apps/paid-api` service remains available for optional external-backend local testing.
+
+Live dashboard: [https://cspr-agentpay-guard.vercel.app](https://cspr-agentpay-guard.vercel.app)
 
 Casper Testnet readiness:
 
@@ -80,7 +83,7 @@ pnpm proof:testnet
 | Request-bound receipt verification | Real local prototype |
 | Replay and duplicate settlement tests | Real local prototype |
 | Mock Casper adapter | Mock, clearly labeled |
-| Dashboard audit UI | Real UI over local demo/audit records |
+| Dashboard audit UI | Real UI over demo/audit records, Vercel-ready through Next.js API routes |
 | AgentPayProofRecorder Odra contract source | Real |
 | Generated wasm and schema artifacts | Real |
 | `proof:testnet:dry-run` | Real dry-run; no transaction submitted |

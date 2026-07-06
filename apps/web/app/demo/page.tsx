@@ -7,6 +7,7 @@ import { ProofCard } from "@/components/ProofCard";
 import { TestnetProofCard } from "@/components/TestnetProofCard";
 import { Timeline } from "@/components/Timeline";
 import type { DemoRunResult } from "@/lib/demoFlow";
+import { saveDemoRunResult } from "@/lib/demoRunCache";
 
 export default function DemoPage() {
   const [loading, setLoading] = useState(false);
@@ -21,6 +22,7 @@ export default function DemoPage() {
       const res = await fetch("/api/agentpay/run-demo", { method: "POST" });
       const data = (await res.json()) as DemoRunResult;
       setResult(data);
+      saveDemoRunResult(data);
       if (!res.ok) setError(data.error ?? "Unknown error");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Demo failed");
@@ -47,23 +49,19 @@ export default function DemoPage() {
         </p>
 
         {error && !result?.success && (
-          <div className="panel" style={{ borderColor: "var(--error)", marginTop: 12 }}>
-            <p style={{ color: "var(--error)", margin: 0 }}>
-              {error}
-              {error.toLowerCase().includes("unreachable") && (
-                <>
-                  <br />
-                  Start it with: <code>pnpm --filter @cspr-agentpay/paid-api dev</code>
-                </>
-              )}
-            </p>
+          <div
+            className="panel"
+            style={{ borderColor: "var(--error)", marginTop: 12 }}
+          >
+            <p style={{ color: "var(--error)", margin: 0 }}>{error}</p>
           </div>
         )}
 
         {!result && !error && !loading && (
           <div className="panel" style={{ textAlign: "center", marginTop: 12 }}>
             <p style={{ color: "var(--ink-dim)" }}>
-              Click <strong>Run AgentPay Demo</strong> to start the automated payment flow.
+              Click <strong>Run AgentPay Demo</strong> to start the automated
+              payment flow.
             </p>
             <p style={{ color: "var(--ink-dim)", fontSize: 13 }}>
               Alternatively, run the terminal demo: <code>pnpm demo:mock</code>
@@ -85,12 +83,10 @@ export default function DemoPage() {
             <div className="panel">
               <h3>Policy</h3>
               <div className="kv">
-              {Object.entries(result.policy).map(([k, v]) => (
+                {Object.entries(result.policy).map(([k, v]) => (
                   <div key={k} style={{ display: "contents" }}>
                     <span className="kv-key">{k}</span>
-                    <span className="kv-value">
-                      {String(v)}
-                    </span>
+                    <span className="kv-value">{String(v)}</span>
                   </div>
                 ))}
               </div>
@@ -103,9 +99,7 @@ export default function DemoPage() {
                 {Object.entries(result.merchant).map(([k, v]) => (
                   <div key={k} style={{ display: "contents" }}>
                     <span className="kv-key">{k}</span>
-                    <span className="kv-value">
-                      {String(v)}
-                    </span>
+                    <span className="kv-value">{String(v)}</span>
                   </div>
                 ))}
               </div>
@@ -121,9 +115,7 @@ export default function DemoPage() {
             {Object.entries(result.receipt).map(([k, v]) => (
               <div key={k} style={{ display: "contents" }}>
                 <span className="kv-key">{k}</span>
-                <span className="kv-value">
-                  {String(v)}
-                </span>
+                <span className="kv-value">{String(v)}</span>
               </div>
             ))}
           </div>
@@ -147,9 +139,7 @@ export default function DemoPage() {
             {Object.entries(result.premiumReport).map(([k, v]) => (
               <div key={k} style={{ display: "contents" }}>
                 <span className="kv-key">{k}</span>
-                <span className="kv-value">
-                  {String(v)}
-                </span>
+                <span className="kv-value">{String(v)}</span>
               </div>
             ))}
           </div>
@@ -163,9 +153,7 @@ export default function DemoPage() {
             {Object.entries(result.settlement).map(([k, v]) => (
               <div key={k} style={{ display: "contents" }}>
                 <span className="kv-key">{k}</span>
-                <span className="kv-value">
-                  {String(v)}
-                </span>
+                <span className="kv-value">{String(v)}</span>
               </div>
             ))}
           </div>

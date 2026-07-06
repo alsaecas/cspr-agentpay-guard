@@ -14,19 +14,32 @@ This is the visible audit trail for CSPR AgentPay Guard. It shows policy, paymen
 ## Quick Start
 
 ```bash
-# Terminal 1: Start the paid API
-pnpm --filter @cspr-agentpay/paid-api dev
-
-# Terminal 2: Start the dashboard
 pnpm --filter @cspr-agentpay/web dev
 
 # Browser: http://localhost:3000
 # Click "Run Dashboard Demo" on the /demo page
 ```
 
+The default dashboard backend is self-contained: Next.js API routes execute the
+full mock AgentPay flow, so the interactive demo works on Vercel without a
+separate Express server.
+
+Production URL: [https://cspr-agentpay-guard.vercel.app](https://cspr-agentpay-guard.vercel.app)
+
+Optional external paid API mode:
+
+```bash
+# Terminal 1
+AGENTPAY_DEMO_BACKEND=external pnpm --filter @cspr-agentpay/paid-api dev
+
+# Terminal 2
+AGENTPAY_DEMO_BACKEND=external pnpm --filter @cspr-agentpay/web dev
+```
+
 ## Troubleshooting
 
-If the dashboard shows "Paid API unreachable":
+If you intentionally set `AGENTPAY_DEMO_BACKEND=external` and the dashboard
+shows "Paid API unreachable":
 
 1. Make sure the paid API is running: `pnpm --filter @cspr-agentpay/paid-api dev`
 2. Check the base URL in `.env`: `AGENTPAY_PAID_API_BASE_URL=http://127.0.0.1:4000`
@@ -39,6 +52,7 @@ All proofs use deterministic `mock-*` hashes. Every page displays a **MOCK MODE*
 ## Architecture
 
 - Next.js App Router
-- API routes proxy to paid-api (no CORS, no direct browser-to-paid-api calls)
+- API routes run the mock demo flow directly by default
+- External mode can proxy to paid-api for local two-server testing
 - Client components fetch from `/api/agentpay/*` routes
 - Dark theme with `globals.css` CSS custom properties

@@ -28,16 +28,22 @@ pnpm --filter @cspr-agentpay/web build  # pass
 ## Dashboard
 
 - [x] Dashboard command documented
-- [x] Paid API command documented
+- [x] Vercel-safe self-contained dashboard backend documented
 - [x] Mock mode visibly labeled
 - [x] Testnet proof status card present
-- [ ] Optional hosted dashboard URL: pending / optional
+- [x] Optional hosted dashboard URL: `https://cspr-agentpay-guard.vercel.app`
 
 Dashboard commands:
 
 ```bash
-pnpm --filter @cspr-agentpay/paid-api dev
 pnpm --filter @cspr-agentpay/web dev
+```
+
+Optional external paid-api mode:
+
+```bash
+AGENTPAY_DEMO_BACKEND=external pnpm --filter @cspr-agentpay/paid-api dev
+AGENTPAY_DEMO_BACKEND=external pnpm --filter @cspr-agentpay/web dev
 ```
 
 ## Casper Testnet
@@ -83,7 +89,7 @@ Status:
 - One-liner: Policy-controlled HTTP 402 payments for autonomous AI agents with Casper proof anchoring.
 - Repository: `https://github.com/alsaecas/cspr-agentpay-guard`
 - Video: pending
-- Live demo: pending / optional hosted dashboard
+- Live demo: `https://cspr-agentpay-guard.vercel.app`
 - Testnet deployment: complete with deployment/proof links in `docs/testnet-status.md`
 - README: complete
 - Submission narrative: `docs/submission.md`

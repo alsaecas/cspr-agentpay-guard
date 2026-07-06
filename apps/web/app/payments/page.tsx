@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { NavBar } from "@/components/NavBar";
 import { StatusBadge } from "@/components/StatusBadge";
+import { loadCachedAuditEvents } from "@/lib/demoRunCache";
 
 interface AuditEvent {
   eventId: string;
@@ -29,8 +30,14 @@ export default function PaymentsPage() {
         return;
       }
       const body = (await res.json()) as { auditEvents?: AuditEvent[] };
-      setEvents(body.auditEvents ?? []);
+      const apiEvents = body.auditEvents ?? [];
+      setEvents(apiEvents.length > 0 ? apiEvents : loadCachedAuditEvents());
     } catch (err) {
+      const cachedEvents = loadCachedAuditEvents();
+      if (cachedEvents.length > 0) {
+        setEvents(cachedEvents);
+        return;
+      }
       setError(err instanceof Error ? err.message : "Failed to fetch");
     }
   };
@@ -86,10 +93,14 @@ export default function PaymentsPage() {
                   </td>
                   <td>{e.policyId ?? "—"}</td>
                   <td>{e.merchantId ?? "—"}</td>
-                  <td>
-                    {e.status ? <StatusBadge status={e.status} /> : "—"}
-                  </td>
-                  <td style={{ maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <td>{e.status ? <StatusBadge status={e.status} /> : "—"}</td>
+                  <td
+                    style={{
+                      maxWidth: 240,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
                     {e.message}
                   </td>
                 </tr>

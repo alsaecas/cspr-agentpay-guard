@@ -5,6 +5,8 @@ export async function GET() {
   const cfg = loadDashboardConfig();
   return NextResponse.json({
     mode: cfg.mode,
+    demoBackend: cfg.demoBackend,
+    publicBaseUrl: cfg.publicBaseUrl,
     paidApiBaseUrl: cfg.paidApiBaseUrl,
     targetUrl: cfg.targetUrl,
     defaultPolicyId: cfg.defaultPolicyId,
