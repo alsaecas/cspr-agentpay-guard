@@ -9,6 +9,7 @@ import {
 import {
   PROTOCOL_VERSION,
   PaymentReceiptSchema,
+  PaymentRequirementSchema,
   blake2b256Hex,
   createBodyHash,
   createRequestHash,
@@ -24,6 +25,7 @@ import express, {
   type Request,
   type Response,
 } from "express";
+import { rateLimit } from "express-rate-limit";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -38,7 +40,9 @@ export interface PaidApiConfig {
   port: number;
 }
 
-export function loadPaidApiConfig(env: NodeJS.ProcessEnv = process.env): PaidApiConfig {
+export function loadPaidApiConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): PaidApiConfig {
   return {
     mode: env.AGENTPAY_MODE ?? "mock",
     agentId: env.AGENT_ID ?? "agent_research_001",
@@ -150,17 +154,61 @@ interface ApiError {
   message: string;
 }
 
-function apiError(res: Response, status: number, error: string, message: string): void {
+function apiError(
+  res: Response,
+  status: number,
+  error: string,
+  message: string,
+): void {
   res.status(status).json({ error, message } satisfies ApiError);
+}
+
+const REQUIREMENT_BINDING_FIELDS = [
+  "version",
+  "requirementId",
+  "merchantId",
+  "merchantAccount",
+  "method",
+  "url",
+  "endpointId",
+  "amount",
+  "currency",
+  "requestHash",
+  "nonce",
+  "termsHash",
+  "escrowMode",
+  "expiresAt",
+  "issuedAt",
+] as const satisfies readonly (keyof PaymentRequirement)[];
+
+function findRequirementMismatches(
+  candidate: PaymentRequirement,
+  issued: PaymentRequirement,
+): string[] {
+  return REQUIREMENT_BINDING_FIELDS.filter(
+    (field) => candidate[field] !== issued[field],
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Server
 // ---------------------------------------------------------------------------
 
-export function createPaidApiServer(config?: PaidApiConfig): express.Application {
+export function createPaidApiServer(
+  config?: PaidApiConfig,
+): express.Application {
   const cfg = config ?? loadPaidApiConfig();
   const app = express();
+  const demoWriteLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      error: "RATE_LIMITED",
+      message: "Too many demo write requests. Try again shortly.",
+    } satisfies ApiError,
+  });
 
   app.use(express.json({ type: ["application/json", "text/plain"] }));
 
@@ -189,397 +237,578 @@ export function createPaidApiServer(config?: PaidApiConfig): express.Application
   // POST /demo/setup
   // -----------------------------------------------------------------------
 
-  app.post("/demo/setup", async (_req: Request, res: Response, next: NextFunction) => {
-    try {
-      state = freshState();
+  app.post(
+    "/demo/setup",
+    demoWriteLimiter,
+    async (_req: Request, res: Response, next: NextFunction) => {
+      try {
+        state = freshState();
 
-      const now = new Date();
-      const createdAt = now.toISOString();
-      const policyExpiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+        const now = new Date();
+        const createdAt = now.toISOString();
+        const policyExpiresAt = new Date(
+          now.getTime() + 24 * 60 * 60 * 1000,
+        ).toISOString();
 
-      const merchant: Merchant = {
-        version: PROTOCOL_VERSION,
-        merchantId: cfg.merchantId,
-        displayName: "Market Data Merchant",
-        status: "active",
-        casperAccount: cfg.merchantAccount,
-        settlementAccount: cfg.merchantAccount,
-        allowedOrigins: [`http://localhost:${cfg.port}`, `http://127.0.0.1:${cfg.port}`],
-        allowedResourcePatterns: [
-          `GET http://localhost:${cfg.port}/premium/parking-report/*`,
-          `GET http://127.0.0.1:${cfg.port}/premium/parking-report/*`,
-        ],
-        createdAt,
-      };
+        const merchant: Merchant = {
+          version: PROTOCOL_VERSION,
+          merchantId: cfg.merchantId,
+          displayName: "Market Data Merchant",
+          status: "active",
+          casperAccount: cfg.merchantAccount,
+          settlementAccount: cfg.merchantAccount,
+          allowedOrigins: [
+            `http://localhost:${cfg.port}`,
+            `http://127.0.0.1:${cfg.port}`,
+          ],
+          allowedResourcePatterns: [
+            `GET http://localhost:${cfg.port}/premium/parking-report/*`,
+            `GET http://127.0.0.1:${cfg.port}/premium/parking-report/*`,
+          ],
+          createdAt,
+        };
 
-      const policy = {
-        version: PROTOCOL_VERSION,
-        policyId: cfg.policyId,
-        ownerAccount: "mock-owner-account",
-        agentId: cfg.agentId,
-        status: "active" as const,
-        currency: "CSPR" as const,
-        maxAmountPerPayment: "10000000000",
-        totalBudget: "100000000000",
-        spentAmount: "0",
-        budgetWindow: "demo-total",
-        allowedMerchantIds: [cfg.merchantId],
-        allowedResourcePatterns: [
-          `GET http://localhost:${cfg.port}/premium/parking-report/*`,
-          `GET http://127.0.0.1:${cfg.port}/premium/parking-report/*`,
-        ],
-        expiresAt: policyExpiresAt,
-        policyNonce: "policy-nonce-paid-api-001",
-        createdAt,
-      };
+        const policy = {
+          version: PROTOCOL_VERSION,
+          policyId: cfg.policyId,
+          ownerAccount: "mock-owner-account",
+          agentId: cfg.agentId,
+          status: "active" as const,
+          currency: "CSPR" as const,
+          maxAmountPerPayment: "10000000000",
+          totalBudget: "100000000000",
+          spentAmount: "0",
+          budgetWindow: "demo-total",
+          allowedMerchantIds: [cfg.merchantId],
+          allowedResourcePatterns: [
+            `GET http://localhost:${cfg.port}/premium/parking-report/*`,
+            `GET http://127.0.0.1:${cfg.port}/premium/parking-report/*`,
+          ],
+          expiresAt: policyExpiresAt,
+          policyNonce: "policy-nonce-paid-api-001",
+          createdAt,
+        };
 
-      await state.adapter.registerMerchant(merchant);
-      const createdPolicy = await state.adapter.createPolicy(policy);
+        await state.adapter.registerMerchant(merchant);
+        const createdPolicy = await state.adapter.createPolicy(policy);
 
-      state.initialized = true;
+        state.initialized = true;
 
-      const auditEvents = await state.adapter.listAuditEvents();
+        const auditEvents = await state.adapter.listAuditEvents();
 
-      res.json({
-        mode: state.adapter.mode,
-        merchant,
-        policy: createdPolicy,
-        auditEvents,
-      });
-    } catch (err) {
-      next(err);
-    }
-  });
+        res.json({
+          mode: state.adapter.mode,
+          merchant,
+          policy: createdPolicy,
+          auditEvents,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
 
   // -----------------------------------------------------------------------
   // GET /premium/parking-report/:lotId
   // -----------------------------------------------------------------------
 
-  app.get("/premium/parking-report/:lotId", async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!state.initialized) {
-        apiError(res, 503, "DEMO_NOT_INITIALIZED", "Call POST /demo/setup first.");
-        return;
-      }
+  app.get(
+    "/premium/parking-report/:lotId",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        if (!state.initialized) {
+          apiError(
+            res,
+            503,
+            "DEMO_NOT_INITIALIZED",
+            "Call POST /demo/setup first.",
+          );
+          return;
+        }
 
-      const lotId = String(req.params.lotId ?? "");
-      const receiptHeader = req.header("x-agentpay-receipt");
+        const lotId = String(req.params.lotId ?? "");
+        const receiptHeader = req.header("x-agentpay-receipt");
 
-      // -- No receipt header → return 402 Payment Required ------------------
+        // -- No receipt header → return 402 Payment Required ------------------
 
-      if (!receiptHeader) {
-        const method = req.method;
-        const endpointId = "parking-report-v1";
-        const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-        const issuedAt = new Date().toISOString();
-        const nonce = `paid-api-${randomUUID()}`;
+        if (!receiptHeader) {
+          const method = req.method;
+          const endpointId = "parking-report-v1";
+          const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+          const issuedAt = new Date().toISOString();
+          const nonce = `paid-api-${randomUUID()}`;
 
-        const request = buildCanonicalRequestInput({
-          method,
+          const request = buildCanonicalRequestInput({
+            method,
+            originalUrl: req.originalUrl,
+            port: cfg.port,
+            endpointId,
+            merchantId: cfg.merchantId,
+            agentId: cfg.agentId,
+            nonce,
+            expiresAt,
+          });
+          const requestHash = createRequestHash(request);
+
+          const requirement: PaymentRequirement = {
+            version: PROTOCOL_VERSION,
+            requirementId: `req_${randomUUID()}`,
+            merchantId: cfg.merchantId,
+            merchantAccount: cfg.merchantAccount,
+            method,
+            url: request.url,
+            endpointId,
+            amount: "1000000000",
+            currency: "CSPR",
+            requestHash,
+            nonce,
+            termsHash: blake2b256Hex("premium parking report terms"),
+            escrowMode: "authorize_then_settle",
+            expiresAt,
+            issuedAt,
+          };
+
+          state.requirements.set(requestHash, requirement);
+
+          res.status(402).json({
+            error: "PAYMENT_REQUIRED",
+            paymentRequirement: requirement,
+          });
+          return;
+        }
+
+        // -- Receipt header present → validate and release premium data -------
+
+        let receipt: PaymentReceipt;
+        try {
+          receipt = PaymentReceiptSchema.parse(JSON.parse(receiptHeader));
+        } catch {
+          apiError(
+            res,
+            400,
+            "MALFORMED_RECEIPT",
+            "The X-AgentPay-Receipt header could not be parsed or validated.",
+          );
+          return;
+        }
+
+        // Look up original requirement by requestHash.
+        const requirement = state.requirements.get(receipt.requestHash);
+        if (!requirement) {
+          apiError(
+            res,
+            404,
+            "RECEIPT_NOT_FOUND",
+            "No requirement was issued for this requestHash.",
+          );
+          return;
+        }
+
+        // Rebuild the request-hash input from the CURRENT HTTP request, reusing
+        // the stored requirement's nonce, endpointId, and expiry.  This ensures
+        // the receipt is bound to the exact current URL — a receipt issued for
+        // /MAD-001 will not pass verification on /BCN-001.
+        const currentRequest = buildCanonicalRequestInput({
+          method: req.method,
           originalUrl: req.originalUrl,
           port: cfg.port,
-          endpointId,
+          endpointId: requirement.endpointId,
           merchantId: cfg.merchantId,
           agentId: cfg.agentId,
-          nonce,
-          expiresAt,
+          nonce: requirement.nonce,
+          expiresAt: requirement.expiresAt,
         });
-        const requestHash = createRequestHash(request);
+        const currentRequestHash = createRequestHash(currentRequest);
 
-        const requirement: PaymentRequirement = {
-          version: PROTOCOL_VERSION,
-          requirementId: `req_${randomUUID()}`,
-          merchantId: cfg.merchantId,
-          merchantAccount: cfg.merchantAccount,
-          method,
-          url: request.url,
-          endpointId,
-          amount: "1000000000",
-          currency: "CSPR",
-          requestHash,
-          nonce,
-          termsHash: blake2b256Hex("premium parking report terms"),
-          escrowMode: "authorize_then_settle",
-          expiresAt,
-          issuedAt,
-        };
+        if (receipt.requestHash !== currentRequestHash) {
+          apiError(
+            res,
+            403,
+            "REQUEST_HASH_MISMATCH",
+            "Receipt requestHash does not match the current request. A receipt issued for one URL cannot be used for another.",
+          );
+          return;
+        }
 
-        state.requirements.set(requestHash, requirement);
+        if (receipt.merchantId !== requirement.merchantId) {
+          apiError(
+            res,
+            403,
+            "MERCHANT_MISMATCH",
+            "Receipt merchantId does not match the issued requirement.",
+          );
+          return;
+        }
 
-        res.status(402).json({
-          error: "PAYMENT_REQUIRED",
-          paymentRequirement: requirement,
-        });
-        return;
-      }
+        if (receipt.endpointId !== requirement.endpointId) {
+          apiError(
+            res,
+            403,
+            "ENDPOINT_MISMATCH",
+            "Receipt endpointId does not match the issued requirement.",
+          );
+          return;
+        }
 
-      // -- Receipt header present → validate and release premium data -------
+        if (receipt.amount !== requirement.amount) {
+          apiError(
+            res,
+            403,
+            "AMOUNT_MISMATCH",
+            "Receipt amount does not match the issued requirement.",
+          );
+          return;
+        }
 
-      let receipt: PaymentReceipt;
-      try {
-        receipt = PaymentReceiptSchema.parse(JSON.parse(receiptHeader));
-      } catch {
-        apiError(res, 400, "MALFORMED_RECEIPT", "The X-AgentPay-Receipt header could not be parsed or validated.");
-        return;
-      }
+        if (receipt.currency !== requirement.currency) {
+          apiError(
+            res,
+            403,
+            "CURRENCY_MISMATCH",
+            "Receipt currency does not match the issued requirement.",
+          );
+          return;
+        }
 
-      // Look up original requirement by requestHash.
-      const requirement = state.requirements.get(receipt.requestHash);
-      if (!requirement) {
-        apiError(res, 404, "RECEIPT_NOT_FOUND", "No requirement was issued for this requestHash.");
-        return;
-      }
+        if (new Date(requirement.expiresAt).getTime() <= Date.now()) {
+          apiError(
+            res,
+            410,
+            "REQUIREMENT_EXPIRED",
+            "The payment requirement has expired.",
+          );
+          return;
+        }
 
-      // Rebuild the request-hash input from the CURRENT HTTP request, reusing
-      // the stored requirement's nonce, endpointId, and expiry.  This ensures
-      // the receipt is bound to the exact current URL — a receipt issued for
-      // /MAD-001 will not pass verification on /BCN-001.
-      const currentRequest = buildCanonicalRequestInput({
-        method: req.method,
-        originalUrl: req.originalUrl,
-        port: cfg.port,
-        endpointId: requirement.endpointId,
-        merchantId: cfg.merchantId,
-        agentId: cfg.agentId,
-        nonce: requirement.nonce,
-        expiresAt: requirement.expiresAt,
-      });
-      const currentRequestHash = createRequestHash(currentRequest);
+        if (
+          receipt.status !== "escrowed" &&
+          receipt.status !== "settled" &&
+          receipt.status !== "fulfilled"
+        ) {
+          apiError(
+            res,
+            402,
+            "PAYMENT_NOT_ESCROWED",
+            `Receipt status is '${receipt.status}'. Payment must be escrowed, fulfilled, or settled to release data.`,
+          );
+          return;
+        }
 
-      if (receipt.requestHash !== currentRequestHash) {
-        apiError(
-          res,
-          403,
-          "REQUEST_HASH_MISMATCH",
-          "Receipt requestHash does not match the current request. A receipt issued for one URL cannot be used for another.",
+        if (cfg.mode === "mock" && receipt.proof.kind !== "mock") {
+          apiError(
+            res,
+            403,
+            "MOCK_MODE_NOT_ALLOWED",
+            "Mock mode requires mock-proof receipts.",
+          );
+          return;
+        }
+
+        // Verify receipt exists in the adapter and matches.
+        const adapterReceipt = await state.adapter.getPayment(
+          receipt.paymentId,
         );
-        return;
+        if (!adapterReceipt) {
+          apiError(
+            res,
+            404,
+            "PAYMENT_NOT_FOUND",
+            "Receipt paymentId is not known to the adapter.",
+          );
+          return;
+        }
+
+        if (
+          adapterReceipt.status !== "escrowed" &&
+          adapterReceipt.status !== "settled" &&
+          adapterReceipt.status !== "fulfilled"
+        ) {
+          apiError(
+            res,
+            402,
+            "PAYMENT_NOT_ESCROWED",
+            `Adapter payment status is '${adapterReceipt.status}'. Must be escrowed, fulfilled, or settled.`,
+          );
+          return;
+        }
+
+        // All checks passed — release premium data.
+        const report = generatePremiumReport(lotId);
+
+        try {
+          await state.adapter.markFulfilled({
+            paymentId: receipt.paymentId,
+            responseBody: report,
+            responseHash: report.responseHash,
+          });
+        } catch {
+          // markFulfilled may throw if the transition is invalid (e.g. already fulfilled).
+          // If the payment was already fulfilled, the data can still be released.
+        }
+
+        res.json(report);
+      } catch (err) {
+        next(err);
       }
-
-      if (receipt.merchantId !== requirement.merchantId) {
-        apiError(res, 403, "MERCHANT_MISMATCH", "Receipt merchantId does not match the issued requirement.");
-        return;
-      }
-
-      if (receipt.endpointId !== requirement.endpointId) {
-        apiError(res, 403, "ENDPOINT_MISMATCH", "Receipt endpointId does not match the issued requirement.");
-        return;
-      }
-
-      if (receipt.amount !== requirement.amount) {
-        apiError(res, 403, "AMOUNT_MISMATCH", "Receipt amount does not match the issued requirement.");
-        return;
-      }
-
-      if (receipt.currency !== requirement.currency) {
-        apiError(res, 403, "CURRENCY_MISMATCH", "Receipt currency does not match the issued requirement.");
-        return;
-      }
-
-      if (new Date(requirement.expiresAt).getTime() <= Date.now()) {
-        apiError(res, 410, "REQUIREMENT_EXPIRED", "The payment requirement has expired.");
-        return;
-      }
-
-      if (receipt.status !== "escrowed" && receipt.status !== "settled" && receipt.status !== "fulfilled") {
-        apiError(
-          res,
-          402,
-          "PAYMENT_NOT_ESCROWED",
-          `Receipt status is '${receipt.status}'. Payment must be escrowed, fulfilled, or settled to release data.`,
-        );
-        return;
-      }
-
-      if (cfg.mode === "mock" && receipt.proof.kind !== "mock") {
-        apiError(res, 403, "MOCK_MODE_NOT_ALLOWED", "Mock mode requires mock-proof receipts.");
-        return;
-      }
-
-      // Verify receipt exists in the adapter and matches.
-      const adapterReceipt = await state.adapter.getPayment(receipt.paymentId);
-      if (!adapterReceipt) {
-        apiError(res, 404, "PAYMENT_NOT_FOUND", "Receipt paymentId is not known to the adapter.");
-        return;
-      }
-
-      if (adapterReceipt.status !== "escrowed" && adapterReceipt.status !== "settled" && adapterReceipt.status !== "fulfilled") {
-        apiError(
-          res,
-          402,
-          "PAYMENT_NOT_ESCROWED",
-          `Adapter payment status is '${adapterReceipt.status}'. Must be escrowed, fulfilled, or settled.`,
-        );
-        return;
-      }
-
-      // All checks passed — release premium data.
-      const report = generatePremiumReport(lotId);
-
-      try {
-        await state.adapter.markFulfilled({
-          paymentId: receipt.paymentId,
-          responseBody: report,
-          responseHash: report.responseHash,
-        });
-      } catch {
-        // markFulfilled may throw if the transition is invalid (e.g. already fulfilled).
-        // If the payment was already fulfilled, the data can still be released.
-      }
-
-      res.json(report);
-    } catch (err) {
-      next(err);
-    }
-  });
+    },
+  );
 
   // -----------------------------------------------------------------------
   // POST /demo/authorize
   // -----------------------------------------------------------------------
 
-  app.post("/demo/authorize", async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!state.initialized) {
-        apiError(res, 503, "DEMO_NOT_INITIALIZED", "Call POST /demo/setup first.");
-        return;
-      }
+  app.post(
+    "/demo/authorize",
+    demoWriteLimiter,
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        if (!state.initialized) {
+          apiError(
+            res,
+            503,
+            "DEMO_NOT_INITIALIZED",
+            "Call POST /demo/setup first.",
+          );
+          return;
+        }
 
-      const { policyId, requirement, agentId } =
-        req.body as {
+        const {
+          policyId,
+          requirement: requirementRaw,
+          agentId,
+        } = req.body as {
           policyId?: string;
-          requirement?: PaymentRequirement;
+          requirement?: unknown;
           agentId?: string;
         };
 
-      if (!policyId || !requirement || !agentId) {
-        apiError(res, 400, "MALFORMED_REQUEST", "Required fields: policyId, requirement, agentId.");
-        return;
+        if (!policyId || !requirementRaw || !agentId) {
+          apiError(
+            res,
+            400,
+            "MALFORMED_REQUEST",
+            "Required fields: policyId, requirement, agentId.",
+          );
+          return;
+        }
+
+        if (policyId !== cfg.policyId) {
+          apiError(
+            res,
+            403,
+            "POLICY_MISMATCH",
+            "policyId does not match the active demo policy.",
+          );
+          return;
+        }
+
+        if (agentId !== cfg.agentId) {
+          apiError(
+            res,
+            403,
+            "AGENT_MISMATCH",
+            "agentId does not match the active demo agent.",
+          );
+          return;
+        }
+
+        let requirement: PaymentRequirement;
+        try {
+          requirement = PaymentRequirementSchema.parse(requirementRaw);
+        } catch {
+          apiError(
+            res,
+            400,
+            "MALFORMED_REQUIREMENT",
+            "The requirement could not be parsed or validated.",
+          );
+          return;
+        }
+
+        const issuedRequirement = state.requirements.get(
+          requirement.requestHash,
+        );
+        if (!issuedRequirement) {
+          apiError(
+            res,
+            404,
+            "REQUIREMENT_NOT_FOUND",
+            "No issued requirement exists for this requestHash.",
+          );
+          return;
+        }
+
+        const mismatchedFields = findRequirementMismatches(
+          requirement,
+          issuedRequirement,
+        );
+        if (mismatchedFields.length > 0) {
+          apiError(
+            res,
+            403,
+            "REQUIREMENT_MISMATCH",
+            `Requirement does not match the server-issued fields: ${mismatchedFields.join(", ")}.`,
+          );
+          return;
+        }
+
+        // Rebuild CreateRequestHashInput from the server-issued requirement.
+        const request: CreateRequestHashInput = {
+          method: issuedRequirement.method,
+          url: issuedRequirement.url,
+          bodyHash: createBodyHash({}),
+          endpointId: issuedRequirement.endpointId,
+          merchantId: issuedRequirement.merchantId,
+          agentId: cfg.agentId,
+          nonce: issuedRequirement.nonce,
+          expiresAt: issuedRequirement.expiresAt,
+        };
+
+        const authorizationResult = await state.adapter.authorizePayment({
+          policyId: cfg.policyId,
+          requirement: issuedRequirement,
+          request,
+        });
+
+        const receipt = await state.adapter.submitPayment({
+          paymentId: authorizationResult.authorization.paymentId,
+        });
+
+        const auditEvents = await state.adapter.listAuditEvents();
+
+        res.json({
+          authorization: authorizationResult.authorization,
+          receipt,
+          proof: receipt.proof,
+          updatedPolicy: authorizationResult.updatedPolicy,
+          auditEvents,
+        });
+      } catch (err) {
+        next(err);
       }
-
-      // Rebuild CreateRequestHashInput from the requirement.
-      const request: CreateRequestHashInput = {
-        method: requirement.method,
-        url: requirement.url,
-        bodyHash: createBodyHash({}),
-        endpointId: requirement.endpointId,
-        merchantId: requirement.merchantId,
-        agentId,
-        nonce: requirement.nonce,
-        expiresAt: requirement.expiresAt,
-      };
-
-      const authorizationResult = await state.adapter.authorizePayment({
-        policyId,
-        requirement,
-        request,
-      });
-
-      const receipt = await state.adapter.submitPayment({
-        paymentId: authorizationResult.authorization.paymentId,
-      });
-
-      const auditEvents = await state.adapter.listAuditEvents();
-
-      res.json({
-        authorization: authorizationResult.authorization,
-        receipt,
-        proof: receipt.proof,
-        updatedPolicy: authorizationResult.updatedPolicy,
-        auditEvents,
-      });
-    } catch (err) {
-      next(err);
-    }
-  });
+    },
+  );
 
   // -----------------------------------------------------------------------
   // POST /demo/settle/:paymentId
   // -----------------------------------------------------------------------
 
-  app.post("/demo/settle/:paymentId", async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!state.initialized) {
-        apiError(res, 503, "DEMO_NOT_INITIALIZED", "Call POST /demo/setup first.");
-        return;
-      }
-
-      const paymentId = String(req.params.paymentId ?? "");
-      if (!paymentId) {
-        apiError(res, 400, "MALFORMED_REQUEST", "Missing paymentId path parameter.");
-        return;
-      }
-
-      const payment = await state.adapter.getPayment(paymentId);
-      if (!payment) {
-        apiError(res, 404, "PAYMENT_NOT_FOUND", `No payment found for paymentId ${paymentId}.`);
-        return;
-      }
-
-      // Only reject payments that can never be settled (terminal/early states).
-      // The adapter handles the fulfilled-only and duplicate-settlement checks internally.
-      if (payment.status === "authorized" || payment.status === "submitted" || payment.status === "escrowed") {
-        apiError(
-          res,
-          409,
-          "INVALID_STATE_TRANSITION",
-          `Payment status is '${payment.status}'. Only fulfilled payments can be settled.`,
-        );
-        return;
-      }
-
-      let settlement;
+  app.post(
+    "/demo/settle/:paymentId",
+    demoWriteLimiter,
+    async (req: Request, res: Response, next: NextFunction) => {
       try {
-        settlement = await state.adapter.settlePayment({ paymentId });
-      } catch (settleErr) {
-        const msg = settleErr instanceof Error ? settleErr.message : "";
-        if (msg.includes("DUPLICATE_SETTLEMENT")) {
-          apiError(res, 409, "DUPLICATE_SETTLEMENT", msg);
+        if (!state.initialized) {
+          apiError(
+            res,
+            503,
+            "DEMO_NOT_INITIALIZED",
+            "Call POST /demo/setup first.",
+          );
           return;
         }
-        if (msg.includes("INVALID_STATE_TRANSITION")) {
-          apiError(res, 409, "INVALID_STATE_TRANSITION", msg);
+
+        const paymentId = String(req.params.paymentId ?? "");
+        if (!paymentId) {
+          apiError(
+            res,
+            400,
+            "MALFORMED_REQUEST",
+            "Missing paymentId path parameter.",
+          );
           return;
         }
-        throw settleErr;
+
+        const payment = await state.adapter.getPayment(paymentId);
+        if (!payment) {
+          apiError(
+            res,
+            404,
+            "PAYMENT_NOT_FOUND",
+            `No payment found for paymentId ${paymentId}.`,
+          );
+          return;
+        }
+
+        // Only reject payments that can never be settled (terminal/early states).
+        // The adapter handles the fulfilled-only and duplicate-settlement checks internally.
+        if (
+          payment.status === "authorized" ||
+          payment.status === "submitted" ||
+          payment.status === "escrowed"
+        ) {
+          apiError(
+            res,
+            409,
+            "INVALID_STATE_TRANSITION",
+            `Payment status is '${payment.status}'. Only fulfilled payments can be settled.`,
+          );
+          return;
+        }
+
+        let settlement;
+        try {
+          settlement = await state.adapter.settlePayment({ paymentId });
+        } catch (settleErr) {
+          const msg = settleErr instanceof Error ? settleErr.message : "";
+          if (msg.includes("DUPLICATE_SETTLEMENT")) {
+            apiError(res, 409, "DUPLICATE_SETTLEMENT", msg);
+            return;
+          }
+          if (msg.includes("INVALID_STATE_TRANSITION")) {
+            apiError(res, 409, "INVALID_STATE_TRANSITION", msg);
+            return;
+          }
+          throw settleErr;
+        }
+
+        const updatedPayment = await state.adapter.getPayment(paymentId);
+        const auditEvents = await state.adapter.listAuditEvents({ paymentId });
+
+        res.json({
+          settlement,
+          payment: updatedPayment,
+          auditEvents,
+        });
+      } catch (err) {
+        next(err);
       }
-
-      const updatedPayment = await state.adapter.getPayment(paymentId);
-      const auditEvents = await state.adapter.listAuditEvents({ paymentId });
-
-      res.json({
-        settlement,
-        payment: updatedPayment,
-        auditEvents,
-      });
-    } catch (err) {
-      next(err);
-    }
-  });
+    },
+  );
 
   // -----------------------------------------------------------------------
   // GET /demo/audit
   // -----------------------------------------------------------------------
 
-  app.get("/demo/audit", async (_req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!state.initialized) {
-        apiError(res, 503, "DEMO_NOT_INITIALIZED", "Call POST /demo/setup first.");
-        return;
-      }
+  app.get(
+    "/demo/audit",
+    async (_req: Request, res: Response, next: NextFunction) => {
+      try {
+        if (!state.initialized) {
+          apiError(
+            res,
+            503,
+            "DEMO_NOT_INITIALIZED",
+            "Call POST /demo/setup first.",
+          );
+          return;
+        }
 
-      const events = await state.adapter.listAuditEvents();
-      res.json({ auditEvents: events });
-    } catch (err) {
-      next(err);
-    }
-  });
+        const events = await state.adapter.listAuditEvents();
+        res.json({ auditEvents: events });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
 
   // -----------------------------------------------------------------------
   // Error handler
   // -----------------------------------------------------------------------
 
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    const message = err instanceof Error ? err.message : "Internal server error";
+    const message =
+      err instanceof Error ? err.message : "Internal server error";
     console.error("paid-api error:", message);
     apiError(res, 500, "INTERNAL_ERROR", message);
   });

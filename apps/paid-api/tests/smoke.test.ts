@@ -332,13 +332,9 @@ describe("paid-api", () => {
       .set("x-agentpay-receipt", JSON.stringify(receipt))
       .expect(200);
 
-    await srv
-      .post(`/demo/settle/${receipt.paymentId}`)
-      .expect(200);
+    await srv.post(`/demo/settle/${receipt.paymentId}`).expect(200);
 
-    const res = await srv
-      .post(`/demo/settle/${receipt.paymentId}`)
-      .expect(409);
+    const res = await srv.post(`/demo/settle/${receipt.paymentId}`).expect(409);
     expect(res.body.message).toContain("DUPLICATE_SETTLEMENT");
   });
 
@@ -347,9 +343,7 @@ describe("paid-api", () => {
     const requirement = await get402Requirement(srv, "MAD-001");
     const receipt = await authorizeAndSubmit(srv, requirement);
 
-    const res = await srv
-      .post(`/demo/settle/${receipt.paymentId}`)
-      .expect(409);
+    const res = await srv.post(`/demo/settle/${receipt.paymentId}`).expect(409);
     expect(res.body.error).toBe("INVALID_STATE_TRANSITION");
   });
 
@@ -385,6 +379,55 @@ describe("paid-api", () => {
     expect(res.body.receipt.status).toBe("escrowed");
     expect(res.body.proof.kind).toBe("mock");
     expect(res.body.updatedPolicy.spentAmount).toBe(requirement.amount);
+  });
+
+  it("POST /demo/authorize rejects a mismatched policyId", async () => {
+    const { srv } = await setup();
+    const requirement = await get402Requirement(srv, "MAD-001");
+
+    const res = await srv
+      .post("/demo/authorize")
+      .send({
+        policyId: "policy_attacker_001",
+        requirement,
+        agentId: cfg.agentId,
+      })
+      .expect(403);
+
+    expect(res.body.error).toBe("POLICY_MISMATCH");
+  });
+
+  it("POST /demo/authorize rejects a mismatched agentId", async () => {
+    const { srv } = await setup();
+    const requirement = await get402Requirement(srv, "MAD-001");
+
+    const res = await srv
+      .post("/demo/authorize")
+      .send({
+        policyId: cfg.policyId,
+        requirement,
+        agentId: "agent_attacker_001",
+      })
+      .expect(403);
+
+    expect(res.body.error).toBe("AGENT_MISMATCH");
+  });
+
+  it("POST /demo/authorize rejects a tampered requirement", async () => {
+    const { srv } = await setup();
+    const requirement = await get402Requirement(srv, "MAD-001");
+    const tampered = { ...requirement, amount: "1" };
+
+    const res = await srv
+      .post("/demo/authorize")
+      .send({
+        policyId: cfg.policyId,
+        requirement: tampered,
+        agentId: cfg.agentId,
+      })
+      .expect(403);
+
+    expect(res.body.error).toBe("REQUIREMENT_MISMATCH");
   });
 
   // -----------------------------------------------------------------------
