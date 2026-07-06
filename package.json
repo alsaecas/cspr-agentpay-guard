@@ -18,6 +18,7 @@
     "contract:test": "cd contracts/agentpay-guard && cargo test --lib",
     "contract:deploy:testnet": "bash contracts/agentpay-guard/scripts/deploy-testnet.sh",
     "docs:check": "bash scripts/docs-check.sh",
+    "security:check": "bash scripts/security-check.sh",
     "video:prep": "bash scripts/video-prep.sh",
     "video:record": "tsx scripts/record-demo-video.ts",
     "video:check": "tsx scripts/record-demo-video.ts --check",

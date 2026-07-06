@@ -72,6 +72,7 @@ for f in \
   docs/video-script.md \
   docs/video-shot-list.md \
   docs/final-checklist.md \
+  docs/final-round-playbook.md \
   docs/testnet-status.md \
   docs/technical-spike.md \
   docs/casper-contract-boundary.md \
@@ -93,6 +94,7 @@ check_min_lines "docs/submission.md"                   80
 check_min_lines "docs/video-script.md"                 60
 check_min_lines "docs/video-shot-list.md"              50
 check_min_lines "docs/final-checklist.md"              60
+check_min_lines "docs/final-round-playbook.md"         80
 check_min_lines "docs/testnet-status.md"               60
 check_min_lines "docs/technical-spike.md"             100
 check_min_lines "contracts/README.md"                  40

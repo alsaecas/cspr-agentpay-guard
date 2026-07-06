@@ -8,3 +8,6 @@ onlyBuiltDependencies:
 allowBuilds:
   esbuild: true
   sharp: true
+
+overrides:
+  hono: 4.12.25

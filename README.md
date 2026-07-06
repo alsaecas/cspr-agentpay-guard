@@ -55,6 +55,12 @@ pnpm demo:mock
 
 The terminal demo starts the paid API in-process, triggers a `402`, authorizes under policy, retries with a receipt, receives premium data, fulfills, settles the mock payment state, and prints the audit trail.
 
+## Final Round Reviewer Quick Check
+
+- Step-by-step reviewer playbook: [`docs/final-round-playbook.md`](docs/final-round-playbook.md)
+- Casper Testnet status and hashes: [`docs/testnet-status.md`](docs/testnet-status.md)
+- Demo video: pending; replace with the final public video URL when uploaded.
+
 ## Dashboard Demo
 
 ```bash
