@@ -381,7 +381,7 @@ describe("paid-api", () => {
     expect(res.body.updatedPolicy.spentAmount).toBe(requirement.amount);
   });
 
-  it("POST /demo/authorize rejects a mismatched policyId", async () => {
+  it("POST /demo/authorize ignores caller-supplied identity fields", async () => {
     const { srv } = await setup();
     const requirement = await get402Requirement(srv, "MAD-001");
 
@@ -390,27 +390,12 @@ describe("paid-api", () => {
       .send({
         policyId: "policy_attacker_001",
         requirement,
-        agentId: cfg.agentId,
-      })
-      .expect(403);
-
-    expect(res.body.error).toBe("POLICY_MISMATCH");
-  });
-
-  it("POST /demo/authorize rejects a mismatched agentId", async () => {
-    const { srv } = await setup();
-    const requirement = await get402Requirement(srv, "MAD-001");
-
-    const res = await srv
-      .post("/demo/authorize")
-      .send({
-        policyId: cfg.policyId,
-        requirement,
         agentId: "agent_attacker_001",
       })
-      .expect(403);
+      .expect(200);
 
-    expect(res.body.error).toBe("AGENT_MISMATCH");
+    expect(res.body.authorization.policyId).toBe(cfg.policyId);
+    expect(res.body.authorization.agentId).toBe(cfg.agentId);
   });
 
   it("POST /demo/authorize rejects a tampered requirement", async () => {

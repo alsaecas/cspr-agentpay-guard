@@ -572,49 +572,11 @@ export function createPaidApiServer(
           return;
         }
 
-        const {
-          policyId,
-          requirement: requirementRaw,
-          agentId,
-        } = req.body as {
-          policyId?: string;
-          requirement?: unknown;
-          agentId?: string;
-        };
-
-        if (!policyId || !requirementRaw || !agentId) {
-          apiError(
-            res,
-            400,
-            "MALFORMED_REQUEST",
-            "Required fields: policyId, requirement, agentId.",
-          );
-          return;
-        }
-
-        if (policyId !== cfg.policyId) {
-          apiError(
-            res,
-            403,
-            "POLICY_MISMATCH",
-            "policyId does not match the active demo policy.",
-          );
-          return;
-        }
-
-        if (agentId !== cfg.agentId) {
-          apiError(
-            res,
-            403,
-            "AGENT_MISMATCH",
-            "agentId does not match the active demo agent.",
-          );
-          return;
-        }
-
         let requirement: PaymentRequirement;
         try {
-          requirement = PaymentRequirementSchema.parse(requirementRaw);
+          requirement = PaymentRequirementSchema.parse(
+            (req.body as { requirement?: unknown }).requirement,
+          );
         } catch {
           apiError(
             res,
