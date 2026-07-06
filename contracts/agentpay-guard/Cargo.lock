@@ -1378,9 +1378,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-test-vm"
-version = "2.8.1"
+version = "2.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "218a93ca6d729beb9a898b31d31f2bda29486453e6f4592fbabd8cd23cd5777a"
+checksum = "7af7a03561a644868dd2338cf2e3c9b746ffb022707d8b055161ad49af51b9cd"
 dependencies = [
  "casper-contract",
  "casper-engine-test-support",
@@ -1403,9 +1403,9 @@ dependencies = [
 
 [[package]]
 name = "odra-core"
-version = "2.8.1"
+version = "2.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "940fef67dfa971d79fba7344844c9fe7c750e97258f08277797aa13a3fe7c439"
+checksum = "510bd2546b09db5556a8e947fbdd2a38b1cff67d2deba253bec190bb7e868137"
 dependencies = [
  "anyhow",
  "casper-event-standard",
@@ -1447,9 +1447,9 @@ dependencies = [
 
 [[package]]
 name = "odra-test"
-version = "2.8.1"
+version = "2.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b57bce89f1e1ef65b84e0e633a3bdfe38370ed6e99926ce30dcb110cda469557"
+checksum = "f6730643e1b63ea0506d2b26b394e6f343debeded38fc417f3a8a0673890b69a"
 dependencies = [
  "odra-casper-test-vm",
  "odra-core",
@@ -1458,9 +1458,9 @@ dependencies = [
 
 [[package]]
 name = "odra-vm"
-version = "2.8.1"
+version = "2.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c06d3dd16611a3901953c9c9e01f39c03d9ef6e11dbce9bce444fa147b895988"
+checksum = "4f3fe8db0993ee2e504549b7f3d41738490261efb152508fb63fe67527502c32"
 dependencies = [
  "anyhow",
  "backtrace",
