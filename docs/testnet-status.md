@@ -1,12 +1,14 @@
 # Casper Testnet Integration Status
 
-Last updated: 2026-07-04
+Last updated: 2026-07-14
 
 ## Current State
 
 State C — **Deployed on Casper Testnet with one proof transaction submitted**.
 
 The repository has a buildable Odra proof-recorder contract, generated wasm/schema artifacts, a guarded Testnet deploy command, and a guarded real proof submission command. The `AgentPayProofRecorder` contract is deployed on Casper Testnet, and one `record_proof` call has executed successfully.
+
+The final-round guarded x402 foundation does not change this status: no real x402 CSPR payment settlement has been submitted. The existing Testnet transactions remain proof-recorder evidence only.
 
 ## Status Table
 

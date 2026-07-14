@@ -7,7 +7,7 @@ Odra/Rust smart contract workspace for CSPR AgentPay Guard.
 - ✅ **`AgentPayProofRecorder` contract source complete.**
 - ✅ **Builds** with Odra 2.8.1 (nightly Rust, `cargo-odra` 0.1.7, `wasm32-unknown-unknown`, Binaryen, WABT).
 - ✅ **Generated wasm/schema artifacts exist.**
-- ⬜ **Not deployed to Casper Testnet** — pending funded Testnet credentials.
+- ✅ **Deployed to Casper Testnet** — verified deployment and proof-call hashes are in `docs/testnet-status.md`.
 - ⬜ **Not production escrow or custody** — the proof recorder is an audit anchor, not payable escrow.
 - ✅ **Mock HTTP 402 flow** remains the primary reliable demo path.
 

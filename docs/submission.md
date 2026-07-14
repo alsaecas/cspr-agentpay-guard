@@ -27,6 +27,12 @@ CSPR AgentPay Guard demonstrates a safe machine-to-machine payment flow:
 
 The local prototype uses a deterministic mock Casper adapter so the full user journey is reliable for judging. The Casper Testnet component is a deployed Odra `AgentPayProofRecorder` contract that records proof data on-chain; it is an audit anchor, not payable escrow.
 
+The final-round foundation adds official x402 v2 transport objects and a
+deterministic guard that checks network, asset, exact payee, merchant, resource,
+price, budget, expiry, request/body integrity, nonce, and facilitator before any
+signer or facilitator call. Casper x402 settlement remains incomplete because
+the official x402 SDK has no Casper scheme package; real mode fails closed.
+
 ## Architecture
 
 ```text
@@ -81,6 +87,8 @@ pnpm proof:testnet
 | Policy checks for allowlist, resource, amount, budget, expiry | Real |
 | HTTP 402 paid API flow | Real local prototype |
 | Request-bound receipt verification | Real local prototype |
+| Official x402 v2 guarded-fetch foundation | Real protocol/policy code; mock settlement |
+| Real Casper x402 signer/facilitator | Not implemented; fails closed |
 | Replay and duplicate settlement tests | Real local prototype |
 | Mock Casper adapter | Mock, clearly labeled |
 | Dashboard audit UI | Real UI over demo/audit records, Vercel-ready through Next.js API routes |

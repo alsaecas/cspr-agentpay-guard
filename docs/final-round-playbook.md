@@ -36,6 +36,19 @@ Expected result:
 5. Premium parking report is returned.
 6. Mock payment is fulfilled and settled in local audit state.
 
+Guarded x402 scenarios:
+
+```bash
+AGENTPAY_SCENARIO=allowed-payment pnpm demo:guarded
+AGENTPAY_SCENARIO=prompt-injection-attack pnpm demo:guarded
+AGENTPAY_SCENARIO=replay-attack pnpm demo:guarded
+```
+
+Each result prints the normalized x402 request, ordered guard checks, ALLOW or
+DENY, reason code, settlement-adapter call flag, budget before/after, and an
+explicit mock-mode note. These scenarios use official x402 v2 transport shapes
+with deterministic local settlement; no CSPR transaction is submitted.
+
 ## Dashboard Demo
 
 Production:

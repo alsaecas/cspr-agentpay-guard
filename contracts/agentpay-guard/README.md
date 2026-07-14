@@ -6,7 +6,7 @@ Odra smart contract for anchoring AgentPay proofs on Casper Testnet.
 
 - ✅ **Contract source complete.** `lib.rs` contains the full `AgentPayProofRecorder`.
 - ✅ **Builds** with Odra 2.8.1 and generates wasm/schema artifacts.
-- ⬜ **Not deployed to Casper Testnet** — pending credentials.
+- ✅ **Deployed to Casper Testnet** — deployment and proof hashes are recorded in `docs/testnet-status.md`.
 - ⬜ **Not production escrow or custody** — this is an audit anchor, not payable escrow.
 
 ## Entrypoints
@@ -37,7 +37,7 @@ Odra smart contract for anchoring AgentPay proofs on Casper Testnet.
 The contract source emits `AgentPayProofRecorded` with:
 - `payment_id`, `request_hash`, `policy_id`, `merchant_id`, `status`, `receipt_hash` (optional), `actor` (caller address), `recorded_at` (block time).
 
-Event indexing has not been verified on CSPR.cloud because no real Testnet deployment exists yet.
+Event indexing has not been verified on CSPR.cloud. The contract deployment and one `record_proof` transaction are real and independently linked from `docs/testnet-status.md`.
 
 ## Build, Test, Deploy
 

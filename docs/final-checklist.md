@@ -1,6 +1,6 @@
 # Final Checklist — CSPR AgentPay Guard
 
-Last updated: 2026-07-04
+Last updated: 2026-07-14
 
 ## GitHub / Submission
 
@@ -20,7 +20,7 @@ Last updated: 2026-07-04
 pnpm install                         # pass
 pnpm docs:check                      # pass
 pnpm typecheck                       # pass with raw pnpm; rtk wrapper returned a false nonzero
-pnpm test                            # pass, 146 tests
+pnpm test                            # pass, 172 tests
 pnpm demo:mock                       # pass
 pnpm --filter @cspr-agentpay/web build  # pass
 ```
@@ -32,6 +32,17 @@ pnpm --filter @cspr-agentpay/web build  # pass
 - [x] Mock mode visibly labeled
 - [x] Testnet proof status card present
 - [x] Optional hosted dashboard URL: `https://cspr-agentpay-guard.vercel.app`
+- [x] Guarded x402 scenario model exposes ALLOW/DENY, checks, reason, budget delta, adapter call status, and mode
+- [x] Allowed-payment, prompt-injection-attack, and replay-attack verified in a local browser
+
+## Guarded x402 Foundation
+
+- [x] Official `@x402/core` v2 transport types and header codecs pinned
+- [x] Normalized `GuardedPaymentRequest` and canonical integrity checks
+- [x] Network, asset, exact payee, merchant, resource, price, budget, expiry, request/body hash, nonce, facilitator, and optional policy-signature checks
+- [x] Signer/facilitator path is never called after a denial
+- [x] Real Casper x402 adapter fails closed without an injected verified Casper signer and facilitator
+- [x] No real x402 CSPR settlement claimed
 
 Dashboard commands:
 

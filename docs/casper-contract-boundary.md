@@ -4,7 +4,7 @@ Protocol version: `agentpay-guard-v1`
 
 This document defines the Casper smart contract modules, entrypoints, and events that the TypeScript `CasperPaymentAdapter` interface maps to. It bridges the current mock state machine (`MockCasperPaymentAdapter`) to the future on-chain implementation (`RealCasperTestnetAdapter`).
 
-Contracts are scaffold-only today. The first real target is on-chain event/state proof, not production custody. Payable escrow is a stretch goal.
+The `AgentPayProofRecorder` is deployed and has recorded one real Testnet proof call. The registry and escrow modules below remain design targets only. The deployed recorder is not production custody or payable escrow.
 
 ---
 
