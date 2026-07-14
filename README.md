@@ -4,6 +4,8 @@ CSPR AgentPay Guard is a policy-controlled payment firewall for autonomous AI ag
 
 This is a Casper Agentic Buildathon project. The local prototype is complete and reliable in mock mode. The Casper component is an Odra `AgentPayProofRecorder` audit/proof anchor, not production escrow, custody, or real CSPR settlement.
 
+The final-round foundation also supports official x402 v2 transport objects and headers through `@x402/core`. A deterministic `GuardedPaymentRequest` policy check runs before any signer or facilitator call. Casper x402 settlement is not yet live because the official x402 SDK currently has no Casper scheme package; real mode fails closed until a verified Casper signer and facilitator are supplied.
+
 ## One-Liner
 
 Autonomous agents can pay for protected APIs through HTTP 402, request-bound receipts, allowlists, spending limits, replay protection, and a Casper Testnet proof-recorder path.
@@ -40,7 +42,7 @@ Key boundaries:
 - `apps/web`: judge-facing dashboard and audit trail.
 - `packages/protocol`: canonical objects, hashes, schemas, proof types.
 - `packages/policy`: deterministic policy authorization.
-- `packages/casper-adapter`: mock state machine plus guarded Casper Testnet proof submission.
+- `packages/casper-adapter`: guarded x402 fetch, deterministic mock settlement, fail-closed real x402/Casper boundary, and Casper proof submission.
 - `contracts/agentpay-guard`: Odra proof-recorder contract and generated wasm/schema artifacts.
 
 ## Quickstart
@@ -118,6 +120,8 @@ The committed default RPC uses Casper Association's public Testnet node. CSPR.cl
 | Policy engine allowlists, resource scope, per-payment limits, budget checks | Real |
 | Paid API HTTP 402 behavior and receipt verification | Real local prototype |
 | Request-bound receipt rejection and replay protections | Real local prototype |
+| Official x402 v2 transport model and guarded fetch | Real foundation; mock settlement only |
+| Casper-capable x402 signer/facilitator | Not implemented; real adapter fails closed |
 | Mock Casper adapter state machine | Mock, clearly labeled |
 | Dashboard audit trail | Real UI over mock/demo state, Vercel-ready through Next.js API routes |
 | `AgentPayProofRecorder` Odra contract source | Real |

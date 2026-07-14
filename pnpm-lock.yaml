@@ -106,6 +106,9 @@ importers:
       '@cspr-agentpay/protocol':
         specifier: workspace:*
         version: link:../protocol
+      '@x402/core':
+        specifier: 2.18.0
+        version: 2.18.0
 
   packages/mcp-server:
     dependencies:
@@ -749,6 +752,9 @@ packages:
 
   '@vitest/utils@4.1.8':
     resolution: {integrity: sha512-uOJamYALNhfJ6iolExyQM40yIQwDqYnkKtQ5VCiSe17E33H0aQ/u+1GlRuz4LZBk6Mm3sg90G9hEbmEt37C1Zg==}
+
+  '@x402/core@2.18.0':
+    resolution: {integrity: sha512-3LB5m0Yx7C38ks8jDqTGYPZ2FnLzlH9pTlGvE8er2ujS1ri12sXXvWwnmYsmh3ZkXSDbV3BKU8oRKULatPp0Hg==}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -1551,6 +1557,9 @@ packages:
     peerDependencies:
       zod: ^3.25.28 || ^4
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
@@ -1994,6 +2003,10 @@ snapshots:
       '@vitest/pretty-format': 4.1.8
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
+
+  '@x402/core@2.18.0':
+    dependencies:
+      zod: 3.25.76
 
   accepts@2.0.0:
     dependencies:
@@ -2759,5 +2772,7 @@ snapshots:
   zod-to-json-schema@3.25.2(zod@4.4.3):
     dependencies:
       zod: 4.4.3
+
+  zod@3.25.76: {}
 
   zod@4.4.3: {}

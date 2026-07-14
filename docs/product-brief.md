@@ -13,7 +13,7 @@ Primary users:
 
 Demo user:
 
-- A hackathon judge watching an AI agent autonomously pay for premium data while Casper records the payment path.
+- A hackathon judge watching an AI agent autonomously authorize a mock payment for premium data while a separate, real Casper Testnet transaction anchors proof metadata.
 
 ## Problem
 

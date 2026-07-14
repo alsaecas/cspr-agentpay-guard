@@ -13,13 +13,23 @@ export default function DemoPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<DemoRunResult | null>(null);
+  const [scenario, setScenario] = useState<
+    | "legacy-demo"
+    | "allowed-payment"
+    | "prompt-injection-attack"
+    | "replay-attack"
+  >("allowed-payment");
 
   const run = async () => {
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const res = await fetch("/api/agentpay/run-demo", { method: "POST" });
+      const res = await fetch("/api/agentpay/run-demo", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(scenario === "legacy-demo" ? {} : { scenario }),
+      });
       const data = (await res.json()) as DemoRunResult;
       setResult(data);
       saveDemoRunResult(data);
@@ -47,6 +57,24 @@ export default function DemoPage() {
           Simulates an autonomous agent paying for a protected parking report
           through the HTTP 402 flow. All mock mode — no real funds.
         </p>
+        <label style={{ display: "block", marginBottom: 12 }}>
+          <span style={{ color: "var(--ink-dim)", marginRight: 8 }}>
+            Scenario
+          </span>
+          <select
+            value={scenario}
+            onChange={(event) =>
+              setScenario(event.target.value as typeof scenario)
+            }
+          >
+            <option value="allowed-payment">Allowed payment</option>
+            <option value="prompt-injection-attack">
+              Prompt injection attack
+            </option>
+            <option value="replay-attack">Replay attack</option>
+            <option value="legacy-demo">Legacy receipt demo</option>
+          </select>
+        </label>
 
         {error && !result?.success && (
           <div
@@ -74,6 +102,37 @@ export default function DemoPage() {
         <div className="gap panel">
           <h3>Timeline</h3>
           <Timeline steps={result.steps} />
+        </div>
+      )}
+
+      {result?.decision && (
+        <div className="gap panel">
+          <h3>Guard Decision: {result.decision}</h3>
+          <div className="kv">
+            <span className="kv-key">scenario</span>
+            <span className="kv-value">{result.scenario}</span>
+            <span className="kv-key">agent intent</span>
+            <span className="kv-value">{result.agentIntent}</span>
+            <span className="kv-key">denial reason</span>
+            <span className="kv-value">{result.denialReason ?? "none"}</span>
+            <span className="kv-key">settlement adapter called</span>
+            <span className="kv-value">
+              {String(result.settlementAdapterCalled)}
+            </span>
+            <span className="kv-key">budget</span>
+            <span className="kv-value">
+              {result.budgetBefore} → {result.budgetAfter}
+            </span>
+            <span className="kv-key">mode</span>
+            <span className="kv-value">
+              {result.mode} — no real Casper funds moved
+            </span>
+          </div>
+          {result.guardChecks && (
+            <pre className="code-block">
+              {JSON.stringify(result.guardChecks, null, 2)}
+            </pre>
+          )}
         </div>
       )}
 

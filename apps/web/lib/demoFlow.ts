@@ -25,6 +25,17 @@ export interface DemoRunResult {
   premiumReport?: Record<string, unknown>;
   settlement?: Record<string, unknown>;
   auditEvents?: unknown;
+  scenario?: "allowed-payment" | "prompt-injection-attack" | "replay-attack";
+  agentIntent?: string;
+  normalizedPaymentRequest?: Record<string, unknown>;
+  guardChecks?: unknown[];
+  decision?: "ALLOW" | "DENY";
+  denialReason?: string;
+  settlementAdapterCalled?: boolean;
+  settlementStatus?: string;
+  casperEvidence?: Record<string, unknown>;
+  budgetBefore?: string;
+  budgetAfter?: string;
 }
 
 export async function executeDemoFlow(): Promise<DemoRunResult> {

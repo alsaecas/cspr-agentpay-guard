@@ -7,6 +7,7 @@
     "dev": "tsx src/index.ts",
     "demo": "tsx src/index.ts",
     "demo:mock": "tsx src/index.ts",
+    "demo:guarded": "tsx src/guarded-scenario.ts",
     "build": "pnpm typecheck",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

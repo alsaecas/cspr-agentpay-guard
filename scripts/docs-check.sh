@@ -74,6 +74,8 @@ for f in \
   docs/final-checklist.md \
   docs/final-round-playbook.md \
   docs/testnet-status.md \
+  docs/final-round-implementation-plan.md \
+  docs/x402-integration.md \
   docs/technical-spike.md \
   docs/casper-contract-boundary.md \
   contracts/README.md \

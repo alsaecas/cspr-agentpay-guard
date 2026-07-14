@@ -1,6 +1,10 @@
 import {
   normalizeUrl,
   type AgentPolicy,
+  type GuardCheck,
+  type GuardDecision,
+  type GuardDecisionReason,
+  type GuardedPaymentRequest,
   type Merchant,
   type PaymentReceipt,
   type PaymentRequirement,
@@ -14,6 +18,18 @@ export interface EvaluatePaymentPolicyInput {
   requirement: PaymentRequirement;
   currentPayments?: PaymentReceipt[] | undefined;
   expectedRequestHash?: string | undefined;
+  now?: Date | undefined;
+}
+
+export interface EvaluateGuardedPaymentInput {
+  policy?: AgentPolicy | null | undefined;
+  merchant?: Merchant | null | undefined;
+  request: GuardedPaymentRequest;
+  expectedRequestHash: string;
+  expectedBodyHash: string;
+  expectedAmount?: string | undefined;
+  usedNonces?: ReadonlySet<string> | undefined;
+  policySignatureValid?: boolean | undefined;
   now?: Date | undefined;
 }
 
@@ -172,6 +188,260 @@ export function evaluatePaymentPolicy(
     merchantId: merchant.merchantId,
     remainingBudget,
     checkedAt,
+  };
+}
+
+/** Deterministic authorization for normalized x402 requirements. */
+export function evaluateGuardedPayment(
+  input: EvaluateGuardedPaymentInput,
+): GuardDecision {
+  const now = input.now ?? new Date();
+  const checkedAt = now.toISOString();
+  const checks: GuardCheck[] = [];
+  const { request } = input;
+  const policy = input.policy ?? null;
+  const merchant = input.merchant ?? null;
+
+  const reject = (
+    check: string,
+    reason: GuardDecisionReason,
+    message: string,
+    budgetBefore?: string,
+  ): GuardDecision => {
+    checks.push({ check, passed: false, reason, message });
+    return {
+      allowed: false,
+      decision: "DENY",
+      reason,
+      message,
+      checkedAt,
+      checks,
+      policyId: policy?.policyId,
+      merchantId: request.merchantId,
+      budgetBefore,
+      budgetAfter: budgetBefore,
+    };
+  };
+
+  const pass = (check: string, message: string) => {
+    checks.push({ check, passed: true, message });
+  };
+
+  if (
+    !policy ||
+    policy.status !== "active" ||
+    isExpired(policy.expiresAt, now)
+  ) {
+    return reject(
+      "policy_active",
+      "POLICY_INACTIVE",
+      "Policy is missing, inactive, or expired.",
+    );
+  }
+  pass("policy_active", "Policy is active.");
+
+  const budgetBefore = calculateRemainingBudget(policy).toString();
+  if (input.policySignatureValid === false) {
+    return reject(
+      "policy_signature",
+      "POLICY_SIGNATURE_INVALID",
+      "Owner-signed policy permit is invalid.",
+      budgetBefore,
+    );
+  }
+  pass(
+    "policy_signature",
+    input.policySignatureValid === undefined
+      ? "No owner-signed permit is required by this policy."
+      : "Owner-signed policy permit is valid.",
+  );
+
+  if (!policy.allowedNetworks?.includes(request.network)) {
+    return reject(
+      "network",
+      "NETWORK_NOT_ALLOWED",
+      "Payment network is not allowlisted by policy.",
+      budgetBefore,
+    );
+  }
+  pass("network", `Network ${request.network} is allowed.`);
+
+  const allowedAssets = policy.allowedAssets ?? [policy.currency];
+  if (!allowedAssets.includes(request.asset)) {
+    return reject(
+      "asset",
+      "ASSET_NOT_ALLOWED",
+      "Payment asset is not allowlisted by policy.",
+      budgetBefore,
+    );
+  }
+  pass("asset", `Asset ${request.asset} is allowed.`);
+
+  const allowedPayees =
+    policy.allowedPayees ?? (merchant ? [merchant.settlementAccount] : []);
+  if (!allowedPayees.includes(request.payee)) {
+    return reject(
+      "payee",
+      "PAYEE_NOT_ALLOWED",
+      "Payment payee is not the exact allowlisted destination.",
+      budgetBefore,
+    );
+  }
+  pass("payee", "Payee exactly matches the allowlisted destination.");
+
+  if (
+    !merchant ||
+    merchant.status !== "active" ||
+    merchant.merchantId !== request.merchantId ||
+    !policy.allowedMerchantIds.includes(request.merchantId) ||
+    merchant.settlementAccount !== request.payee
+  ) {
+    return reject(
+      "merchant",
+      "MERCHANT_NOT_ALLOWED",
+      "Merchant identity, status, or registered destination is not allowed.",
+      budgetBefore,
+    );
+  }
+  pass("merchant", `Merchant ${request.merchantId} is active and allowlisted.`);
+
+  if (
+    !matchResourcePattern(
+      request.method,
+      request.url,
+      policy.allowedResourcePatterns,
+    ) ||
+    !matchResourcePattern(
+      request.method,
+      request.url,
+      merchant.allowedResourcePatterns,
+    )
+  ) {
+    return reject(
+      "resource",
+      "RESOURCE_NOT_ALLOWED",
+      "HTTP method or resource URL is outside policy scope.",
+      budgetBefore,
+    );
+  }
+  pass("resource", `${request.method} ${request.url} is allowed.`);
+
+  const amount = parseAmount(request.amount);
+  const maxAmount = parseAmount(policy.maxAmountPerPayment);
+  if (
+    input.expectedAmount !== undefined &&
+    request.amount !== input.expectedAmount
+  ) {
+    return reject(
+      "amount_integrity",
+      "AMOUNT_MISMATCH",
+      "Amount differs from the expected resource price.",
+      budgetBefore,
+    );
+  }
+  pass(
+    "amount_integrity",
+    input.expectedAmount === undefined
+      ? "No fixed resource price was configured."
+      : "Amount matches the expected resource price.",
+  );
+  if (amount === null || maxAmount === null || amount > maxAmount) {
+    return reject(
+      "amount",
+      "AMOUNT_EXCEEDS_PAYMENT_LIMIT",
+      "Amount exceeds the per-payment limit.",
+      budgetBefore,
+    );
+  }
+  pass("amount", `Amount ${request.amount} is within the per-payment limit.`);
+
+  if (amount > BigInt(budgetBefore)) {
+    return reject(
+      "budget",
+      "BUDGET_EXCEEDED",
+      "Amount exceeds the remaining policy budget.",
+      budgetBefore,
+    );
+  }
+  const budgetAfter = (BigInt(budgetBefore) - amount).toString();
+  pass("budget", `Budget changes from ${budgetBefore} to ${budgetAfter}.`);
+
+  if (
+    isExpired(request.expiresAt, now) ||
+    new Date(request.issuedAt).getTime() > now.getTime() ||
+    new Date(request.expiresAt).getTime() <=
+      new Date(request.issuedAt).getTime()
+  ) {
+    return reject(
+      "expiry",
+      "REQUIREMENT_EXPIRED",
+      "Requirement timestamps are expired or invalid.",
+      budgetBefore,
+    );
+  }
+  pass("expiry", `Requirement expires at ${request.expiresAt}.`);
+
+  if (request.bodyHash !== input.expectedBodyHash) {
+    return reject(
+      "body_hash",
+      "BODY_HASH_MISMATCH",
+      "Requirement body hash does not match the outgoing request body.",
+      budgetBefore,
+    );
+  }
+  pass("body_hash", "Body hash matches the outgoing request.");
+
+  if (request.requestHash !== input.expectedRequestHash) {
+    return reject(
+      "request_hash",
+      "REQUEST_HASH_MISMATCH",
+      "Requirement request hash does not match the outgoing request.",
+      budgetBefore,
+    );
+  }
+  pass(
+    "request_hash",
+    "Request hash matches method, URL, body, merchant, agent, nonce, and expiry.",
+  );
+
+  const nonceKey = `${request.merchantId}:${request.nonce}`;
+  if (input.usedNonces?.has(nonceKey)) {
+    return reject(
+      "nonce",
+      "NONCE_ALREADY_USED",
+      "Requirement nonce was already used.",
+      budgetBefore,
+    );
+  }
+  pass("nonce", "Requirement nonce has not been used.");
+
+  if (
+    request.facilitator &&
+    !policy.allowedFacilitators?.includes(request.facilitator)
+  ) {
+    return reject(
+      "facilitator",
+      "FACILITATOR_NOT_ALLOWED",
+      "Facilitator is not allowlisted by policy.",
+      budgetBefore,
+    );
+  }
+  pass(
+    "facilitator",
+    request.facilitator
+      ? `Facilitator ${request.facilitator} is allowed.`
+      : "No facilitator was declared.",
+  );
+
+  return {
+    allowed: true,
+    decision: "ALLOW",
+    policyId: policy.policyId,
+    merchantId: request.merchantId,
+    checkedAt,
+    checks,
+    budgetBefore,
+    budgetAfter,
   };
 }
 

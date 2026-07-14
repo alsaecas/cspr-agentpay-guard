@@ -8,6 +8,7 @@ import {
   type PaymentAuthorization,
   type PaymentReceipt,
   type PaymentRequirement,
+  type GuardedPaymentRequest,
   type CreateRequestHashInput,
 } from "./types";
 import { createRequestHash } from "./hash";
@@ -68,6 +69,25 @@ export const PolicyDenialReasonSchema = z.enum([
   "BUDGET_EXCEEDED",
   "REQUIREMENT_EXPIRED",
   "REQUEST_HASH_MISMATCH",
+]);
+
+export const GuardDecisionReasonSchema = z.enum([
+  "MALFORMED_REQUIREMENT",
+  "NETWORK_NOT_ALLOWED",
+  "ASSET_NOT_ALLOWED",
+  "PAYEE_NOT_ALLOWED",
+  "MERCHANT_NOT_ALLOWED",
+  "RESOURCE_NOT_ALLOWED",
+  "AMOUNT_EXCEEDS_PAYMENT_LIMIT",
+  "AMOUNT_MISMATCH",
+  "BUDGET_EXCEEDED",
+  "REQUIREMENT_EXPIRED",
+  "REQUEST_HASH_MISMATCH",
+  "BODY_HASH_MISMATCH",
+  "NONCE_ALREADY_USED",
+  "FACILITATOR_NOT_ALLOWED",
+  "POLICY_SIGNATURE_INVALID",
+  "POLICY_INACTIVE",
 ]);
 
 export const PolicyDecisionSchema = z.discriminatedUnion("allowed", [
@@ -174,9 +194,38 @@ export const AgentPolicySchema = z
     budgetWindow: nonEmptyString,
     allowedMerchantIds: z.array(nonEmptyString).min(1),
     allowedResourcePatterns: z.array(nonEmptyString).min(1),
+    allowedNetworks: z.array(nonEmptyString).min(1).optional(),
+    allowedAssets: z.array(nonEmptyString).min(1).optional(),
+    allowedPayees: z.array(nonEmptyString).min(1).optional(),
+    allowedFacilitators: z.array(z.string().url()).min(1).optional(),
     expiresAt: isoTimestamp,
     policyNonce: nonEmptyString,
     createdAt: isoTimestamp,
+  })
+  .strict();
+
+export const GuardedPaymentRequestSchema = z
+  .object({
+    version: z.literal(PROTOCOL_VERSION),
+    x402Version: z.literal(2),
+    scheme: nonEmptyString,
+    method: nonEmptyString,
+    url: z.string().url(),
+    endpointId: nonEmptyString,
+    bodyHash: hexHash,
+    requestHash: hexHash,
+    merchantId: nonEmptyString,
+    providerId: nonEmptyString,
+    payee: nonEmptyString,
+    network: nonEmptyString,
+    asset: nonEmptyString,
+    amount: positiveAmountString,
+    nonce: nonEmptyString,
+    issuedAt: isoTimestamp,
+    expiresAt: isoTimestamp,
+    facilitator: z.string().url().optional(),
+    originalPaymentRequired: z.record(z.string(), z.unknown()),
+    selectedRequirement: z.record(z.string(), z.unknown()),
   })
   .strict();
 
@@ -287,6 +336,12 @@ export function validatePaymentReceipt(input: unknown): PaymentReceipt {
 
 export function validateAuditEvent(input: unknown): AuditEvent {
   return AuditEventSchema.parse(input);
+}
+
+export function validateGuardedPaymentRequest(
+  input: unknown,
+): GuardedPaymentRequest {
+  return GuardedPaymentRequestSchema.parse(input);
 }
 
 export function validateReceiptForRequest(

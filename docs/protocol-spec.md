@@ -402,3 +402,45 @@ HTTP mapping:
 - `409`: Replay, duplicate settlement, or invalid state transition.
 - `410`: Expired requirement, authorization, or receipt.
 - `502`: Casper submission or event lookup failed.
+
+## Guarded x402 v2 Model
+
+Milestone 1 adds a transport-compatible internal model without replacing the
+existing custom demo protocol. Official x402 v2 objects remain available as
+`originalPaymentRequired` and `selectedRequirement`; the guard normalizes the
+selected option into `GuardedPaymentRequest` before signing.
+
+Security-critical normalized fields are:
+
+- internal and x402 protocol versions;
+- scheme, Casper network identifier, asset, amount, and exact payee;
+- HTTP method, normalized URL, endpoint ID, body hash, and request hash;
+- merchant/provider identity, nonce, issue time, expiry, and optional facilitator;
+- the complete original x402 `PaymentRequired` payload.
+
+The request hash formula remains `CSPR_AGENTPAY_REQUEST_V1`; this milestone does
+not change existing hash fixtures. The x402 metadata supplies the same endpoint,
+merchant, agent, nonce, and expiry inputs so the guard can recompute it.
+
+Guard denial reasons are:
+
+- `MALFORMED_REQUIREMENT`
+- `NETWORK_NOT_ALLOWED`
+- `ASSET_NOT_ALLOWED`
+- `PAYEE_NOT_ALLOWED`
+- `MERCHANT_NOT_ALLOWED`
+- `RESOURCE_NOT_ALLOWED`
+- `AMOUNT_MISMATCH`
+- `AMOUNT_EXCEEDS_PAYMENT_LIMIT`
+- `BUDGET_EXCEEDED`
+- `REQUIREMENT_EXPIRED`
+- `REQUEST_HASH_MISMATCH`
+- `BODY_HASH_MISMATCH`
+- `NONCE_ALREADY_USED`
+- `FACILITATOR_NOT_ALLOWED`
+- `POLICY_SIGNATURE_INVALID`
+- `POLICY_INACTIVE`
+
+Each decision includes ordered checks, the stable reason code, and budget before
+and after. A denial must occur before `createPaymentAuthorization` or `settle`.
+See `docs/x402-integration.md` for the exact wire shape and current limitations.
