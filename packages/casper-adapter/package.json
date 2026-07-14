@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@cspr-agentpay/policy": "workspace:*",
-    "@cspr-agentpay/protocol": "workspace:*"
+    "@cspr-agentpay/protocol": "workspace:*",
+    "@x402/core": "2.18.0"
   }
 }
