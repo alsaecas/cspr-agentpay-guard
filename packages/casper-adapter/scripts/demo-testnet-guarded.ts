@@ -133,7 +133,6 @@ const authorization = buildCasperPaymentAuthorization({
   request,
   decision,
   agentId,
-  now,
 });
 const authorizationHash = createCasperPaymentAuthorizationHash(authorization);
 console.log(`signer: ${env.CASPER_TESTNET_PUBLIC_KEY}`);

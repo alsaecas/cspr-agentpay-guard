@@ -1,4 +1,4 @@
-import { readFile, stat } from "node:fs/promises";
+import { open } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
 
 import {
@@ -93,10 +93,12 @@ export class LocalTestnetCasperSigner implements CasperPaymentSigner {
   }
 
   async #loadKey(): Promise<CasperSdk.PrivateKey> {
+    let handle;
     try {
-      const file = await stat(this.#keyPath);
+      handle = await open(this.#keyPath, "r");
+      const file = await handle.stat();
       if (!file.isFile()) throw new Error("not a file");
-      const pem = await readFile(this.#keyPath, "utf8");
+      const pem = await handle.readFile("utf8");
       let key: CasperSdk.PrivateKey | undefined;
       for (const algorithm of [
         CasperSdk.KeyAlgorithm.ED25519,
@@ -121,6 +123,38 @@ export class LocalTestnetCasperSigner implements CasperPaymentSigner {
         throw error;
       }
       throw new Error("CASPER_SIGNER_KEY_UNAVAILABLE");
+    } finally {
+      await handle?.close();
     }
+  }
+}
+
+/** Verify the raw 64-byte SDK signature over the raw 32-byte authorization hash. */
+export function verifyCasperAuthorizationSignature(input: {
+  publicKey: string;
+  authorizationHash: string;
+  signature: string;
+}): boolean {
+  if (!/^[a-fA-F0-9]{64}$/.test(input.authorizationHash)) return false;
+  if (!/^[a-fA-F0-9]{128}$/.test(input.signature)) return false;
+  try {
+    const publicKey = CasperSdk.PublicKey.fromHex(input.publicKey);
+    if (
+      publicKey.cryptoAlg !== CasperSdk.KeyAlgorithm.ED25519 &&
+      publicKey.cryptoAlg !== CasperSdk.KeyAlgorithm.SECP256K1
+    ) {
+      return false;
+    }
+    const rawSignature = Buffer.from(input.signature, "hex");
+    const taggedSignature = Buffer.concat([
+      Buffer.from([publicKey.cryptoAlg]),
+      rawSignature,
+    ]);
+    return publicKey.verifySignature(
+      Buffer.from(input.authorizationHash, "hex"),
+      taggedSignature,
+    );
+  } catch {
+    return false;
   }
 }

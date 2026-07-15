@@ -23,13 +23,22 @@ export function buildCasperPaymentAuthorization(input: {
   request: GuardedPaymentRequest;
   decision: Extract<GuardDecision, { allowed: true }>;
   agentId: string;
-  now?: Date;
 }): CasperPaymentAuthorization {
-  const issuedAt = (
-    input.now ?? new Date(input.decision.checkedAt)
-  ).toISOString();
-  const paymentId = createPaymentId({
+  return buildCasperPaymentAuthorizationFromRequest({
+    request: input.request,
     policyId: input.decision.policyId,
+    agentId: input.agentId,
+  });
+}
+
+/** Build the one authorization implied by trusted, server-issued payment terms. */
+export function buildCasperPaymentAuthorizationFromRequest(input: {
+  request: GuardedPaymentRequest;
+  policyId: string;
+  agentId: string;
+}): CasperPaymentAuthorization {
+  const paymentId = createPaymentId({
+    policyId: input.policyId,
     merchantAccount: input.request.payee,
     amount: input.request.amount,
     endpointId: input.request.endpointId,
@@ -39,7 +48,7 @@ export function buildCasperPaymentAuthorization(input: {
   return {
     version: CASPER_PAYMENT_AUTHORIZATION_VERSION,
     paymentId,
-    policyId: input.decision.policyId,
+    policyId: input.policyId,
     agentId: input.agentId,
     requestHash: input.request.requestHash,
     bodyHash: input.request.bodyHash,
@@ -50,7 +59,7 @@ export function buildCasperPaymentAuthorization(input: {
     amountMotes: input.request.amount,
     nonce: input.request.nonce,
     transferId: deriveCasperTransferId(paymentId),
-    issuedAt,
+    issuedAt: input.request.issuedAt,
     expiresAt: input.request.expiresAt,
     facilitator: input.request.facilitator ?? new URL(input.request.url).origin,
     requirementHash: createCasperRequirementHash(input.request),
