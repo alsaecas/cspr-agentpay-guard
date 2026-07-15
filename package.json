@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@cspr-agentpay/casper-adapter": "workspace:*",
-    "@types/node": "^24.10.1",
+    "@types/node": "^26.1.0",
     "playwright": "^1.61.1",
     "prettier": "^3.7.4",
     "tsx": "^4.22.4",
