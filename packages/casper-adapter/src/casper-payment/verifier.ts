@@ -1,6 +1,7 @@
 import type { CasperPaymentAuthorization } from "@cspr-agentpay/protocol";
-import * as CasperSdk from "casper-js-sdk";
+import type { RpcClient } from "casper-js-sdk";
 
+import { CasperSdk } from "./sdk";
 import type { CasperSettlementEvidence, CasperTransferReader } from "./types";
 
 export interface ConsumedTransactionStore {
@@ -89,7 +90,7 @@ export class CasperSettlementVerifier {
 
 /** Reads and parses the authoritative TransactionV1 and execution info from Casper RPC. */
 export class SdkCasperTransferReader implements CasperTransferReader {
-  readonly #client: CasperSdk.RpcClient;
+  readonly #client: RpcClient;
   constructor(rpcUrl: string) {
     this.#client = new CasperSdk.RpcClient(new CasperSdk.HttpHandler(rpcUrl));
   }

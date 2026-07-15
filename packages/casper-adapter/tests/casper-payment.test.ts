@@ -17,14 +17,45 @@ import {
   LocalTestnetCasperSigner,
   MemoryConsumedTransactionStore,
   RealGuardedCasperPaymentFlow,
+  classifyTransactionExecution,
   pollTransaction,
   verifyCasperAuthorizationSignature,
   type CasperTransactionSubmitter,
   type ObservedCasperTransfer,
   type SignedCasperPayment,
 } from "../src/index";
+import { CasperSdk } from "../src/casper-payment/sdk";
 
 const directories: string[] = [];
+
+describe("Casper SDK runtime interop", () => {
+  it("loads constructable RPC clients", () => {
+    const handler = new CasperSdk.HttpHandler("https://example.com/rpc");
+    expect(new CasperSdk.RpcClient(handler)).toBeDefined();
+  });
+});
+
+describe("TransactionV1 execution classification", () => {
+  it("treats a null error_message as successful execution", () => {
+    expect(
+      classifyTransactionExecution({
+        executionResult: { errorMessage: null },
+      }).status,
+    ).toBe("succeeded");
+  });
+
+  it("preserves a real execution error as failure", () => {
+    expect(
+      classifyTransactionExecution({
+        executionResult: { errorMessage: "Insufficient payment" },
+      }),
+    ).toMatchObject({
+      status: "failed",
+      reason: "Insufficient payment",
+    });
+  });
+});
+
 afterEach(async () =>
   Promise.all(
     directories
@@ -72,6 +103,23 @@ async function tempConsumedStore() {
 }
 
 describe("file submission idempotency", () => {
+  it("clears stale failure metadata after confirmed recovery", async () => {
+    const store = await tempStore();
+    const hash = createCasperPaymentAuthorizationHash(authorization);
+    await store.prepare(hash, new Date("2030-01-01"));
+    await store.transition(hash, "failed", {
+      transactionHash: "aa".repeat(32),
+      failureReason: "false local failure",
+    });
+
+    const confirmed = await store.transition(hash, "confirmed", {
+      transactionHash: "aa".repeat(32),
+    });
+
+    expect(confirmed.failureReason).toBeUndefined();
+    expect(confirmed.state).toBe("confirmed");
+  });
+
   it("creates one record under concurrency and persists transitions", async () => {
     const store = await tempStore();
     const hash = createCasperPaymentAuthorizationHash(authorization);

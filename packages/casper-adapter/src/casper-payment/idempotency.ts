@@ -54,8 +54,10 @@ export class FileSubmissionStore {
       if (current.state === "confirmed" && state !== "confirmed") {
         throw new Error("IDEMPOTENCY_ALREADY_CONFIRMED");
       }
+      const stable = { ...current };
+      if (state === "confirmed") delete stable.failureReason;
       const record: SubmissionRecord = {
-        ...current,
+        ...stable,
         state,
         updatedAt: new Date().toISOString(),
         ...(update.transactionHash

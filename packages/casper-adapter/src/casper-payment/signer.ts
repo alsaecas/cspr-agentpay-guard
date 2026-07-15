@@ -8,8 +8,9 @@ import {
   type CasperPaymentAuthorization,
   type GuardedPaymentRequest,
 } from "@cspr-agentpay/protocol";
-import * as CasperSdk from "casper-js-sdk";
+import type { PrivateKey } from "casper-js-sdk";
 
+import { CasperSdk } from "./sdk";
 import type { CasperPaymentSigner, SignedCasperPayment } from "./types";
 
 export interface LocalTestnetSignerOptions {
@@ -92,14 +93,14 @@ export class LocalTestnetCasperSigner implements CasperPaymentSigner {
     assertAuthorizationMatchesRequest(authorization, request);
   }
 
-  async #loadKey(): Promise<CasperSdk.PrivateKey> {
+  async #loadKey(): Promise<PrivateKey> {
     let handle;
     try {
       handle = await open(this.#keyPath, "r");
       const file = await handle.stat();
       if (!file.isFile()) throw new Error("not a file");
       const pem = await handle.readFile("utf8");
-      let key: CasperSdk.PrivateKey | undefined;
+      let key: PrivateKey | undefined;
       for (const algorithm of [
         CasperSdk.KeyAlgorithm.ED25519,
         CasperSdk.KeyAlgorithm.SECP256K1,

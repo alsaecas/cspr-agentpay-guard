@@ -1,12 +1,12 @@
-import * as CasperSdk from "casper-js-sdk";
-import type { Transaction } from "casper-js-sdk";
+import type { RpcClient, Transaction } from "casper-js-sdk";
 
+import { CasperSdk } from "./sdk";
 import type { CasperTransactionSubmitter, TransactionStatus } from "./types";
 
 const TRANSACTION_HASH = /^[a-fA-F0-9]{64}$/;
 
 export class SdkCasperTransactionSubmitter implements CasperTransactionSubmitter {
-  readonly #client: CasperSdk.RpcClient;
+  readonly #client: RpcClient;
 
   constructor(rpcUrl: string) {
     const url = new URL(rpcUrl);
@@ -38,18 +38,7 @@ export class SdkCasperTransactionSubmitter implements CasperTransactionSubmitter
     try {
       const result =
         await this.#client.getTransactionByTransactionHash(transactionHash);
-      const raw = result.rawJSON as Record<string, unknown> | undefined;
-      const execution = raw?.execution_info ?? raw?.executionInfo;
-      if (!execution) return { status: "pending" };
-      const executionJson = JSON.stringify(execution);
-      const failed = /Failure|error_message|errorMessage/.test(executionJson);
-      return failed
-        ? {
-            status: "failed",
-            reason: "Casper execution failed",
-            raw: execution,
-          }
-        : { status: "succeeded", raw: result };
+      return classifyTransactionExecution(result.executionInfo, result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/not found|NoSuchTransaction|32001/i.test(message))
@@ -57,6 +46,20 @@ export class SdkCasperTransactionSubmitter implements CasperTransactionSubmitter
       throw new Error(`CASPER_STATUS_QUERY_FAILED: ${message}`);
     }
   }
+}
+
+export function classifyTransactionExecution(
+  execution:
+    | { executionResult: { errorMessage?: string | null } }
+    | null
+    | undefined,
+  raw?: unknown,
+): TransactionStatus {
+  if (!execution) return { status: "pending" };
+  const errorMessage = execution.executionResult.errorMessage;
+  return errorMessage
+    ? { status: "failed", reason: errorMessage, raw: raw ?? execution }
+    : { status: "succeeded", raw };
 }
 
 export async function pollTransaction(
