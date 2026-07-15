@@ -14,6 +14,8 @@
     "demo": "pnpm --filter @cspr-agentpay/agent demo",
     "proof:testnet": "tsx packages/casper-adapter/scripts/proof-testnet.ts",
     "proof:testnet:dry-run": "tsx packages/casper-adapter/scripts/proof-testnet.ts --dry-run",
+    "demo:testnet:guarded": "tsx packages/casper-adapter/scripts/demo-testnet-guarded.ts",
+    "demo:testnet:guarded:dry-run": "tsx packages/casper-adapter/scripts/demo-testnet-guarded.ts --dry-run",
     "contract:check": "bash contracts/agentpay-guard/scripts/check.sh",
     "contract:build": "cd contracts/agentpay-guard && cargo odra build",
     "contract:test": "cd contracts/agentpay-guard && cargo test --lib",

@@ -1,10 +1,18 @@
 import { describe, expect, it } from "vitest";
+import {
+  decodePaymentRequiredHeader,
+  encodePaymentSignatureHeader,
+} from "@x402/core/http";
+import type { PaymentPayload } from "@x402/core/types";
 
 import {
   PaymentReceiptSchema,
   type PaymentRequirement,
   type PaymentReceipt,
+  normalizeX402PaymentRequired,
+  createCasperPaymentAuthorizationHash,
 } from "@cspr-agentpay/protocol";
+import { buildCasperPaymentAuthorization } from "@cspr-agentpay/casper-adapter";
 import request from "supertest";
 
 import { createPaidApiServer, type PaidApiConfig } from "../src/server";
@@ -430,5 +438,113 @@ describe("paid-api", () => {
 
     const freshReq = await get402Requirement(srv);
     expect(freshReq.requestHash).toMatch(/^[a-f0-9]{64}$/);
+  });
+});
+
+describe("real Testnet paid resource", () => {
+  const payee = `01${"44".repeat(32)}`;
+  const realConfig: PaidApiConfig = {
+    ...cfg,
+    mode: "casper-testnet",
+    realPayee: payee,
+    realAmountMotes: "2500000000",
+  };
+
+  async function paymentHeader(
+    requiredHeader: string,
+    transactionHash = "aa".repeat(32),
+  ) {
+    const paymentRequired = decodePaymentRequiredHeader(requiredHeader);
+    const guarded = normalizeX402PaymentRequired({
+      paymentRequired,
+      method: "GET",
+      url: "http://127.0.0.1:4000/premium/rwa/parking-asset/MAD-001",
+      body: {},
+      agentId: cfg.agentId,
+      endpointId: "rwa-parking-asset-MAD-001",
+    });
+    const authorization = buildCasperPaymentAuthorization({
+      request: guarded,
+      agentId: cfg.agentId,
+      decision: {
+        allowed: true,
+        decision: "ALLOW",
+        policyId: cfg.policyId,
+        merchantId: cfg.merchantId,
+        checkedAt: new Date().toISOString(),
+        checks: [],
+        budgetBefore: guarded.amount,
+        budgetAfter: "0",
+      },
+    });
+    const payload: PaymentPayload = {
+      x402Version: 2,
+      resource: paymentRequired.resource,
+      accepted: paymentRequired.accepts[0]!,
+      payload: {
+        authorization,
+        authorizationHash: createCasperPaymentAuthorizationHash(authorization),
+        transactionHash,
+      },
+    };
+    return encodePaymentSignatureHeader(payload);
+  }
+
+  it("returns official 402 and fails closed without an independent verifier", async () => {
+    const server = request(createPaidApiServer(realConfig));
+    const unpaid = await server
+      .get("/premium/rwa/parking-asset/MAD-001")
+      .expect(402);
+    expect(unpaid.headers["payment-required"]).toBeTruthy();
+    const header = await paymentHeader(
+      unpaid.headers["payment-required"] as string,
+    );
+    const rejected = await server
+      .get("/premium/rwa/parking-asset/MAD-001")
+      .set("PAYMENT-SIGNATURE", header)
+      .expect(503);
+    expect(rejected.body.error).toBe("SETTLEMENT_VERIFIER_UNAVAILABLE");
+  });
+
+  it("releases premium data only after verification and rejects replay", async () => {
+    const consumed = new Set<string>();
+    const server = request(
+      createPaidApiServer(realConfig, {
+        realPaymentVerifier: {
+          verify: async ({ authorization, transactionHash }) => {
+            if (consumed.has(transactionHash))
+              throw new Error("TRANSACTION_ALREADY_CONSUMED");
+            consumed.add(transactionHash);
+            return {
+              mode: "casper-testnet",
+              transactionHash,
+              executionStatus: "succeeded",
+              signer: payee,
+              destination: authorization.destination,
+              amountMotes: authorization.amountMotes,
+              transferId: authorization.transferId,
+              verifiedAt: new Date().toISOString(),
+            };
+          },
+        },
+      }),
+    );
+    const unpaid = await server
+      .get("/premium/rwa/parking-asset/MAD-001")
+      .expect(402);
+    const header = await paymentHeader(
+      unpaid.headers["payment-required"] as string,
+    );
+    const paid = await server
+      .get("/premium/rwa/parking-asset/MAD-001")
+      .set("PAYMENT-SIGNATURE", header)
+      .expect(200);
+    expect(paid.body.lotId).toBe("MAD-001");
+    expect(paid.headers["payment-response"]).toBeTruthy();
+    const replay = await server
+      .get("/premium/rwa/parking-asset/MAD-001")
+      .set("PAYMENT-SIGNATURE", header)
+      .expect(403);
+    expect(replay.body.error).toBe("SETTLEMENT_NOT_VERIFIED");
   });
 });

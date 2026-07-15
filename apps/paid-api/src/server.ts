@@ -4,9 +4,16 @@ import { fileURLToPath } from "node:url";
 
 import {
   MockCasperPaymentAdapter,
+  CasperSettlementVerifier,
+  MemoryConsumedTransactionStore,
+  SdkCasperTransferReader,
+  X402_HEADERS,
+  type CasperSettlementEvidence,
   type CasperPaymentAdapter,
 } from "@cspr-agentpay/casper-adapter";
 import {
+  CasperPaymentAuthorizationSchema,
+  createCasperPaymentAuthorizationHash,
   PROTOCOL_VERSION,
   PaymentReceiptSchema,
   PaymentRequirementSchema,
@@ -20,6 +27,12 @@ import {
   type PaymentReceipt,
   type PaymentRequirement,
 } from "@cspr-agentpay/protocol";
+import {
+  decodePaymentSignatureHeader,
+  encodePaymentRequiredHeader,
+  encodePaymentResponseHeader,
+} from "@x402/core/http";
+import type { PaymentRequired } from "@x402/core/types";
 import express, {
   type NextFunction,
   type Request,
@@ -38,6 +51,8 @@ export interface PaidApiConfig {
   merchantAccount: string;
   policyId: string;
   port: number;
+  realPayee?: string;
+  realAmountMotes?: string;
 }
 
 export function loadPaidApiConfig(
@@ -50,7 +65,21 @@ export function loadPaidApiConfig(
     merchantAccount: env.MERCHANT_ACCOUNT ?? "mock-merchant-account",
     policyId: env.POLICY_ID ?? "policy_demo_agent_001",
     port: Number(env.PORT ?? "4000"),
+    realPayee: env.X402_CASPER_PAYEE ?? "",
+    realAmountMotes: env.X402_CASPER_PAYMENT_AMOUNT_MOTES ?? "2500000000",
   };
+}
+
+export interface RealPaymentVerifier {
+  verify(input: {
+    authorization: import("@cspr-agentpay/protocol").CasperPaymentAuthorization;
+    authorizationHash: string;
+    transactionHash: string;
+  }): Promise<CasperSettlementEvidence>;
+}
+
+export interface PaidApiServerOptions {
+  realPaymentVerifier?: RealPaymentVerifier;
 }
 
 // ---------------------------------------------------------------------------
@@ -196,8 +225,11 @@ function findRequirementMismatches(
 
 export function createPaidApiServer(
   config?: PaidApiConfig,
+  options: PaidApiServerOptions = {},
 ): express.Application {
   const cfg = config ?? loadPaidApiConfig();
+  const realPayee = cfg.realPayee ?? "";
+  const realAmountMotes = cfg.realAmountMotes ?? "2500000000";
   const app = express();
   const demoWriteLimiter = rateLimit({
     windowMs: 60_000,
@@ -214,6 +246,8 @@ export function createPaidApiServer(
 
   // Shared mutable demo state — scoped to this server instance.
   let state = createInitialState();
+  const realRequirements = new Map<string, PaymentRequired>();
+  let activeRealRequirement: PaymentRequired | undefined;
 
   // Factory that returns a fresh state without touching the shared one.
   // Used by /demo/setup to reset the adapter and store.
@@ -232,6 +266,220 @@ export function createPaidApiServer(
       mode: cfg.mode,
     });
   });
+
+  // Real Testnet endpoint. It never accepts the legacy X-AgentPay-Receipt.
+  app.get(
+    "/premium/rwa/parking-asset/MAD-001",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const paymentHeader = req.header(X402_HEADERS.paymentSignature);
+        if (!paymentHeader) {
+          if (!realPayee) {
+            apiError(
+              res,
+              503,
+              "REAL_PAYMENT_NOT_CONFIGURED",
+              "X402_CASPER_PAYEE is not configured.",
+            );
+            return;
+          }
+          const cachedExpiry = activeRealRequirement?.accepts[0]?.extra
+            .agentPayGuard as { expiresAt?: string } | undefined;
+          if (
+            activeRealRequirement &&
+            cachedExpiry?.expiresAt &&
+            Date.parse(cachedExpiry.expiresAt) > Date.now()
+          ) {
+            res.setHeader(
+              X402_HEADERS.paymentRequired,
+              encodePaymentRequiredHeader(activeRealRequirement),
+            );
+            res.status(402).json({
+              error: "PAYMENT_REQUIRED",
+              paymentRequired: activeRealRequirement,
+            });
+            return;
+          }
+          const issuedAt = new Date();
+          const expiresAt = new Date(
+            issuedAt.getTime() + 5 * 60_000,
+          ).toISOString();
+          const nonce = `casper-testnet-${randomUUID()}`;
+          const url = `http://127.0.0.1:${cfg.port}${req.originalUrl}`;
+          const bodyHash = createBodyHash({});
+          const requestHash = createRequestHash({
+            method: "GET",
+            url,
+            bodyHash,
+            endpointId: "rwa-parking-asset-MAD-001",
+            merchantId: cfg.merchantId,
+            agentId: cfg.agentId,
+            nonce,
+            expiresAt,
+          });
+          const requirement: PaymentRequired = {
+            x402Version: 2,
+            resource: {
+              url,
+              description: "Premium Madrid parking asset data",
+              mimeType: "application/json",
+            },
+            accepts: [
+              {
+                scheme: "exact",
+                network: "casper:casper-test",
+                asset: "CSPR",
+                amount: realAmountMotes,
+                payTo: realPayee,
+                maxTimeoutSeconds: 300,
+                extra: {
+                  agentPayGuard: {
+                    merchantId: cfg.merchantId,
+                    nonce,
+                    issuedAt: issuedAt.toISOString(),
+                    expiresAt,
+                    requestHash,
+                    bodyHash,
+                    facilitator: `http://127.0.0.1:${cfg.port}`,
+                  },
+                },
+              },
+            ],
+          };
+          realRequirements.set(requestHash, requirement);
+          activeRealRequirement = requirement;
+          res.setHeader(
+            X402_HEADERS.paymentRequired,
+            encodePaymentRequiredHeader(requirement),
+          );
+          res
+            .status(402)
+            .json({ error: "PAYMENT_REQUIRED", paymentRequired: requirement });
+          return;
+        }
+
+        if (!options.realPaymentVerifier) {
+          apiError(
+            res,
+            503,
+            "SETTLEMENT_VERIFIER_UNAVAILABLE",
+            "Independent Casper RPC verification is not configured.",
+          );
+          return;
+        }
+        let payload;
+        try {
+          payload = decodePaymentSignatureHeader(paymentHeader);
+        } catch {
+          apiError(
+            res,
+            400,
+            "MALFORMED_PAYMENT_EVIDENCE",
+            "PAYMENT-SIGNATURE is malformed.",
+          );
+          return;
+        }
+        const evidencePayload = payload.payload as Record<string, unknown>;
+        let authorization;
+        try {
+          authorization = CasperPaymentAuthorizationSchema.parse(
+            evidencePayload.authorization,
+          );
+        } catch {
+          apiError(
+            res,
+            403,
+            "INVALID_PAYMENT_AUTHORIZATION",
+            "Payment authorization is invalid.",
+          );
+          return;
+        }
+        const issued = realRequirements.get(authorization.requestHash);
+        if (
+          !issued ||
+          issued.resource.url !==
+            `http://127.0.0.1:${cfg.port}${req.originalUrl}`
+        ) {
+          apiError(
+            res,
+            403,
+            "REQUEST_HASH_MISMATCH",
+            "Payment is not bound to this resource request.",
+          );
+          return;
+        }
+        if (
+          authorization.destination.toLowerCase() !== realPayee.toLowerCase() ||
+          authorization.amountMotes !== realAmountMotes
+        ) {
+          apiError(
+            res,
+            403,
+            "PAYMENT_TERMS_MISMATCH",
+            "Destination or amount differs from server terms.",
+          );
+          return;
+        }
+        const authorizationHash = String(
+          evidencePayload.authorizationHash ?? "",
+        );
+        const transactionHash = String(evidencePayload.transactionHash ?? "");
+        if (
+          authorizationHash !==
+            createCasperPaymentAuthorizationHash(authorization) ||
+          !/^[a-fA-F0-9]{64}$/.test(transactionHash)
+        ) {
+          apiError(
+            res,
+            403,
+            "PAYMENT_EVIDENCE_MISMATCH",
+            "Authorization hash or transaction hash is invalid.",
+          );
+          return;
+        }
+        let evidence: CasperSettlementEvidence;
+        try {
+          evidence = await options.realPaymentVerifier.verify({
+            authorization,
+            authorizationHash,
+            transactionHash,
+          });
+        } catch (error) {
+          apiError(
+            res,
+            403,
+            "SETTLEMENT_NOT_VERIFIED",
+            error instanceof Error
+              ? error.message
+              : "Settlement verification failed.",
+          );
+          return;
+        }
+        const report = generatePremiumReport("MAD-001");
+        res.setHeader(
+          X402_HEADERS.paymentResponse,
+          encodePaymentResponseHeader({
+            success: true,
+            payer: evidence.signer,
+            transaction: evidence.transactionHash,
+            network: "casper:casper-test",
+            amount: evidence.amountMotes,
+            extra: {
+              executionStatus: evidence.executionStatus,
+              verifiedAt: evidence.verifiedAt,
+            },
+          }),
+        );
+        res.json({
+          ...report,
+          transactionHash: evidence.transactionHash,
+          settlement: evidence,
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   // -----------------------------------------------------------------------
   // POST /demo/setup
@@ -788,7 +1036,31 @@ const isDirectRun = process.argv[1]
 
 if (isDirectRun && process.env.NODE_ENV !== "test") {
   const config = loadPaidApiConfig();
-  const server = createPaidApiServer(config);
+  const rpcUrl = process.env.CASPER_RPC_URL;
+  const expectedSigner = process.env.CASPER_TESTNET_PUBLIC_KEY;
+  const settlementVerifier =
+    rpcUrl && expectedSigner
+      ? new CasperSettlementVerifier(
+          new SdkCasperTransferReader(rpcUrl),
+          new MemoryConsumedTransactionStore(),
+        )
+      : undefined;
+  const server = createPaidApiServer(
+    config,
+    settlementVerifier
+      ? {
+          realPaymentVerifier: {
+            verify: ({ authorization, authorizationHash, transactionHash }) =>
+              settlementVerifier.verify({
+                authorization,
+                authorizationHash,
+                transactionHash,
+                expectedSigner: expectedSigner!,
+              }),
+          },
+        }
+      : {},
+  );
   server.listen(config.port, () => {
     console.log(`paid-api listening on http://localhost:${config.port}`);
   });
