@@ -28,6 +28,7 @@ export interface EvaluateGuardedPaymentInput {
   expectedRequestHash: string;
   expectedBodyHash: string;
   expectedAmount?: string | undefined;
+  expectedPayee?: string | undefined;
   usedNonces?: ReadonlySet<string> | undefined;
   policySignatureValid?: boolean | undefined;
   now?: Date | undefined;
@@ -279,6 +280,23 @@ export function evaluateGuardedPayment(
 
   const allowedPayees =
     policy.allowedPayees ?? (merchant ? [merchant.settlementAccount] : []);
+  if (
+    input.expectedPayee !== undefined &&
+    request.payee !== input.expectedPayee
+  ) {
+    return reject(
+      "payee_integrity",
+      "PAYEE_MISMATCH",
+      "Payee differs from the expected server-authorized destination.",
+      budgetBefore,
+    );
+  }
+  pass(
+    "payee_integrity",
+    input.expectedPayee === undefined
+      ? "No fixed payee integrity value was configured."
+      : "Payee matches the expected server-authorized destination.",
+  );
   if (!allowedPayees.includes(request.payee)) {
     return reject(
       "payee",

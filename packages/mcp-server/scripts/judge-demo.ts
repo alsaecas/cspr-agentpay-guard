@@ -1,10 +1,12 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
 
 import { createAgentPayMcpServer } from "../src/server";
 
 function parsed(result: Awaited<ReturnType<Client["callTool"]>>) {
-  const item = result.content[0];
+  const validated = CallToolResultSchema.parse(result);
+  const item = validated.content[0];
   if (!item || item.type !== "text") throw new Error("MCP tool returned no JSON text");
   return JSON.parse(item.text) as Record<string, unknown>;
 }
@@ -38,7 +40,7 @@ try {
   }));
   const evidence = parsed(await client.callTool({ name: required[2]!, arguments: {} }));
 
-  if (rwa.signerCalled || rwa.submitterCalled || allowed.signerCalled || allowed.submissionCalled) {
+  if (rwa.signerCalled || rwa.submissionCalled || allowed.signerCalled || allowed.submissionCalled) {
     throw new Error("Judge demo violated its no-spend invariant");
   }
 
@@ -49,9 +51,9 @@ try {
   console.log(`3. Policy ${allowed.decision}`);
   console.log("4. Hosted demo submitted: no");
   console.log(`5. Prompt injection ${injection.decision === "DENY" ? "DENIED" : injection.decision}`);
-  console.log(`6. Replay ${replay.reasonCode === "TRANSACTION_REPLAYED" ? "REJECTED" : replay.decision}`);
+  console.log(`6. Replay ${replay.reasonCode === "NONCE_ALREADY_USED" ? "REJECTED" : replay.decision}`);
   console.log(`7. Verified Testnet payment: ${hash.slice(0, 8)}…${hash.slice(-6)}`);
-  console.log(`8. Premium data release: ${evidence.premiumResourceReleased ? "verified" : "not verified"}`);
+  console.log(`8. Premium data release: ${evidence.verifiedTestnetPremiumResourceReleased ? "verified" : "not verified"}`);
   console.log("9. Hosted signing: disabled");
 } finally {
   await client.close();

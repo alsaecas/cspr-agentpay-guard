@@ -59,7 +59,7 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
         "Run the deterministic, no-spend judge journey from HTTP 402 through ordered policy checks and premium MAD-001 data release. Never invokes a signer.",
       inputSchema: {},
     },
-    async () => jsonResponse(runRwaDueDiligence()),
+    async () => jsonResponse(await runRwaDueDiligence()),
   );
 
   server.registerTool(
@@ -72,7 +72,8 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
         scenario: z.enum(JUDGE_SCENARIOS).default("allowed-payment"),
       },
     },
-    async ({ scenario }) => jsonResponse(evaluatePaymentScenario(scenario)),
+    async ({ scenario }) =>
+      jsonResponse(await evaluatePaymentScenario(scenario)),
   );
 
   server.registerTool(
@@ -121,8 +122,12 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
         ];
 
         if (!status.reachable) {
-          lines.unshift("⚠ paid-api unreachable — demo tools will fail.");
-          lines.push("⚠ paid-api is unreachable. Start it with: pnpm --filter @cspr-agentpay/paid-api dev");
+          lines.unshift(
+            "First-class judge tools remain available; only legacy API-backed demo tools are unavailable.",
+          );
+          lines.push(
+            "Legacy paid-api tools require: pnpm --filter @cspr-agentpay/paid-api dev",
+          );
         }
 
         lines.push("");
