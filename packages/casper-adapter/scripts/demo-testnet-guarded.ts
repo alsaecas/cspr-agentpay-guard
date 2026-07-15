@@ -30,6 +30,21 @@ const dryRun = process.argv.includes("--dry-run");
 const confirmationIndex = process.argv.indexOf("--confirm-authorization");
 const confirmation =
   confirmationIndex >= 0 ? process.argv[confirmationIndex + 1] : undefined;
+if (dryRun) {
+  const publicConfig = [
+    "CASPER_RPC_URL",
+    "X402_CASPER_PAYEE",
+    "X402_CASPER_PAYMENT_AMOUNT_MOTES",
+  ] as const;
+  const missingPublicConfig = publicConfig.filter((name) => !process.env[name]);
+  console.log("CSPR AgentPay Guard — real Testnet payment readiness");
+  console.log("mode: DRY RUN (no signing or submission)");
+  console.log(`public configuration: ${missingPublicConfig.length ? "incomplete" : "present"}`);
+  if (missingPublicConfig.length) console.log(`missing: ${missingPublicConfig.join(", ")}`);
+  console.log("No .env file or key was loaded, no request was sent, and no transaction was signed or submitted.");
+  process.exit(0);
+}
+
 const env = process.env;
 const required = [
   "CASPER_TESTNET_PUBLIC_KEY",

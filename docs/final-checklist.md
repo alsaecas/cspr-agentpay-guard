@@ -65,7 +65,7 @@
 - [x] Shot list prioritizes Judge Mode and existing evidence.
 - [x] Recording runbook prohibits live commands and secret display.
 - [x] Captions file prepared.
-- [ ] Silent browser recording generated locally; set from actual run result.
+- [x] Silent browser recording generated locally at `artifacts/video/cspr-agentpay-browser-demo.webm` and ignored by Git.
 - [ ] Voiceover and edit completed manually.
 - [ ] Video uploaded manually.
 - [ ] Public video URL added to repository and DoraHacks.
@@ -81,18 +81,18 @@
 
 ## Validation
 
-- [ ] `pnpm docs:check`
-- [ ] `pnpm typecheck`
-- [ ] `pnpm test`
-- [ ] `pnpm --filter @cspr-agentpay/mcp-server test`
-- [ ] `pnpm demo:mcp:judge`
-- [ ] `pnpm contract:test`
-- [ ] `pnpm proof:testnet:dry-run`
-- [ ] `pnpm demo:testnet:guarded:dry-run`
-- [ ] `pnpm --filter @cspr-agentpay/web build`
-- [ ] `pnpm security:check`
-- [ ] Browser routes checked at desktop and mobile widths.
-- [ ] Secret scan completed before push.
+- [x] `pnpm docs:check`
+- [x] `pnpm typecheck`
+- [x] `pnpm test`
+- [x] `pnpm --filter @cspr-agentpay/mcp-server test`
+- [x] `pnpm demo:mcp:judge`
+- [x] `pnpm contract:test`
+- [x] `pnpm proof:testnet:dry-run`
+- [x] `pnpm demo:testnet:guarded:dry-run`
+- [x] `pnpm --filter @cspr-agentpay/web build`
+- [x] `pnpm security:check`
+- [x] Browser routes checked at desktop and mobile widths.
+- [x] Secret scan completed before push.
 
 The current suite passes; see latest CI. Do not hard-code a test count here.
 

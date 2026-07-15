@@ -47,7 +47,11 @@ function loadDotEnv(path: string): void {
   }
 }
 
-loadDotEnv(resolve(repoRoot, ".env"));
+// A dry run must be safe even on a workstation that has live credentials.
+// Do not read .env unless the explicitly selected mode can submit.
+if (mode !== "dry-run") {
+  loadDotEnv(resolve(repoRoot, ".env"));
+}
 
 // ---------------------------------------------------------------------------
 // Build a sample proof payload

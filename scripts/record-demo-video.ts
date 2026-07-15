@@ -8,11 +8,12 @@ const OUTPUT_DIR = path.join(ROOT, "artifacts", "video");
 const FINAL_VIDEO = path.join(OUTPUT_DIR, "cspr-agentpay-browser-demo.webm");
 
 const VIEWPORT = { width: 1280, height: 720 } as const;
-const HOME_URL = "http://localhost:3000/";
-const JUDGE_URL = "http://localhost:3000/judge";
-const DEMO_URL = "http://localhost:3000/demo";
-const PAYMENTS_URL = "http://localhost:3000/payments";
-const AUDIT_URL = "http://localhost:3000/audit";
+const BASE_URL = (process.env.VIDEO_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+const HOME_URL = `${BASE_URL}/`;
+const JUDGE_URL = `${BASE_URL}/judge`;
+const DEMO_URL = `${BASE_URL}/demo`;
+const PAYMENTS_URL = `${BASE_URL}/payments`;
+const AUDIT_URL = `${BASE_URL}/audit`;
 
 const START_HINT = [
   "Start the dashboard first:",

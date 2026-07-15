@@ -13,6 +13,8 @@
 
 Run `pnpm video:record`. The script records only local deterministic pages and public explorer evidence. It does not call payment, proof, or deploy scripts.
 
+If port 3000 is unavailable, start the web app on another port and set `VIDEO_BASE_URL`, for example `VIDEO_BASE_URL=http://localhost:3100 pnpm video:record`.
+
 Expected output: `artifacts/video/cspr-agentpay-browser-demo.webm`.
 
 The artifact is intentionally ignored by Git. Do not upload it from automation.
