@@ -74,6 +74,30 @@ export interface GuardedPaymentRequest {
   selectedRequirement: Record<string, unknown>;
 }
 
+export const CASPER_PAYMENT_AUTHORIZATION_VERSION =
+  "agentpay-casper-payment-v1" as const;
+
+/** Immutable, canonically hashed intent signed before a Casper native transfer. */
+export interface CasperPaymentAuthorization {
+  version: typeof CASPER_PAYMENT_AUTHORIZATION_VERSION;
+  paymentId: string;
+  policyId: string;
+  agentId: string;
+  requestHash: string;
+  bodyHash: string;
+  merchantId: string;
+  destination: string;
+  network: "casper-test";
+  asset: "CSPR";
+  amountMotes: string;
+  nonce: string;
+  transferId: string;
+  issuedAt: string;
+  expiresAt: string;
+  facilitator: string;
+  requirementHash: string;
+}
+
 export interface GuardCheck {
   check: string;
   passed: boolean;
