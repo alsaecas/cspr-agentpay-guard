@@ -74,6 +74,16 @@ Expected result:
 
 ## Casper Testnet Proof Verification
 
+### Verified guarded payment
+
+- TransactionV1: [`801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f`](https://testnet.cspr.live/transaction/801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f)
+- Amount: 2.5 CSPR
+- Block: `8510676`
+- Result: successful native transfer; MAD-001 released after independent RPC verification
+- Evidence: `docs/evidence/first-guarded-testnet-payment.md`
+
+This payment settlement is separate from the Odra deployment and proof transaction below.
+
 Contract hash:
 
 ```text
@@ -116,17 +126,18 @@ Real:
 - HTTP 402 paid-resource flow and request-bound receipt verification.
 - Casper Testnet `AgentPayProofRecorder` contract deployment.
 - Casper Testnet `record_proof` transaction listed above.
+- One policy-authorized native-CSPR TransactionV1 payment and post-verification premium response.
 
-Mock:
+Hosted deterministic demo:
 
-- Payment execution and settlement state machine.
+- Repeatable allowed, prompt-injection, and replay scenario state.
 - Interactive dashboard payment proofs shown as `mock-*` values.
 
 Not claimed:
 
 - Production escrow.
 - Custody of funds.
-- Real CSPR payment settlement.
+- Mainnet or production-grade custody/settlement.
 
 ## Known Limitations
 

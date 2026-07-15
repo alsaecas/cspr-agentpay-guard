@@ -1,12 +1,13 @@
-import * as CasperSdk from "casper-js-sdk";
-import type { Transaction } from "casper-js-sdk";
+import type { RpcClient, Transaction } from "casper-js-sdk";
 
+import { classifyCasperExecution } from "./execution";
+import { CasperSdk } from "./sdk";
 import type { CasperTransactionSubmitter, TransactionStatus } from "./types";
 
 const TRANSACTION_HASH = /^[a-fA-F0-9]{64}$/;
 
 export class SdkCasperTransactionSubmitter implements CasperTransactionSubmitter {
-  readonly #client: CasperSdk.RpcClient;
+  readonly #client: RpcClient;
 
   constructor(rpcUrl: string) {
     const url = new URL(rpcUrl);
@@ -38,18 +39,7 @@ export class SdkCasperTransactionSubmitter implements CasperTransactionSubmitter
     try {
       const result =
         await this.#client.getTransactionByTransactionHash(transactionHash);
-      const raw = result.rawJSON as Record<string, unknown> | undefined;
-      const execution = raw?.execution_info ?? raw?.executionInfo;
-      if (!execution) return { status: "pending" };
-      const executionJson = JSON.stringify(execution);
-      const failed = /Failure|error_message|errorMessage/.test(executionJson);
-      return failed
-        ? {
-            status: "failed",
-            reason: "Casper execution failed",
-            raw: execution,
-          }
-        : { status: "succeeded", raw: result };
+      return classifyCasperExecution(result.executionInfo, result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/not found|NoSuchTransaction|32001/i.test(message))

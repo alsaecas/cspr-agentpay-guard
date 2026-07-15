@@ -52,7 +52,7 @@ Editing plan:
 
 "The Casper Testnet component is real. CSPR AgentPay Guard deploys an Odra AgentPayProofRecorder contract to Casper Testnet. The first CSPR.live page is the real contract deployment transaction. The second CSPR.live page is a real record_proof transaction submitted to that deployed contract. It records paymentId, requestHash, policyId, merchantId, status, and optional receiptHash on-chain."
 
-"The important distinction is this: browser payment execution is mock mode, clearly labeled and safe for demo repetition. The Casper Testnet proof transaction is real and publicly verifiable. This project does not claim production escrow, custody, or real CSPR settlement. It demonstrates controlled autonomous spending, request-bound receipts, replay protection, and a visible Casper proof anchor for AgentPay events."
+"The important distinction is this: browser scenarios are deterministic and safe for demo repetition. The guarded native-CSPR payment is a separate, real TransactionV1 that released data after RPC verification. The Odra proof transaction is also real but is a distinct audit anchor. This project does not claim production escrow, custody, Mainnet readiness, or official Casper x402 standardization."
 
 ## 0:00-0:20 | Problem
 

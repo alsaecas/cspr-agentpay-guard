@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import verifiedPayment from "../../../../../../docs/evidence/first-guarded-testnet-payment.json";
+
 export const dynamic = "force-dynamic";
 
 export function GET() {
@@ -22,5 +24,7 @@ export function GET() {
       env.AGENTPAY_REAL_RESOURCE_URL ??
       "http://127.0.0.1:4000/premium/rwa/parking-asset/MAD-001",
     hostedSigningEnabled: false,
+    gitCommit: env.VERCEL_GIT_COMMIT_SHA ?? null,
+    verifiedPayment,
   });
 }

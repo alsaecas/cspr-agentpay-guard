@@ -17,14 +17,69 @@ import {
   LocalTestnetCasperSigner,
   MemoryConsumedTransactionStore,
   RealGuardedCasperPaymentFlow,
+  classifyCasperExecution,
+  mapCasperExecutionToTransferStatus,
   pollTransaction,
   verifyCasperAuthorizationSignature,
   type CasperTransactionSubmitter,
   type ObservedCasperTransfer,
   type SignedCasperPayment,
 } from "../src/index";
+import { CasperSdk } from "../src/casper-payment/sdk";
 
 const directories: string[] = [];
+
+describe("Casper SDK runtime interop", () => {
+  it("loads constructable RPC clients", () => {
+    const handler = new CasperSdk.HttpHandler("https://example.com/rpc");
+    expect(new CasperSdk.RpcClient(handler)).toBeDefined();
+  });
+});
+
+describe("TransactionV1 execution classification", () => {
+  it.each([
+    ["absent execution info", undefined, "pending", undefined],
+    [
+      "explicit successful result",
+      { executionResult: { errorMessage: null } },
+      "succeeded",
+      undefined,
+    ],
+    [
+      "non-empty execution error",
+      { executionResult: { errorMessage: "Insufficient payment" } },
+      "failed",
+      "Insufficient payment",
+    ],
+    [
+      "empty execution error",
+      { executionResult: { errorMessage: "" } },
+      "failed",
+      "Casper execution failed",
+    ],
+    ["missing error field", { executionResult: {} }, "pending", undefined],
+    [
+      "undefined error field",
+      { executionResult: { errorMessage: undefined } },
+      "pending",
+      undefined,
+    ],
+    ["unsupported result shape", { executionResult: [] }, "pending", undefined],
+  ] as const)(
+    "classifies %s identically for polling and transfer reading",
+    (_name, execution, expectedStatus, expectedReason) => {
+      expect(classifyCasperExecution(execution)).toMatchObject({
+        status: expectedStatus,
+        ...(expectedReason ? { reason: expectedReason } : {}),
+      });
+      expect(mapCasperExecutionToTransferStatus(execution)).toEqual({
+        executionStatus: expectedStatus,
+        ...(expectedReason ? { failureReason: expectedReason } : {}),
+      });
+    },
+  );
+});
+
 afterEach(async () =>
   Promise.all(
     directories
@@ -72,6 +127,48 @@ async function tempConsumedStore() {
 }
 
 describe("file submission idempotency", () => {
+  it("clears stale failure metadata after confirmed recovery", async () => {
+    const store = await tempStore();
+    const hash = createCasperPaymentAuthorizationHash(authorization);
+    await store.prepare(hash, new Date("2030-01-01"));
+    await store.transition(hash, "failed", {
+      transactionHash: "aa".repeat(32),
+      failureReason: "false local failure",
+    });
+
+    const confirmed = await store.transition(hash, "confirmed", {
+      transactionHash: "aa".repeat(32),
+    });
+
+    expect(confirmed.failureReason).toBeUndefined();
+    expect(confirmed.state).toBe("confirmed");
+  });
+
+  it("rejects a conflicting transaction hash during recovery", async () => {
+    const store = await tempStore();
+    const hash = createCasperPaymentAuthorizationHash(authorization);
+    await store.prepare(hash, new Date("2030-01-01"));
+    await store.transition(hash, "submitted", {
+      transactionHash: "aa".repeat(32),
+    });
+
+    await expect(
+      store.transition(hash, "confirmed", {
+        transactionHash: "bb".repeat(32),
+      }),
+    ).rejects.toThrow("IDEMPOTENCY_TRANSACTION_HASH_CONFLICT");
+  });
+
+  it("cannot confirm a record without a transaction hash", async () => {
+    const store = await tempStore();
+    const hash = createCasperPaymentAuthorizationHash(authorization);
+    await store.prepare(hash, new Date("2030-01-01"));
+
+    await expect(store.transition(hash, "confirmed")).rejects.toThrow(
+      "IDEMPOTENCY_TRANSACTION_HASH_MISSING",
+    );
+  });
+
   it("creates one record under concurrency and persists transitions", async () => {
     const store = await tempStore();
     const hash = createCasperPaymentAuthorizationHash(authorization);
@@ -375,6 +472,100 @@ describe("submission and verification", () => {
         expectedSigner: authorization.destination,
       }),
     ).rejects.toThrow("TRANSACTION_EXECUTION_FAILED");
+  });
+
+  it.each([
+    ["absent", undefined],
+    ["missing error field", { executionResult: {} }],
+    ["unsupported", { executionResult: { errorMessage: 0 } }],
+  ])(
+    "does not consume or produce evidence for %s execution state",
+    async (_name, execution) => {
+      const consume = vi.fn();
+      const observed: ObservedCasperTransfer = {
+        transactionHash: "aa".repeat(32),
+        ...mapCasperExecutionToTransferStatus(execution),
+        network: "casper-test",
+        signer: authorization.destination,
+        destination: authorization.destination,
+        amountMotes: authorization.amountMotes,
+        transferId: authorization.transferId,
+      };
+      const verifier = new CasperSettlementVerifier(
+        { readTransfer: async () => observed },
+        { getAuthorizationHash: async () => undefined, consume },
+      );
+
+      await expect(
+        verifier.verify({
+          transactionHash: observed.transactionHash,
+          authorizationHash: "bb".repeat(32),
+          authorization,
+          expectedSigner: authorization.destination,
+        }),
+      ).rejects.toThrow("TRANSACTION_PENDING");
+      expect(consume).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects a classified execution failure without consuming it", async () => {
+    const consume = vi.fn();
+    const observed: ObservedCasperTransfer = {
+      transactionHash: "aa".repeat(32),
+      ...mapCasperExecutionToTransferStatus({
+        executionResult: { errorMessage: "revert" },
+      }),
+      network: "casper-test",
+      signer: authorization.destination,
+      destination: authorization.destination,
+      amountMotes: authorization.amountMotes,
+      transferId: authorization.transferId,
+    };
+    const verifier = new CasperSettlementVerifier(
+      { readTransfer: async () => observed },
+      { getAuthorizationHash: async () => undefined, consume },
+    );
+
+    await expect(
+      verifier.verify({
+        transactionHash: observed.transactionHash,
+        authorizationHash: "bb".repeat(32),
+        authorization,
+        expectedSigner: authorization.destination,
+      }),
+    ).rejects.toThrow("TRANSACTION_EXECUTION_FAILED: revert");
+    expect(consume).not.toHaveBeenCalled();
+  });
+
+  it("accepts the confirmed Testnet null-error success shape", async () => {
+    const observed: ObservedCasperTransfer = {
+      transactionHash: "aa".repeat(32),
+      ...mapCasperExecutionToTransferStatus({
+        executionResult: { errorMessage: null },
+      }),
+      network: "casper-test",
+      signer: authorization.destination,
+      destination: authorization.destination,
+      amountMotes: authorization.amountMotes,
+      transferId: authorization.transferId,
+    };
+    const consumed = new MemoryConsumedTransactionStore();
+    const verifier = new CasperSettlementVerifier(
+      { readTransfer: async () => observed },
+      consumed,
+    );
+
+    await expect(
+      verifier.verify({
+        transactionHash: observed.transactionHash,
+        authorizationHash: "bb".repeat(32),
+        authorization,
+        expectedSigner: authorization.destination,
+      }),
+    ).resolves.toMatchObject({ executionStatus: "succeeded" });
+    await expect(
+      consumed.getAuthorizationHash(observed.transactionHash),
+    ).resolves.toBe("bb".repeat(32));
   });
 });
 

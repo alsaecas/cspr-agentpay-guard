@@ -1,6 +1,6 @@
 # CSPR AgentPay Guard
 
-The first guarded native-CSPR Testnet path is available as an explicitly gated local workflow. It uses `casper-js-sdk` 5.0.12, Casper 2.0 TransactionV1, server-authoritative payment reconstruction, cryptographic authorization verification, durable replay tracking, and independent RPC verification before the premium endpoint releases data.
+AgentPay Guard completed one real, policy-authorized native-CSPR payment on Casper Testnet. The protected API released premium data only after independently reconstructing the authorization, verifying its signature, and confirming the TransactionV1 settlement through Casper RPC. [Inspect the public evidence](docs/evidence/first-guarded-testnet-payment.md).
 
 ```bash
 pnpm demo:testnet:guarded:dry-run
@@ -8,15 +8,15 @@ pnpm demo:testnet:guarded:dry-run
 
 The dry run reports every missing variable and never submits. See [the runbook](docs/real-guarded-payment-runbook.md) and [payment scheme](docs/casper-payment-scheme.md). The hosted dashboard never loads a signing key or exposes a live-spend button.
 
-CSPR AgentPay Guard is a policy-controlled payment firewall for autonomous AI agents. It demonstrates an HTTP `402 Payment Required` flow where an agent buys a protected API response only when a deterministic policy allows it, while Casper Testnet can anchor the resulting AgentPay proof data on-chain.
+CSPR AgentPay Guard is a zero-trust payment firewall for autonomous AI agents. x402 is the payment rail; AgentPay Guard is the authorization layer. An agent buys a protected API response only when deterministic policy allows it, and the resource server verifies Casper settlement before release.
 
-This is a Casper Agentic Buildathon project. The local prototype is complete and reliable in mock mode. The Casper component is an Odra `AgentPayProofRecorder` audit/proof anchor, not production escrow, custody, or real CSPR settlement.
+This is a Casper Agentic Buildathon project. Hosted scenarios remain deterministic and safe for repeatable judging. Separately, one guarded native-CSPR payment is publicly verified on Casper Testnet. The existing Odra `AgentPayProofRecorder` is another, separate audit path—not production escrow or custody.
 
 The final-round foundation uses official x402 v2 transport objects and headers through `@x402/core`, plus a project-specific native-CSPR scheme that is not an official Casper x402 standard. A deterministic `GuardedPaymentRequest` policy check runs before signing. In real mode the server reconstructs the authorization from its issued requirement, verifies an Ed25519 or Secp256k1 signature over the raw 32-byte authorization hash, independently verifies settlement, and records transaction consumption before returning premium data.
 
 ## One-Liner
 
-Autonomous agents can pay for protected APIs through HTTP 402, request-bound receipts, allowlists, spending limits, replay protection, and a Casper Testnet proof-recorder path.
+Autonomous agents can pay for protected APIs through x402 while AgentPay Guard enforces request-bound authorization, spending limits, replay protection, and independently verified Casper settlement.
 
 ## Problem
 
@@ -36,11 +36,12 @@ Autonomous Agent
   <- 402 Payment Required + PaymentRequirement
   -> Policy Engine checks merchant, resource, amount, budget, expiry, requestHash
   -> Casper Adapter
-       - mock mode: deterministic mock proof state machine
-       - testnet mode: AgentPayProofRecorder proof anchor
-  -> Retry paid API with X-AgentPay-Receipt
+       - hosted demo: deterministic mock proof state machine
+       - local real mode: signed native-CSPR TransactionV1
+  -> Retry paid API with PAYMENT-SIGNATURE
   <- Premium response
-  -> Dashboard reads audit events and proof metadata
+  <- PAYMENT-RESPONSE
+  -> Dashboard shows demo audit state and separate public settlement evidence
 ```
 
 Key boundaries:
@@ -129,8 +130,8 @@ The committed default RPC uses Casper Association's public Testnet node. CSPR.cl
 | Policy engine allowlists, resource scope, per-payment limits, budget checks | Real |
 | Paid API HTTP 402 behavior and receipt verification | Real local prototype |
 | Request-bound receipt rejection and replay protections | Real local prototype |
-| Official x402 v2 transport model and guarded fetch | Real foundation; mock settlement only |
-| Casper-capable x402 signer/facilitator | Not implemented; real adapter fails closed |
+| Official x402 v2 transport model and guarded fetch | Real |
+| Project-specific native-CSPR signer and direct RPC verifier | Real local Testnet path; not an official Casper x402 scheme |
 | Mock Casper adapter state machine | Mock, clearly labeled |
 | Dashboard audit trail | Real UI over mock/demo state, Vercel-ready through Next.js API routes |
 | `AgentPayProofRecorder` Odra contract source | Real |
@@ -140,13 +141,14 @@ The committed default RPC uses Casper Association's public Testnet node. CSPR.cl
 | `pnpm proof:testnet` | Real proof path, executed on Testnet |
 | Real Casper Testnet deployment hash | `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c` |
 | Real Casper Testnet proof transaction hash | `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409` |
+| Real guarded Testnet payment | [`801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f`](https://testnet.cspr.live/transaction/801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f) |
 | CSPR.click wallet integration | Not implemented |
 | CSPR.cloud event indexing | Not implemented |
 | Production escrow/custody/settlement | Not implemented |
 
 ## Testnet Deployment Status
 
-State: **Deployed on Casper Testnet with one proof transaction submitted**.
+State: **One guarded native-CSPR payment verified, plus a separate deployed proof recorder and proof transaction**.
 
 | Item | Status |
 |---|---|
@@ -192,7 +194,7 @@ These hashes are the real Casper Testnet anchors for the current proof-recorder 
 
 ## No Production Escrow Disclaimer
 
-CSPR AgentPay Guard does not implement production escrow, custody, or real CSPR settlement. The current Casper contract is an audit/proof recorder for AgentPay proof fields. Mock-mode `mock-*` hashes are deterministic local demo artifacts, not Casper transactions.
+CSPR AgentPay Guard does not implement production escrow, custody, Mainnet settlement, or an official Casper x402 standard. The current Casper contract is a separate audit/proof recorder for AgentPay proof fields. Mock-mode `mock-*` hashes are deterministic local demo artifacts, not Casper transactions.
 
 ## License
 

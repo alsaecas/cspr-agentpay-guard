@@ -1,6 +1,10 @@
 # Final-Round Implementation Plan
 
-Last updated: 2026-07-14
+Last updated: 2026-07-15
+
+## Milestone 3 result
+
+Milestone 3 is complete for one bounded Testnet demonstration. TransactionV1 `801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f` moved 2.5 CSPR after policy ALLOW, was independently verified through Casper RPC, and unlocked MAD-001. The hosted scenarios remain deterministic; the direct native-CSPR scheme remains project-specific and local-only.
 
 ## Current-State Architecture
 
@@ -41,15 +45,15 @@ or custody contract.
   `GuardedPaymentRequest`, deterministic guard traces, a guarded fetch pipeline,
   and a fail-closed real integration boundary.
 
-### Currently simulated or incomplete
+### Currently simulated or incomplete after the verified payment
 
-- Interactive payment authorization, signing, funds movement, settlement, and
-  payment lifecycle events are deterministic local mock behavior.
+- Hosted interactive scenario authorization and lifecycle events are deterministic
+  demo behavior. They do not sign or spend.
 - The existing broad demo uses a custom `PaymentRequirement` and
   `X-AgentPay-Receipt`; it has not yet migrated to the official x402 headers.
-- The official x402 SDK has no Casper scheme/network package. The new real
-  adapter therefore requires an injected, independently verified Casper signer
-  and Casper-capable facilitator and otherwise refuses to sign or settle.
+- The official x402 SDK has no Casper scheme/network package. The verified direct
+  native-CSPR path is therefore an AgentPay Guard scheme with local signing and
+  direct RPC verification, not an official Casper x402 facilitator.
 - The proof recorder stores one immutable record per `paymentId`, has no recorder
   allowlist, and does not prove that CSPR moved.
 - CSPR.cloud indexing, CSPR.click, payable escrow, production custody, and

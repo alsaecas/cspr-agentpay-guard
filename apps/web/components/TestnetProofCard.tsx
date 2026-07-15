@@ -55,7 +55,7 @@ export function TestnetProofCard() {
   if (!state.loaded) {
     return (
       <div className="panel">
-        <h3>Testnet Proof</h3>
+        <h3>Separate Odra Proof Recorder</h3>
         <p style={{ color: "var(--ink-dim)" }}>
           <span className="spinner" /> Loading proof status...
         </p>
@@ -66,7 +66,7 @@ export function TestnetProofCard() {
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3>Testnet Proof</h3>
+        <h3>Separate Odra Proof Recorder</h3>
         <span className="badge badge-real">CASPER TESTNET</span>
       </div>
       <p style={{ color: "var(--ink-dim)", margin: "8px 0" }}>
