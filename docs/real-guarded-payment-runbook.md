@@ -2,7 +2,7 @@
 
 ## Setup and funding
 
-Use a dedicated, low-value Casper Testnet account. Put its secret PEM outside the repository with owner-only permissions. Configure the variables documented in `.env.example`; the PEM path never reaches the browser or logs. Fund enough for the configured transfer plus network payment cost. The sample transfer is 2,500,000,000 motes (2.5 CSPR) and the builder payment limit defaults to 100,000,000 motes (0.1 CSPR), but the actual fee and minimum are network/chainspec-controlled—verify current Testnet values before approval.
+Use a dedicated, low-value Casper Testnet account. Put its secret PEM outside the repository with owner-only permissions. Configure the variables documented in `.env.example`, including the tagged `CASPER_TESTNET_PUBLIC_KEY` and `AGENTPAY_CONSUMED_TRANSACTIONS_PATH=.agentpay/consumed.real.json`; the PEM path never reaches the browser or logs. The signer may be Ed25519 or Secp256k1. Fund enough for the configured transfer plus network payment cost. The sample transfer is 2,500,000,000 motes (2.5 CSPR) and the builder payment limit defaults to 100,000,000 motes (0.1 CSPR), but the actual fee and minimum are network/chainspec-controlled—verify current Testnet values before approval.
 
 Start the paid API on port 4000, then run:
 
@@ -24,7 +24,7 @@ RPC acceptance is not success. The command polls execution, then independently r
 
 ## Timeout and duplicate safety
 
-After a timeout, do not clear state and do not repeat the transfer manually. Inspect `.agentpay/submissions.real.json`, take its transaction hash, and query Casper RPC/explorer. Re-running the same active authorization performs status lookup and cannot call submission twice. Corrupt state fails closed.
+After a timeout, do not clear state and do not repeat the transfer manually. Inspect `.agentpay/submissions.real.json`, take its transaction hash, and query Casper RPC/explorer. Re-running the same active authorization performs status lookup and cannot call submission twice. The paid API separately persists verified consumption in `.agentpay/consumed.real.json`; keep both files. Corrupt state fails closed.
 
 Clear only non-secret demo state when there is no prepared/submitted transaction under investigation:
 
@@ -32,11 +32,10 @@ Clear only non-secret demo state when there is no prepared/submitted transaction
 rm .agentpay/submissions.real.json
 ```
 
-Never delete the store to work around uncertainty. The file is local single-host durability; production would require a transactional shared database.
+Never delete either store to work around uncertainty. These files provide local single-host durability; production would require a transactional shared database. The server signs and verifies the raw 32-byte authorization hash, not its UTF-8 hexadecimal text.
 
 ## Key rotation
 
 Stop local services, resolve all pending hashes, create/fund a new dedicated Testnet key, update the public key and external PEM path together, run dry-run again, then securely retire the old key. Never copy PEM content into `.env`, command arguments, logs, screenshots, or the repository.
 
 Payment proof anchoring may be submitted afterward through the existing recorder, but it is a separate optional transaction and does not change payment settlement.
-
