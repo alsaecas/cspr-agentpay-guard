@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { NavBar } from "@/components/NavBar";
 import { ProofCard } from "@/components/ProofCard";
@@ -10,6 +10,13 @@ import type { DemoRunResult } from "@/lib/demoFlow";
 import { saveDemoRunResult } from "@/lib/demoRunCache";
 
 export default function DemoPage() {
+  const [testnetStatus, setTestnetStatus] = useState<{
+    readyForLocalDryRun: boolean;
+    payee: string | null;
+    amountMotes: string | null;
+    network: string;
+    resource: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<DemoRunResult | null>(null);
@@ -19,6 +26,13 @@ export default function DemoPage() {
     | "prompt-injection-attack"
     | "replay-attack"
   >("allowed-payment");
+
+  useEffect(() => {
+    fetch("/api/agentpay/testnet-status")
+      .then((response) => response.json())
+      .then(setTestnetStatus)
+      .catch(() => setTestnetStatus(null));
+  }, []);
 
   const run = async () => {
     setLoading(true);
@@ -189,6 +203,47 @@ export default function DemoPage() {
 
       <div className="gap">
         <TestnetProofCard />
+      </div>
+
+      <div className="gap panel" style={{ borderColor: "var(--warning)" }}>
+        <div className="panel-header">
+          <h3>Real Testnet Payment</h3>
+          <span className="badge">CASPER TESTNET · LOCAL ONLY</span>
+        </div>
+        <p style={{ color: "var(--ink-dim)" }}>
+          Hosted signing is disabled. No payment runs on page load and this
+          panel has no live-spend button.
+        </p>
+        <div className="kv">
+          <span className="kv-key">configuration</span>
+          <span className="kv-value">
+            {testnetStatus?.readyForLocalDryRun
+              ? "ready for local dry-run"
+              : "missing local configuration"}
+          </span>
+          <span className="kv-key">network</span>
+          <span className="kv-value">
+            {testnetStatus?.network ?? "casper-test"}
+          </span>
+          <span className="kv-key">payee</span>
+          <span className="kv-value">
+            {testnetStatus?.payee ?? "not configured"}
+          </span>
+          <span className="kv-key">amount</span>
+          <span className="kv-value">
+            {testnetStatus?.amountMotes
+              ? `${testnetStatus.amountMotes} motes`
+              : "not configured"}
+          </span>
+          <span className="kv-key">resource</span>
+          <span className="kv-value">
+            {testnetStatus?.resource ?? "local paid API"}
+          </span>
+          <span className="kv-key">execution</span>
+          <span className="kv-value">
+            <code>pnpm demo:testnet:guarded:dry-run</code>
+          </span>
+        </div>
       </div>
 
       {result?.premiumReport && (
