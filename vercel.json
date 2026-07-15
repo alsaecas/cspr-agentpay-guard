@@ -7,5 +7,5 @@
       "use": "@vercel/next"
     }
   ],
-  "installCommand": "pnpm install --frozen-lockfile"
+  "installCommand": "npx --yes pnpm@11.5.1 install --frozen-lockfile"
 }
