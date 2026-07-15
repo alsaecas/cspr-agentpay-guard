@@ -1,6 +1,7 @@
 import type { CasperPaymentAuthorization } from "@cspr-agentpay/protocol";
 import type { RpcClient } from "casper-js-sdk";
 
+import { mapCasperExecutionToTransferStatus } from "./execution";
 import { CasperSdk } from "./sdk";
 import type { CasperSettlementEvidence, CasperTransferReader } from "./types";
 
@@ -123,14 +124,7 @@ export class SdkCasperTransferReader implements CasperTransferReader {
       }
       return {
         transactionHash: transaction.hash.toHex().toLowerCase(),
-        executionStatus: !execution
-          ? ("pending" as const)
-          : execution.executionResult.errorMessage
-            ? ("failed" as const)
-            : ("succeeded" as const),
-        ...(execution?.executionResult.errorMessage
-          ? { failureReason: execution.executionResult.errorMessage }
-          : {}),
+        ...mapCasperExecutionToTransferStatus(execution),
         network: transaction.chainName,
         signer: signer.toLowerCase(),
         destination: target.toLowerCase(),

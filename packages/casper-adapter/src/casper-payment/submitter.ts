@@ -1,5 +1,6 @@
 import type { RpcClient, Transaction } from "casper-js-sdk";
 
+import { classifyCasperExecution } from "./execution";
 import { CasperSdk } from "./sdk";
 import type { CasperTransactionSubmitter, TransactionStatus } from "./types";
 
@@ -38,7 +39,7 @@ export class SdkCasperTransactionSubmitter implements CasperTransactionSubmitter
     try {
       const result =
         await this.#client.getTransactionByTransactionHash(transactionHash);
-      return classifyTransactionExecution(result.executionInfo, result);
+      return classifyCasperExecution(result.executionInfo, result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/not found|NoSuchTransaction|32001/i.test(message))
@@ -46,26 +47,6 @@ export class SdkCasperTransactionSubmitter implements CasperTransactionSubmitter
       throw new Error(`CASPER_STATUS_QUERY_FAILED: ${message}`);
     }
   }
-}
-
-export function classifyTransactionExecution(
-  execution:
-    | { executionResult: { errorMessage?: string | null } }
-    | null
-    | undefined,
-  raw?: unknown,
-): TransactionStatus {
-  if (!execution) return { status: "pending" };
-  const errorMessage = execution.executionResult.errorMessage;
-  if (errorMessage === null) return { status: "succeeded", raw };
-  if (typeof errorMessage === "string") {
-    return {
-      status: "failed",
-      reason: errorMessage || "Casper execution failed",
-      raw: raw ?? execution,
-    };
-  }
-  return { status: "pending" };
 }
 
 export async function pollTransaction(
