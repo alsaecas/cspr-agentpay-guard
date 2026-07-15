@@ -1,4 +1,5 @@
 import { NavBar } from "@/components/NavBar";
+import { VerifiedTestnetPaymentCard } from "@/components/VerifiedTestnetPaymentCard";
 
 export default function HomePage() {
   return (
@@ -6,10 +7,11 @@ export default function HomePage() {
       <NavBar />
 
       <div className="hero">
-        <h1>Secure Payments for Autonomous AI Agents on Casper</h1>
+        <h1>Zero-Trust Payment Firewall for Autonomous AI Agents on Casper</h1>
         <p>
-          HTTP 402 payments with policy limits, request-bound receipts, escrow,
-          and audit trails. All visible through Casper.
+          x402 is the payment rail. AgentPay Guard is the authorization layer.
+          Deterministic policy checks run before signing, and protected data is
+          released only after independently verified settlement.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <a href="/demo" className="btn btn-primary">
@@ -18,6 +20,40 @@ export default function HomePage() {
           <a href="/audit" className="btn btn-ghost">
             View Audit Trail
           </a>
+        </div>
+      </div>
+
+      <div className="gap">
+        <VerifiedTestnetPaymentCard
+          commit={process.env.VERCEL_GIT_COMMIT_SHA ?? null}
+        />
+      </div>
+
+      <h2 className="gap">Three Judge Scenarios</h2>
+      <div className="grid-3 gap">
+        <div className="panel">
+          <span className="badge badge-real">ALLOW</span>
+          <h3 style={{ marginTop: 12 }}>Allowed real payment</h3>
+          <p style={{ color: "var(--ink-dim)" }}>
+            Real Casper Testnet settlement was independently verified before
+            premium data was released.
+          </p>
+        </div>
+        <div className="panel">
+          <span className="badge badge-error">DENY</span>
+          <h3 style={{ marginTop: 12 }}>Prompt-injection attack</h3>
+          <p style={{ color: "var(--ink-dim)" }}>
+            Policy denial stops the signer. No transaction is constructed or
+            submitted.
+          </p>
+        </div>
+        <div className="panel">
+          <span className="badge badge-error">REJECTED</span>
+          <h3 style={{ marginTop: 12 }}>Replay attack</h3>
+          <p style={{ color: "var(--ink-dim)" }}>
+            A consumed transaction cannot authorize another request, and no
+            premium response is released.
+          </p>
         </div>
       </div>
 
@@ -48,9 +84,9 @@ export default function HomePage() {
         <div className="panel">
           <h3>4. Receipt unlocks premium data</h3>
           <p style={{ color: "var(--ink-dim)", margin: "8px 0 0" }}>
-            In the local demo, a clearly labelled mock receipt is bound to the
-            exact HTTP request. The API verifies it and releases premium data;
-            the separate Casper Testnet transaction records proof data only.
+            The real local Testnet path reconstructs authorization, verifies
+            its signature, confirms TransactionV1 through RPC, and only then
+            returns premium data. Hosted scenarios remain deterministic demos.
           </p>
         </div>
       </div>
@@ -79,8 +115,8 @@ export default function HomePage() {
         className="gap"
         style={{ textAlign: "center", color: "var(--ink-dim)", fontSize: 13 }}
       >
-        All proofs use deterministic <code>mock-*</code> hashes. No real Casper
-        funds are moved.
+        Hosted interactive scenarios use deterministic demo state. The verified
+        payment card above is separate public Casper Testnet evidence.
         <br />
         Terminal demo: <code>pnpm demo:mock</code>
       </div>

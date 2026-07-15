@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { NavBar } from "@/components/NavBar";
 import { ProofCard } from "@/components/ProofCard";
 import { TestnetProofCard } from "@/components/TestnetProofCard";
+import { VerifiedTestnetPaymentCard } from "@/components/VerifiedTestnetPaymentCard";
 import { Timeline } from "@/components/Timeline";
 import type { DemoRunResult } from "@/lib/demoFlow";
 import { saveDemoRunResult } from "@/lib/demoRunCache";
@@ -16,6 +17,7 @@ export default function DemoPage() {
     amountMotes: string | null;
     network: string;
     resource: string;
+    gitCommit: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -202,17 +204,24 @@ export default function DemoPage() {
       )}
 
       <div className="gap">
+        <VerifiedTestnetPaymentCard
+          commit={testnetStatus?.gitCommit ?? null}
+        />
+      </div>
+
+      <div className="gap">
         <TestnetProofCard />
       </div>
 
       <div className="gap panel" style={{ borderColor: "var(--warning)" }}>
         <div className="panel-header">
-          <h3>Real Testnet Payment</h3>
-          <span className="badge">CASPER TESTNET · LOCAL ONLY</span>
+          <h3>Local Signing Boundary</h3>
+          <span className="badge">NO HOSTED SPENDING</span>
         </div>
         <p style={{ color: "var(--ink-dim)" }}>
-          Hosted signing is disabled. No payment runs on page load and this
-          panel has no live-spend button.
+          Hosted scenarios are deterministic demo state. Hosted signing is
+          disabled, no payment runs on page load, and there is no live-spend
+          button.
         </p>
         <div className="kv">
           <span className="kv-key">configuration</span>
