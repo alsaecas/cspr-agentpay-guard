@@ -33,10 +33,10 @@ export default function HomePage() {
       <div className="grid-3 gap">
         <div className="panel">
           <span className="badge badge-real">ALLOW</span>
-          <h3 style={{ marginTop: 12 }}>Allowed real payment</h3>
+          <h3 style={{ marginTop: 12 }}>Allowed payment</h3>
           <p style={{ color: "var(--ink-dim)" }}>
-            Real Casper Testnet settlement was independently verified before
-            premium data was released.
+            The hosted deterministic scenario shows policy ALLOW. The separate
+            card above is public evidence of the real Testnet settlement.
           </p>
         </div>
         <div className="panel">

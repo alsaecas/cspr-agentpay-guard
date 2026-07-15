@@ -54,6 +54,12 @@ describe("TransactionV1 execution classification", () => {
       reason: "Insufficient payment",
     });
   });
+
+  it("keeps an execution with an unknown error field pending", () => {
+    expect(
+      classifyTransactionExecution({ executionResult: {} }).status,
+    ).toBe("pending");
+  });
 });
 
 afterEach(async () =>
@@ -118,6 +124,31 @@ describe("file submission idempotency", () => {
 
     expect(confirmed.failureReason).toBeUndefined();
     expect(confirmed.state).toBe("confirmed");
+  });
+
+  it("rejects a conflicting transaction hash during recovery", async () => {
+    const store = await tempStore();
+    const hash = createCasperPaymentAuthorizationHash(authorization);
+    await store.prepare(hash, new Date("2030-01-01"));
+    await store.transition(hash, "submitted", {
+      transactionHash: "aa".repeat(32),
+    });
+
+    await expect(
+      store.transition(hash, "confirmed", {
+        transactionHash: "bb".repeat(32),
+      }),
+    ).rejects.toThrow("IDEMPOTENCY_TRANSACTION_HASH_CONFLICT");
+  });
+
+  it("cannot confirm a record without a transaction hash", async () => {
+    const store = await tempStore();
+    const hash = createCasperPaymentAuthorizationHash(authorization);
+    await store.prepare(hash, new Date("2030-01-01"));
+
+    await expect(store.transition(hash, "confirmed")).rejects.toThrow(
+      "IDEMPOTENCY_TRANSACTION_HASH_MISSING",
+    );
   });
 
   it("creates one record under concurrency and persists transitions", async () => {

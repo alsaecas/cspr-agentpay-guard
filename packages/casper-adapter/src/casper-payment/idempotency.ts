@@ -54,6 +54,21 @@ export class FileSubmissionStore {
       if (current.state === "confirmed" && state !== "confirmed") {
         throw new Error("IDEMPOTENCY_ALREADY_CONFIRMED");
       }
+      if (
+        current.transactionHash &&
+        update.transactionHash &&
+        current.transactionHash.toLowerCase() !==
+          update.transactionHash.toLowerCase()
+      ) {
+        throw new Error("IDEMPOTENCY_TRANSACTION_HASH_CONFLICT");
+      }
+      if (
+        (state === "submitted" || state === "confirmed") &&
+        !current.transactionHash &&
+        !update.transactionHash
+      ) {
+        throw new Error("IDEMPOTENCY_TRANSACTION_HASH_MISSING");
+      }
       const stable = { ...current };
       if (state === "confirmed") delete stable.failureReason;
       const record: SubmissionRecord = {

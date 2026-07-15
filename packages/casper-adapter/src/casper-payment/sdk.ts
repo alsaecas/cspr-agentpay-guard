@@ -8,5 +8,25 @@ const defaultExport = (
   CasperSdkNamespace as unknown as { default?: CasperSdkApi }
 ).default;
 
-export const CasperSdk =
+const normalizedSdk =
   defaultExport ?? (CasperSdkNamespace as unknown as CasperSdkApi);
+
+const requiredExports = [
+  "AccountHash",
+  "HttpHandler",
+  "KeyAlgorithm",
+  "NativeTransferBuilder",
+  "PrivateKey",
+  "PublicKey",
+  "RpcClient",
+  "Timestamp",
+  "TransactionEntryPointEnum",
+] as const;
+
+for (const name of requiredExports) {
+  if (normalizedSdk[name] == null) {
+    throw new Error(`CASPER_SDK_EXPORT_MISSING:${name}`);
+  }
+}
+
+export const CasperSdk = normalizedSdk;

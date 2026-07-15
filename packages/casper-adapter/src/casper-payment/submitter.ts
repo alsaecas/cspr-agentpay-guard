@@ -57,9 +57,15 @@ export function classifyTransactionExecution(
 ): TransactionStatus {
   if (!execution) return { status: "pending" };
   const errorMessage = execution.executionResult.errorMessage;
-  return errorMessage
-    ? { status: "failed", reason: errorMessage, raw: raw ?? execution }
-    : { status: "succeeded", raw };
+  if (errorMessage === null) return { status: "succeeded", raw };
+  if (typeof errorMessage === "string") {
+    return {
+      status: "failed",
+      reason: errorMessage || "Casper execution failed",
+      raw: raw ?? execution,
+    };
+  }
+  return { status: "pending" };
 }
 
 export async function pollTransaction(
