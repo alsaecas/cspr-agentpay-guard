@@ -1,5 +1,9 @@
 # Environment and secrets
 .env
+.agentpay/*.real.json
+.agentpay/*.mock.json
+.agentpay/*.tmp
+*.pem
 .env.*
 !.env.example
 *.pem

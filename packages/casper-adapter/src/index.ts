@@ -6,3 +6,4 @@ export * from "./types";
 export * from "./x402";
 export * from "./guarded-fetch";
 export * from "./scenarios";
+export * from "./casper-payment/index";

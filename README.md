@@ -1,10 +1,18 @@
 # CSPR AgentPay Guard
 
+The first guarded native-CSPR Testnet path is available as an explicitly gated local workflow. It uses `casper-js-sdk` 5.0.12, Casper 2.0 TransactionV1, server-authoritative payment reconstruction, cryptographic authorization verification, durable replay tracking, and independent RPC verification before the premium endpoint releases data.
+
+```bash
+pnpm demo:testnet:guarded:dry-run
+```
+
+The dry run reports every missing variable and never submits. See [the runbook](docs/real-guarded-payment-runbook.md) and [payment scheme](docs/casper-payment-scheme.md). The hosted dashboard never loads a signing key or exposes a live-spend button.
+
 CSPR AgentPay Guard is a policy-controlled payment firewall for autonomous AI agents. It demonstrates an HTTP `402 Payment Required` flow where an agent buys a protected API response only when a deterministic policy allows it, while Casper Testnet can anchor the resulting AgentPay proof data on-chain.
 
 This is a Casper Agentic Buildathon project. The local prototype is complete and reliable in mock mode. The Casper component is an Odra `AgentPayProofRecorder` audit/proof anchor, not production escrow, custody, or real CSPR settlement.
 
-The final-round foundation also supports official x402 v2 transport objects and headers through `@x402/core`. A deterministic `GuardedPaymentRequest` policy check runs before any signer or facilitator call. Casper x402 settlement is not yet live because the official x402 SDK currently has no Casper scheme package; real mode fails closed until a verified Casper signer and facilitator are supplied.
+The final-round foundation uses official x402 v2 transport objects and headers through `@x402/core`, plus a project-specific native-CSPR scheme that is not an official Casper x402 standard. A deterministic `GuardedPaymentRequest` policy check runs before signing. In real mode the server reconstructs the authorization from its issued requirement, verifies an Ed25519 or Secp256k1 signature over the raw 32-byte authorization hash, independently verifies settlement, and records transaction consumption before returning premium data.
 
 ## One-Liner
 
@@ -102,6 +110,7 @@ CASPER_NODE_SSE_URL=
 
 CASPER_TESTNET_PUBLIC_KEY=<public_key_hex>
 CASPER_TESTNET_SECRET_KEY_PATH=/absolute/path/to/secret_key.pem
+AGENTPAY_CONSUMED_TRANSACTIONS_PATH=.agentpay/consumed.real.json
 CASPER_AGENTPAY_CONTRACT_HASH=<contract_hash_after_deployment>
 CASPER_AGENTPAY_CONTRACT_PACKAGE_HASH=<package_hash_after_deployment>
 

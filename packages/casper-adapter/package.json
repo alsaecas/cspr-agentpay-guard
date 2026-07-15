@@ -17,6 +17,7 @@
   "dependencies": {
     "@cspr-agentpay/policy": "workspace:*",
     "@cspr-agentpay/protocol": "workspace:*",
-    "@x402/core": "2.18.0"
+    "@x402/core": "2.18.0",
+    "casper-js-sdk": "5.0.12"
   }
 }

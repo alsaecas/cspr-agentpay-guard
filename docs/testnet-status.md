@@ -136,3 +136,8 @@ If it does not print a real hash, do not document one.
 - CSPR.click is not implemented.
 - The proof-recorder contract is not payable escrow.
 - Mock-mode hashes are deterministic local `mock-*` values and must never be shown as Casper transaction hashes.
+# Real guarded payment status
+
+Implemented dependency-independent pieces: canonical native-CSPR authorization, server-authoritative reconstruction of issued payment terms, Ed25519/Secp256k1 authorization-signature verification over raw hash bytes, SDK 5.0.12 TransactionV1 signing, atomic file idempotency, durable consumed-transaction replay defense, exact-once coordination, bounded submission polling, RPC transfer reading, independent settlement verification, official x402 v2 headers, a dedicated premium endpoint, dry-run/live-gated CLI, and a hosted-safe dashboard status panel.
+
+No new live payment has been submitted in this milestone. The existing proof-recorder deployment/evidence remains separate. Local credentials, a funded Testnet signer, configured payee, and reachable RPC are still required before a live validation can be authorized.
