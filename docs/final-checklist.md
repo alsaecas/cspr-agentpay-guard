@@ -82,15 +82,15 @@
 ## Validation
 
 - [x] `pnpm docs:check`
-- [ ] `pnpm typecheck` — rerun from the final clean worktree.
-- [ ] `pnpm test` — rerun from the final clean worktree.
-- [ ] `pnpm --filter @cspr-agentpay/mcp-server test`
-- [ ] `pnpm demo:mcp:judge`
-- [ ] `pnpm contract:test`
-- [ ] `pnpm proof:testnet:dry-run`
-- [ ] `pnpm demo:testnet:guarded:check`
-- [ ] `pnpm --filter @cspr-agentpay/web build`
-- [ ] `pnpm security:check`
+- [x] `pnpm typecheck` — passed from the final clean worktree.
+- [x] `pnpm test` — passed from the final clean worktree.
+- [x] `pnpm --filter @cspr-agentpay/mcp-server test`
+- [x] `pnpm demo:mcp:judge`
+- [x] `pnpm contract:test`
+- [x] `pnpm proof:testnet:dry-run`
+- [x] `pnpm demo:testnet:guarded:check`
+- [x] `pnpm --filter @cspr-agentpay/web build`
+- [x] `pnpm security:check`
 - [x] Browser routes checked at desktop and mobile widths.
 - [x] Secret scan completed before push.
 
