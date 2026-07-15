@@ -28,7 +28,9 @@ export function VerifiedTestnetPaymentCard({
         <span className="kv-value">2.5 CSPR</span>
         <span className="kv-key">payer</span>
         <span className="kv-value">{evidence.signerAccountHash}</span>
-        <span className="kv-key">payee</span>
+        <span className="kv-key">payee public key</span>
+        <span className="kv-value">{evidence.payee}</span>
+        <span className="kv-key">payee account hash</span>
         <span className="kv-value">{evidence.payeeAccountHash}</span>
         <span className="kv-key">block height</span>
         <span className="kv-value">{evidence.blockHeight}</span>

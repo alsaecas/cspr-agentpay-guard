@@ -33,7 +33,7 @@ Open `http://localhost:3000/judge`. No key, paid API, or Testnet credential is r
 
 ## What the MCP command proves
 
-The command creates a real SDK MCP client and server over an in-memory transport. It lists tools and invokes:
+The command creates a real SDK MCP client and server over an in-memory transport. The tools call the product's existing guarded x402 implementation rather than duplicating decision results. It lists tools and invokes:
 
 - the MAD-001 RWA journey;
 - an allowed requirement;
@@ -55,7 +55,7 @@ Malicious model output attempts to change the payee or amount. The guard returns
 
 ### Replay
 
-A consumed transaction cannot unlock a repeated or different request. The guard rejects it and releases no premium response.
+A consumed requirement nonce cannot unlock a repeated request. The guard returns `NONCE_ALREADY_USED` and releases no deterministic premium response.
 
 ## Existing real payment
 
@@ -74,7 +74,7 @@ Do not submit another proof to review this evidence.
 | Surface | Meaning |
 |---|---|
 | Hosted Judge Mode | Deterministic, repeatable, no funds |
-| MCP judge command | Real MCP protocol, deterministic no-spend tools |
+| MCP judge command | Real MCP protocol and actual guard logic with an injected no-spend adapter |
 | Guarded payment evidence | One real verified Casper Testnet TransactionV1 |
 | Odra proof recorder | Separate real audit/proof transaction |
 | Native-CSPR x402 payload | Project-specific, not official Casper standardization |

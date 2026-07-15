@@ -40,7 +40,7 @@ Official x402 v2 transport objects and headers are used through `@x402/core`. Th
 
 ## MCP integration
 
-The project owns an MCP server built with the official Model Context Protocol SDK. The real MCP protocol exposes the MAD-001 journey, safe payment evaluation, public Testnet evidence, and security invariants. It is not an official Casper MCP server.
+The project owns an MCP server built with the official Model Context Protocol SDK. Its judge tools invoke the existing guarded x402 normalization, policy engine, no-spend adapter, paid retry, and PAYMENT-RESPONSE verification. They expose the MAD-001 journey, adversarial evaluation, public Testnet evidence, and security invariants. It is not an official Casper MCP server.
 
 ```bash
 pnpm demo:mcp:judge
@@ -50,7 +50,7 @@ The command uses an actual MCP client/server connection and requires no key, cre
 
 ## Casper integration
 
-One native-CSPR TransactionV1 transferred 2.5 CSPR exactly once on Casper Testnet. The resource server independently verified execution, signer, payee, amount, transfer ID, and request binding before releasing premium MAD-001 data.
+One native-CSPR TransactionV1 transferred 2.5 CSPR exactly once on Casper Testnet. The requirement destination was the tagged public key `01e16a6a8992000821589fc26d00bc63c1c06e636765e27bba3b8df99f302c8ec6`; its derived account hash is `40ccfcd1c883b9b6241dc73dba2c13e852b9ea859bc50c244dbb940f63f297b4`. The resource server independently verified execution, signer, payee, amount, transfer ID, and request binding before releasing premium MAD-001 data.
 
 The Odra `AgentPayProofRecorder` is a separate public audit/proof path. It is not the payment, settlement, escrow, or custody.
 
@@ -67,7 +67,7 @@ The Odra `AgentPayProofRecorder` is a separate public audit/proof path. It is no
 | Capability | Status |
 |---|---|
 | Policy engine, request binding, x402 transport, MCP protocol | Real implementation |
-| Hosted Judge Mode | Deterministic and no-spend |
+| Hosted Judge Mode | Actual guard code with deterministic no-spend adapter and deterministic premium response |
 | Guarded Testnet payment | One real independently verified TransactionV1 |
 | Odra proof recorder | Separate real deployment and existing proof |
 | Native-CSPR scheme | Project-specific |

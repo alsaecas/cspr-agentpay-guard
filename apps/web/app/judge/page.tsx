@@ -73,7 +73,7 @@ export default function JudgePage() {
             <span className="badge badge-error">REJECTED</span>
             <h3>3. Replay attack</h3>
             <p>A consumed transaction cannot authorize a different or repeated request.</p>
-            <ul><li>Reason: <code>TRANSACTION_REPLAYED</code></li><li>No premium data</li><li>No submission</li></ul>
+            <ul><li>Reason: <code>NONCE_ALREADY_USED</code></li><li>No premium data</li><li>No submission</li></ul>
           </article>
         </div>
       </section>
@@ -88,7 +88,7 @@ export default function JudgePage() {
           <span className="badge badge-mode">REAL MCP PROTOCOL</span>
         </div>
         <p className="section-lede">
-          A project-owned MCP server built with the official Model Context Protocol SDK exposes the guard to MCP-compatible agents. The judge workflow is deterministic and no-spend.
+          A project-owned MCP server built with the official Model Context Protocol SDK invokes the same normalization, policy, x402 retry, and PAYMENT-RESPONSE verification used by the product. Its injected adapter is deterministic and no-spend.
         </p>
         <div className="grid-2">
           <div>

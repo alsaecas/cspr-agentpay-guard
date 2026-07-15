@@ -24,7 +24,7 @@ No scene submits a payment or proof. Browser and terminal footage use public evi
 
 **Visual:** MAD-001 hero and terminal running `pnpm demo:mcp:judge`.
 
-**Voiceover:** “Our autonomous RWA due-diligence agent needs a premium report for tokenized parking asset MAD-001. The provider returns HTTP 402. An MCP-compatible agent calls our project-owned server, built with the official Model Context Protocol SDK. The hosted judge flow is deterministic and no-spend: it uses the real MCP protocol, but no signer or submitter.”
+**Voiceover:** “Our autonomous RWA due-diligence agent needs a premium report for tokenized parking asset MAD-001. The provider returns HTTP 402. An MCP-compatible agent calls our project-owned server, built with the official Model Context Protocol SDK. Those tools invoke the product’s actual normalization and policy engine, then use an injected no-spend adapter for the x402 retry and deterministic premium response.”
 
 **On-screen:**
 
@@ -39,7 +39,7 @@ Hosted signing: disabled
 
 **Visual:** Prompt-injection and replay cards; optionally switch interactive demo scenarios.
 
-**Voiceover:** “Now malicious model output attempts to substitute the payee. The authoritative requirement does not match, so policy returns PAYEE_MISMATCH. The signer is never called and budget does not change. A consumed transaction is also rejected as a replay, and no premium data is released.”
+**Voiceover:** “Now malicious model output attempts to substitute the payee. The authoritative tagged public-key destination does not match, so the guard returns PAYEE_MISMATCH. The signer is never called and budget does not change. A consumed requirement nonce returns NONCE_ALREADY_USED, and no deterministic premium response is released.”
 
 **On-screen:** `DENY · signerCalled=false · submissionCalled=false`
 

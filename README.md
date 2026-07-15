@@ -65,7 +65,7 @@ pnpm install
 pnpm demo:mcp:judge
 ```
 
-The command starts an actual MCP server and client over an SDK-supported transport, discovers tools, and invokes the RWA, allowed, prompt-injection, replay, and evidence paths. It does not require the paid API, a private key, or Testnet credentials.
+The command starts an actual MCP server and client over an SDK-supported transport. Its tools execute the existing `guardedFetch` path: x402 requirement decoding, normalization, real policy evaluation, an injected no-spend settlement adapter, PAYMENT-SIGNATURE retry, PAYMENT-RESPONSE verification, and deterministic premium response. It does not require the paid API, a private key, or Testnet credentials.
 
 First-class tools:
 
@@ -153,7 +153,7 @@ The transport uses official x402 v2 objects and headers. The `agentpay-casper-na
 
 ## Validation
 
-The current suite passes; see latest CI. High-risk paths cover policy allow/deny, request binding, expiry, budget, duplicate settlement, deterministic Casper events, guarded Testnet verification, MCP client/server handshake, no-spend guarantees, and Judge Mode content.
+See the latest CI for current status. High-risk paths cover policy allow/deny, request binding, expiry, budget, duplicate settlement, deterministic Casper events, guarded Testnet verification, MCP client/server handshake, no-spend guarantees, and rendered Judge Mode content.
 
 ## Final submission package
 

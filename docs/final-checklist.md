@@ -82,19 +82,19 @@
 ## Validation
 
 - [x] `pnpm docs:check`
-- [x] `pnpm typecheck`
-- [x] `pnpm test`
-- [x] `pnpm --filter @cspr-agentpay/mcp-server test`
-- [x] `pnpm demo:mcp:judge`
-- [x] `pnpm contract:test`
-- [x] `pnpm proof:testnet:dry-run`
-- [x] `pnpm demo:testnet:guarded:dry-run`
-- [x] `pnpm --filter @cspr-agentpay/web build`
-- [x] `pnpm security:check`
+- [ ] `pnpm typecheck` — rerun from the final clean worktree.
+- [ ] `pnpm test` — rerun from the final clean worktree.
+- [ ] `pnpm --filter @cspr-agentpay/mcp-server test`
+- [ ] `pnpm demo:mcp:judge`
+- [ ] `pnpm contract:test`
+- [ ] `pnpm proof:testnet:dry-run`
+- [ ] `pnpm demo:testnet:guarded:check`
+- [ ] `pnpm --filter @cspr-agentpay/web build`
+- [ ] `pnpm security:check`
 - [x] Browser routes checked at desktop and mobile widths.
 - [x] Secret scan completed before push.
 
-The current suite passes; see latest CI. Do not hard-code a test count here.
+See latest CI for current status. Do not hard-code a test count here.
 
 ## Remaining manual steps
 

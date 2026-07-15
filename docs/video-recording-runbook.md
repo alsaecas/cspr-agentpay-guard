@@ -11,7 +11,7 @@
 
 ## Record the silent browser clip
 
-Run `pnpm video:record`. The script records only local deterministic pages and public explorer evidence. It does not call payment, proof, or deploy scripts.
+Run `pnpm video:record`. The script records only the local homepage, Judge Mode, and deterministic demo scenarios. It excludes empty Payments and Audit pages and does not call payment, proof, or deploy scripts.
 
 If port 3000 is unavailable, start the web app on another port and set `VIDEO_BASE_URL`, for example `VIDEO_BASE_URL=http://localhost:3100 pnpm video:record`.
 
@@ -19,9 +19,14 @@ Expected output: `artifacts/video/cspr-agentpay-browser-demo.webm`.
 
 The artifact is intentionally ignored by Git. Do not upload it from automation.
 
-## Optional terminal insert
+## Separate editing inserts
 
-In a clean terminal run `pnpm demo:mcp:judge`. This uses a real MCP SDK client/server connection but no signer, submitter, paid API, key, or Testnet credential.
+Capture these separately; browser automation intentionally does not attempt to record terminal output or external explorer pages:
+
+1. In a clean terminal run `pnpm demo:mcp:judge`. This uses a real MCP SDK client/server connection and the actual deterministic guard flow with a no-spend adapter.
+2. Open the existing CSPR.live payment transaction.
+3. Open the existing Odra contract deployment.
+4. Open the existing proof transaction.
 
 ## Manual quality check
 

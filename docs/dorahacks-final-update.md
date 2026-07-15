@@ -30,11 +30,11 @@ The guarded path uses official x402 v2 transport objects and `PAYMENT-REQUIRED`,
 
 ## How MCP is used
 
-The project owns an MCP server built with the official Model Context Protocol SDK. MCP-compatible agents can run the MAD-001 journey, evaluate safe and adversarial requirements, read public Testnet evidence, and inspect security invariants. `pnpm demo:mcp:judge` performs a real MCP client/server handshake and never calls a signer or submitter.
+The project owns an MCP server built with the official Model Context Protocol SDK. MCP-compatible agents run the existing guarded x402 normalization, policy evaluation, no-spend settlement adapter, paid retry, and PAYMENT-RESPONSE verification. `pnpm demo:mcp:judge` performs a real MCP client/server handshake and never constructs or calls a real signer or submitter.
 
 ## Casper integration
 
-One real policy-authorized native-CSPR TransactionV1 transferred 2.5 CSPR exactly once on Casper Testnet. The resource server independently verified the expected signer, payee, amount, transfer ID, execution success, and request-bound authorization before returning premium data. A separate Odra `AgentPayProofRecorder` provides public audit/proof evidence and is not payment settlement.
+One real policy-authorized native-CSPR TransactionV1 transferred 2.5 CSPR exactly once on Casper Testnet. The exact authorization destination was the tagged public key `01e16a6a8992000821589fc26d00bc63c1c06e636765e27bba3b8df99f302c8ec6`, whose derived account hash is `40ccfcd1c883b9b6241dc73dba2c13e852b9ea859bc50c244dbb940f63f297b4`. The resource server independently verified the expected signer, payee, amount, transfer ID, execution success, and request-bound authorization before returning premium data. A separate Odra `AgentPayProofRecorder` provides public audit/proof evidence and is not payment settlement.
 
 ## Architecture
 
@@ -60,7 +60,7 @@ Agent task → HTTP 402 → requirement normalization → deterministic guard �
 
 ## What remains deterministic
 
-The public hosted scenarios and MCP judge journey are safe, repeatable simulations. They invoke no signer, load no private key, submit no transaction, and move no funds. They demonstrate policy decisions rather than pretending to be new settlement.
+The public hosted scenarios and MCP judge journey execute the actual guard code with an injected no-spend adapter and deterministic premium response. They invoke no real signer, load no private key, submit no transaction, and move no funds. The historical real Testnet premium release remains separate public evidence.
 
 ## Transaction evidence
 

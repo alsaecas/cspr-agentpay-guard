@@ -12,8 +12,6 @@ const BASE_URL = (process.env.VIDEO_BASE_URL ?? "http://localhost:3000").replace
 const HOME_URL = `${BASE_URL}/`;
 const JUDGE_URL = `${BASE_URL}/judge`;
 const DEMO_URL = `${BASE_URL}/demo`;
-const PAYMENTS_URL = `${BASE_URL}/payments`;
-const AUDIT_URL = `${BASE_URL}/audit`;
 
 const START_HINT = [
   "Start the dashboard first:",
@@ -132,19 +130,17 @@ async function record() {
   try {
     await gotoLocal(page, HOME_URL, 3500);
     await gotoLocal(page, JUDGE_URL, 3000);
-    await focusSection(page, "Three decisions a judge can verify");
+    await focusSection(page, "60-second architecture");
     await focusSection(page, "Verified Testnet Payment");
     await focusSection(page, "MCP Agent Interface");
     await focusSection(page, "Real versus hosted");
-    await focusSection(page, "Separate Odra Proof Recorder");
 
     await gotoLocal(page, DEMO_URL, 2000);
     await runScenario(page, "allowed-payment", "Guard Decision: ALLOW");
     await runScenario(page, "prompt-injection-attack", "Guard Decision: DENY");
     await runScenario(page, "replay-attack", "Guard Decision: DENY");
-    await gotoLocal(page, PAYMENTS_URL, 4500);
-    await gotoLocal(page, AUDIT_URL, 4500);
     await gotoLocal(page, JUDGE_URL, 2500);
+    await focusSection(page, "Separate Odra Proof Recorder");
     await focusSection(page, "Judge links", 4500);
   } finally {
     const video = page.video();

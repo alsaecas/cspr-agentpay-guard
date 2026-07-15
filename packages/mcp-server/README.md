@@ -8,7 +8,7 @@ This project-owned server exposes CSPR AgentPay Guard through the official Model
 pnpm demo:mcp:judge
 ```
 
-The command creates an actual MCP client and server over an SDK-supported in-memory transport, discovers the tools, invokes allowed and adversarial scenarios, reads public Testnet evidence, verifies the no-spend invariant, and closes both endpoints cleanly.
+The command creates an actual MCP client and server over an SDK-supported in-memory transport. Tool calls execute the existing guarded x402 normalization, policy evaluation, injected no-spend settlement adapter, PAYMENT-SIGNATURE retry, and PAYMENT-RESPONSE verification before the endpoints close cleanly.
 
 It requires no paid API, private key, signer, Casper credentials, or funds.
 
