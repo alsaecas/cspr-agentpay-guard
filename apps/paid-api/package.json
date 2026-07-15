@@ -18,6 +18,7 @@
   "dependencies": {
     "@cspr-agentpay/casper-adapter": "workspace:*",
     "@cspr-agentpay/protocol": "workspace:*",
+    "@x402/core": "2.18.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2"
   },
