@@ -1,5 +1,13 @@
 # CSPR AgentPay Guard
 
+The first guarded native-CSPR Testnet path is available as an explicitly gated local workflow. It uses `casper-js-sdk` 5.0.12, Casper 2.0 TransactionV1, atomic idempotency, and independent RPC verification before the premium endpoint releases data.
+
+```bash
+pnpm demo:testnet:guarded:dry-run
+```
+
+The dry run reports every missing variable and never submits. See [the runbook](docs/real-guarded-payment-runbook.md) and [payment scheme](docs/casper-payment-scheme.md). The hosted dashboard never loads a signing key or exposes a live-spend button.
+
 CSPR AgentPay Guard is a policy-controlled payment firewall for autonomous AI agents. It demonstrates an HTTP `402 Payment Required` flow where an agent buys a protected API response only when a deterministic policy allows it, while Casper Testnet can anchor the resulting AgentPay proof data on-chain.
 
 This is a Casper Agentic Buildathon project. The local prototype is complete and reliable in mock mode. The Casper component is an Odra `AgentPayProofRecorder` audit/proof anchor, not production escrow, custody, or real CSPR settlement.

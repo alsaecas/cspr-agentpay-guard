@@ -109,3 +109,16 @@ Status:
 
 1. Record the demo video using `docs/video-script.md`.
 2. Submit DoraHacks.
+# Milestone 2 guarded Testnet gate
+
+- [x] Native CSPR TransactionV1 scheme documented
+- [x] Canonical authorization and fixed hash vector
+- [x] Signer secret failures are redacted
+- [x] Real/mock idempotency stores separated and ignored
+- [x] Independent destination, amount, signer, network and transfer-ID verification
+- [x] Premium endpoint rejects legacy receipt and unverified evidence
+- [x] Dry run submits nothing and reports missing configuration
+- [x] Hosted dashboard cannot sign
+- [ ] Full configured dry run reviewed with exact intent
+- [ ] Explicit user confirmation received
+- [ ] One live Testnet payment submitted and explorer-verified

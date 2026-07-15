@@ -229,3 +229,6 @@ Run on 2026-07-14 before implementation:
 | `pnpm proof:testnet:dry-run` | pass; no submission | repository; credentials intentionally unnecessary |
 | `pnpm --filter @cspr-agentpay/web build` | pass | repository |
 | `pnpm security:check` | pass | repository |
+# Milestone 2 update
+
+The first real guarded payment path is implemented as a narrow local Testnet workflow. Live execution remains intentionally blocked at the explicit authorization-hash confirmation gate. Proof-recorder anchoring is optional follow-up and never gates premium release after verified settlement.

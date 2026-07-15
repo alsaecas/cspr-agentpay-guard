@@ -135,3 +135,10 @@ Not claimed:
 - The Casper contract is a proof recorder, not payable escrow.
 - Real Testnet deploy/proof commands require a funded Testnet key and local `.env`; CI only runs `proof:testnet:dry-run`.
 - Demo video URL is pending until the final public video is uploaded.
+# Real Testnet judge path
+
+1. Start the paid API locally and open the demo dashboard.
+2. Run `pnpm demo:testnet:guarded:dry-run` and show every policy check plus the exact signer, payee, motes, network, resource, authorization hash and TransactionV1 hash.
+3. After explicit approval only, run the printed `--confirm-authorization <hash>` command.
+4. Show RPC execution evidence and the CSPR.live transaction page.
+5. Retry the premium resource with PAYMENT-SIGNATURE and show PAYMENT-RESPONSE. Explain that the server independently re-read Casper RPC before returning the report.

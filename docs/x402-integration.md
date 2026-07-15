@@ -139,3 +139,8 @@ Primary references:
 - https://docs.x402.org/core-concepts/client-server
 - https://github.com/x402-foundation/x402
 - https://docs.casper.network/condor/transactions
+# Direct Casper Testnet scheme
+
+Milestone 2 adds the project-specific `agentpay-casper-native-v1` payload inside official x402 v2 headers. `PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE`, and `PAYMENT-RESPONSE` remain official x402 transport. The Casper network selector, canonical authorization, direct TransactionV1 transfer, and RPC verifier are AgentPay Guard behavior; they are not represented as an official Casper x402 scheme or facilitator.
+
+The real endpoint is `GET /premium/rwa/parking-asset/MAD-001`. It does not accept `X-AgentPay-Receipt` and releases data only through an injected independent Casper verifier.
