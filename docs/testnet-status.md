@@ -1,147 +1,78 @@
-# Casper Testnet Integration Status
+# Casper Testnet Status
 
-Last updated: 2026-07-15
+## Current state
 
-## Current State
+The project has two separate public Casper Testnet evidence paths:
 
-State D — **First guarded native-CSPR payment independently verified on Casper Testnet**.
+1. one policy-authorized native-CSPR payment; and
+2. one Odra proof-recorder deployment with an existing proof transaction.
 
-The repository has a buildable Odra proof-recorder contract, generated wasm/schema artifacts, a guarded Testnet deploy command, and a guarded real proof submission command. The `AgentPayProofRecorder` contract is deployed on Casper Testnet, and one `record_proof` call has executed successfully.
+They are not the same transaction and must not be described as the same settlement event.
 
-The guarded payment is TransactionV1 `801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f`, executed successfully in block `8510676`. The existing Odra deployment and proof call remain separate transactions and do not establish payment settlement.
-
-## Status Table
-
-| Item | Status | Evidence |
-|---|---|---|
-| Contract source | Done | `contracts/agentpay-guard/src/lib.rs` |
-| Odra project manifest | Done | `contracts/agentpay-guard/Odra.toml` |
-| Contract wasm artifact | Done | `contracts/agentpay-guard/wasm/AgentPayProofRecorder.wasm` |
-| Contract schema artifact | Done | `contracts/agentpay-guard/resources/casper_contract_schemas/agent_pay_proof_recorder_schema.json` |
-| Contract check | Done | `pnpm contract:check` passes |
-| Contract build | Done | `pnpm contract:build` passes |
-| Proof dry-run | Done | `pnpm proof:testnet:dry-run` passes |
-| Real Testnet deployment | Done | [CSPR.live deploy](https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c) |
-| Real proof transaction | Done | [CSPR.live proof](https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409) |
-| Guarded native-CSPR payment | Verified | [CSPR.live transaction](https://testnet.cspr.live/transaction/801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f) |
-| Payment amount | Verified | `2,500,000,000` motes |
-| Payment block | Verified | `8510676` |
-| Premium resource | Released | MAD-001 after RPC verification |
-| Contract hash | Done | `2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01` |
-| Package hash | Done | `d5587b9875c2e1090d65dd20bdd8eade6f3f8d97792525ecffc3b90506aef010` |
-| Deployment transaction | Done | `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c` |
-| Proof transaction | Done | `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409` |
-
-## What The Contract Records
-
-`AgentPayProofRecorder.record_proof` records:
-
-- `payment_id`
-- `request_hash`
-- `policy_id`
-- `merchant_id`
-- `status`
-- optional `receipt_hash`
-- caller address
-- block time
-
-Validation:
-
-- Empty `payment_id` is rejected.
-- Empty `request_hash` is rejected.
-- Duplicate `payment_id` is rejected.
-- Status must be one of `authorized`, `escrowed`, `fulfilled`, or `settled`.
-
-This is a proof/audit anchor. It does not transfer CSPR, custody funds, or implement production escrow.
-
-## Commands
-
-```bash
-pnpm proof:testnet:dry-run
-pnpm contract:check
-pnpm contract:build
-pnpm contract:deploy:testnet
-pnpm proof:testnet
-```
-
-Expected behavior without credentials:
-
-- `proof:testnet:dry-run` succeeds and submits nothing.
-- `contract:deploy:testnet` fails with missing key setup instructions.
-- `proof:testnet` fails with missing key/contract hash setup instructions.
-
-## Required Environment
-
-Copy `.env.example` to `.env` and fill only local secrets. Never commit `.env` or PEM files.
-
-```bash
-CASPER_NETWORK=casper-test
-CASPER_RPC_URL=https://node.testnet.casper.network/rpc
-CASPER_NODE_SSE_URL=
-
-CASPER_TESTNET_PUBLIC_KEY=<public_key_hex>
-CASPER_TESTNET_SECRET_KEY_PATH=/absolute/path/to/secret_key.pem
-
-CASPER_DEPLOY_GAS_MOTES=500000000000
-CASPER_PROOF_GAS_MOTES=5000000000
-
-CASPER_AGENTPAY_CONTRACT_HASH=<set after deployment>
-CASPER_AGENTPAY_CONTRACT_PACKAGE_HASH=<set after deployment>
-```
-
-## Reproduction Steps
-
-1. Create or choose a Casper Testnet keypair.
-2. Fund the account from the Casper Testnet faucet. The CSPR.live faucet requires signing in with Casper Wallet.
-3. Set `CASPER_TESTNET_PUBLIC_KEY` and `CASPER_TESTNET_SECRET_KEY_PATH` in `.env`.
-4. Run `pnpm contract:check`.
-5. Run `pnpm contract:build`.
-6. Run `pnpm contract:deploy:testnet`.
-7. Copy the real deployment deploy hash and CSPR.live Testnet URL from the command output.
-8. After execution, find the installed contract/package hash from the execution result or account named keys.
-9. Set `CASPER_AGENTPAY_CONTRACT_HASH` in `.env`.
-10. Run `pnpm proof:testnet`.
-11. Copy the real proof deploy hash and CSPR.live Testnet URL from the command output.
-12. Update this file, `README.md`, `docs/submission.md`, and `docs/final-checklist.md` with only the real hashes.
-
-## Current Testnet Values
+## Guarded payment
 
 | Field | Value |
 |---|---|
-| Contract deployed | Yes |
-| Contract hash | `2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01` |
-| Package hash | `d5587b9875c2e1090d65dd20bdd8eade6f3f8d97792525ecffc3b90506aef010` |
-| Deployment transaction | `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c` |
-| Proof transaction submitted | Yes |
-| Proof transaction | `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409` |
-| CSPR.live deployment link | https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c |
-| CSPR.live proof link | https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409 |
-| Proof block height | `8395592` |
-| Proof `paymentId` | `3fbf28b266b5b93b59ec44c2d86b9bbc85b5859924a737a1e0468fe70c9ef5ae` |
-| Proof `requestHash` | `59c91e0431a40afdcc32b43a5a67b057299098622767a240470b1f67e062319b` |
+| Status | verified |
+| Network | `casper-test` |
+| Transaction | `801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f` |
+| Amount | 2.5 CSPR |
+| Block | 8510676 |
+| Execution | succeeded |
+| Submission | exactly once |
+| Payment response | verified |
+| Premium MAD-001 data | released after verification |
 
-## Reproduction After Real Deployment
+Public source: [machine-readable evidence](evidence/first-guarded-testnet-payment.json) and [evidence report](evidence/first-guarded-testnet-payment.md).
 
-```bash
-pnpm proof:testnet
+The paid API reconstructed the authorization from its own issued requirement, verified the signature, independently queried Casper RPC, matched the expected signer, payee, amount, and transfer ID, and marked the transaction consumed before returning premium data.
+
+## x402 boundary
+
+The guarded exchange uses official x402 v2 transport headers through `@x402/core`:
+
+```text
+PAYMENT-REQUIRED
+-> deterministic authorization
+-> native-CSPR TransactionV1
+-> independent RPC verification
+-> PAYMENT-SIGNATURE
+-> HTTP 200
+-> PAYMENT-RESPONSE
 ```
 
-The command should print:
+The native-CSPR payload is the project-specific `agentpay-casper-native-v1` scheme, not an official Casper x402 standard.
 
-- submitted status
-- real deploy hash
-- CSPR.live Testnet link
+## Separate Odra proof recorder
 
-If it does not print a real hash, do not document one.
+| Field | Value |
+|---|---|
+| Contract | `2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01` |
+| Package | `d5587b9875c2e1090d65dd20bdd8eade6f3f8d97792525ecffc3b90506aef010` |
+| Deployment | `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c` |
+| Existing proof | `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409` |
 
-## Honest Limitations
+The contract records audit/proof fields. It does not transfer CSPR and is not payable escrow, custody, or payment settlement.
 
-- CSPR.cloud indexing is not implemented.
-- CSPR.click is not implemented.
-- The proof-recorder contract is not payable escrow.
-- Mock-mode hashes are deterministic local `mock-*` values and must never be shown as Casper transaction hashes.
-# Real guarded payment status
+## Safe validation
 
-Implemented dependency-independent pieces: canonical native-CSPR authorization, server-authoritative reconstruction of issued payment terms, Ed25519/Secp256k1 authorization-signature verification over raw hash bytes, SDK 5.0.12 TransactionV1 signing, atomic file idempotency, durable consumed-transaction replay defense, exact-once coordination, bounded submission polling, RPC transfer reading, independent settlement verification, official x402 v2 headers, a dedicated premium endpoint, dry-run/live-gated CLI, and a hosted-safe dashboard status panel.
+```bash
+pnpm proof:testnet:dry-run
+pnpm demo:testnet:guarded:dry-run
+pnpm contract:test
+```
 
-One live payment was submitted exactly once and verified. Public evidence is stored in `docs/evidence/first-guarded-testnet-payment.json` and `.md`. Reproduction requires new funded Testnet accounts and a new explicit authorization; the committed evidence does not enable spending.
+The milestone validation uses dry runs only. No reviewer needs to submit another payment, proof, or deployment.
+
+## Hosted boundary
+
+Vercel has no private key, signer, or spending control. Judge Mode reads committed public evidence and executes deterministic scenarios. A hosted ALLOW decision does not claim that a new Testnet transaction occurred.
+
+## Limitations
+
+- Testnet only; no Mainnet claim.
+- One completed guarded native-CSPR payment, not a production payment service.
+- No custody, payable escrow, refunds, or production settlement system.
+- No independent security audit.
+- No official Casper x402 scheme claim.
+- No official Casper MCP server claim.

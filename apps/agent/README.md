@@ -1,6 +1,6 @@
 # Agent Demo — Autonomous Agent Runner
 
-This is the judge-facing terminal demo for CSPR AgentPay Guard. It shows an AI analyst agent autonomously paying for a protected resource through the HTTP 402 flow.
+This is the legacy deterministic terminal lifecycle demo for CSPR AgentPay Guard. For the final-round MCP judge path, run `pnpm demo:mcp:judge`.
 
 ## What It Shows
 
@@ -14,7 +14,7 @@ This is the judge-facing terminal demo for CSPR AgentPay Guard. It shows an AI a
 8. Payment is fulfilled and optionally settled.
 9. Agent prints a recommendation and full audit trail.
 
-All in mock mode — no real Casper funds move.
+This command is mock mode, so no real Casper funds move. Separate committed evidence documents the already completed guarded Testnet payment.
 
 ## Quick Start
 

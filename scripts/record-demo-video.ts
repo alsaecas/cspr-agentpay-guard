@@ -8,18 +8,14 @@ const OUTPUT_DIR = path.join(ROOT, "artifacts", "video");
 const FINAL_VIDEO = path.join(OUTPUT_DIR, "cspr-agentpay-browser-demo.webm");
 
 const VIEWPORT = { width: 1280, height: 720 } as const;
-const DASHBOARD_URL = "http://localhost:3000/demo";
-const HEALTH_URL = "http://localhost:3000/api/agentpay/health";
+const HOME_URL = "http://localhost:3000/";
+const JUDGE_URL = "http://localhost:3000/judge";
+const DEMO_URL = "http://localhost:3000/demo";
 const PAYMENTS_URL = "http://localhost:3000/payments";
 const AUDIT_URL = "http://localhost:3000/audit";
-const CONTRACT_DEPLOY_URL =
-  "https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c";
-const PROOF_DEPLOY_URL =
-  "https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409";
 
 const START_HINT = [
   "Start the dashboard first:",
-  "pnpm --filter @cspr-agentpay/paid-api dev",
   "pnpm --filter @cspr-agentpay/web dev",
 ].join("\n");
 
@@ -48,7 +44,7 @@ async function fetchJson(url: string, timeoutMs = 5000) {
 
 async function assertLocalAppReady() {
   try {
-    const dashboard = await fetchJson(DASHBOARD_URL, 5000);
+    const dashboard = await fetchJson(JUDGE_URL, 5000);
     if (!dashboard.ok) {
       throw new Error(`Dashboard returned HTTP ${dashboard.status}`);
     }
@@ -58,17 +54,6 @@ async function assertLocalAppReady() {
     );
   }
 
-  try {
-    const health = await fetchJson(HEALTH_URL, 5000);
-    const body = health.body as { reachable?: boolean; hint?: string } | null;
-    if (!health.ok || !body?.reachable) {
-      throw new Error(
-        body?.hint ?? `Health check returned HTTP ${health.status}`,
-      );
-    }
-  } catch (error) {
-    throw new Error(`${START_HINT}\n\nPaid API check failed: ${String(error)}`);
-  }
 }
 
 async function waitForReadablePage(page: Page, ms: number) {
@@ -101,9 +86,16 @@ async function gotoLocal(page: Page, url: string, pauseMs = 3500) {
   await waitForReadablePage(page, pauseMs);
 }
 
-async function gotoExternal(page: Page, url: string, pauseMs = 7000) {
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
-  await waitForReadablePage(page, pauseMs);
+async function focusSection(page: Page, text: string, pauseMs = 3200) {
+  await page.getByText(text, { exact: false }).first().scrollIntoViewIfNeeded();
+  await sleep(pauseMs);
+}
+
+async function runScenario(page: Page, scenario: string, resultText: string) {
+  await page.locator("select").selectOption(scenario);
+  await page.getByRole("button", { name: /run agentpay demo/i }).click();
+  await page.getByText(resultText, { exact: false }).first().waitFor({ timeout: 30000 });
+  await sleep(3000);
 }
 
 async function runCheck() {
@@ -137,17 +129,22 @@ async function record() {
   const page = await context.newPage();
 
   try {
-    await gotoLocal(page, DASHBOARD_URL, 2500);
+    await gotoLocal(page, HOME_URL, 3500);
+    await gotoLocal(page, JUDGE_URL, 3000);
+    await focusSection(page, "Three decisions a judge can verify");
+    await focusSection(page, "Verified Testnet Payment");
+    await focusSection(page, "MCP Agent Interface");
+    await focusSection(page, "Real versus hosted");
+    await focusSection(page, "Separate Odra Proof Recorder");
 
-    const runButton = page.getByRole("button", { name: /run agentpay demo/i });
-    await runButton.click({ timeout: 10000 });
-    await page.getByText("Premium Report").waitFor({ timeout: 30000 });
-    await sleep(4500);
-
+    await gotoLocal(page, DEMO_URL, 2000);
+    await runScenario(page, "allowed-payment", "Guard Decision: ALLOW");
+    await runScenario(page, "prompt-injection-attack", "Guard Decision: DENY");
+    await runScenario(page, "replay-attack", "Guard Decision: DENY");
     await gotoLocal(page, PAYMENTS_URL, 4500);
     await gotoLocal(page, AUDIT_URL, 4500);
-    await gotoExternal(page, CONTRACT_DEPLOY_URL, 8000);
-    await gotoExternal(page, PROOF_DEPLOY_URL, 8000);
+    await gotoLocal(page, JUDGE_URL, 2500);
+    await focusSection(page, "Judge links", 4500);
   } finally {
     const video = page.video();
     await context.close();

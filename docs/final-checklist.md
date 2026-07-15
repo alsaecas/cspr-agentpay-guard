@@ -1,127 +1,111 @@
-# Final Checklist — CSPR AgentPay Guard
+# Final-Round Checklist
 
-Last updated: 2026-07-15
+## Registration and public surfaces
 
-## GitHub / Submission
+- [x] Same qualified DoraHacks BUIDL registered for Final Round.
+- [x] Public GitHub repository available.
+- [x] Stable production URL available.
+- [ ] Final BUIDL content refresh pasted manually.
+- [ ] Production Judge Mode deployed after PR review and merge.
 
-- [x] GitHub repo public: `https://github.com/alsaecas/cspr-agentpay-guard`
-- [x] README complete
-- [x] DoraHacks paste-ready submission doc complete: `docs/submission.md`
-- [x] Testnet status doc complete: `docs/testnet-status.md`
-- [x] Video script complete: `docs/video-script.md`
-- [x] No production escrow/custody disclaimer present
-- [x] What is real vs mock documented
-- [ ] Demo video recorded and uploaded
-- [ ] DoraHacks form submitted
+## Agentic AI and RWA story
 
-## Local Prototype
+- [x] MAD-001 tokenized parking asset is the judge task.
+- [x] Agent receives HTTP 402 before premium data.
+- [x] Model cannot choose an arbitrary wallet payee.
+- [x] Deterministic checks precede the signer boundary.
+- [x] Prompt-injection/payee substitution is denied.
+- [x] Replay is rejected without premium release.
 
-```bash
-pnpm install                         # pass
-pnpm docs:check                      # pass
-pnpm typecheck                       # pass with raw pnpm; rtk wrapper returned a false nonzero
-pnpm test                            # pass, 172 tests
-pnpm demo:mock                       # pass
-pnpm --filter @cspr-agentpay/web build  # pass
-```
+## MCP
 
-## Dashboard
+- [x] Project-owned MCP server uses the official Model Context Protocol SDK.
+- [x] `agentpay_run_rwa_due_diligence` implemented.
+- [x] `agentpay_evaluate_payment` implements judge-safe attack scenarios.
+- [x] `agentpay_get_verified_testnet_payment` reads committed public evidence only.
+- [x] `agentpay_security_model` exposes fail-closed invariants.
+- [x] Actual MCP client/server integration test covers discovery and invocation.
+- [x] `pnpm demo:mcp:judge` requires no key or paid API.
 
-- [x] Dashboard command documented
-- [x] Vercel-safe self-contained dashboard backend documented
-- [x] Mock mode visibly labeled
-- [x] Testnet proof status card present
-- [x] Optional hosted dashboard URL: `https://cspr-agentpay-guard.vercel.app`
-- [x] Guarded x402 scenario model exposes ALLOW/DENY, checks, reason, budget delta, adapter call status, and mode
-- [x] Allowed-payment, prompt-injection-attack, and replay-attack verified in a local browser
+## Judge Mode
 
-## Guarded x402 Foundation
+- [x] `/judge` route implemented.
+- [x] Homepage primary CTA points to Judge Mode.
+- [x] Demo and navigation link to Judge Mode.
+- [x] Three scenarios are concise and visible.
+- [x] Verified Testnet payment details and explorer link are visible.
+- [x] MCP tools and command are visible.
+- [x] Hosted, real payment, and Odra proof boundaries are separate.
+- [x] No live-spend control exists.
+- [ ] Vercel preview reviewed on desktop and mobile.
 
-- [x] Official `@x402/core` v2 transport types and header codecs pinned
-- [x] Normalized `GuardedPaymentRequest` and canonical integrity checks
-- [x] Network, asset, exact payee, merchant, resource, price, budget, expiry, request/body hash, nonce, facilitator, and optional policy-signature checks
-- [x] Signer/facilitator path is never called after a denial
-- [x] Real Casper x402 adapter fails closed without an injected verified Casper signer and facilitator
-- [x] Project-specific native-CSPR x402 scheme distinguished from official x402 transport
-- [x] First guarded Testnet settlement independently verified
+## Casper evidence
 
-Dashboard commands:
+- [x] Existing payment transaction is public and execution succeeded.
+- [x] 2.5 CSPR amount and block 8510676 match committed evidence.
+- [x] Premium MAD-001 response was released after independent verification.
+- [x] Payment submission occurred exactly once.
+- [x] Separate Odra proof-recorder deployment is public.
+- [x] Separate existing proof transaction is public.
+- [x] Payment and proof are never conflated.
+- [x] No new payment or proof is required for judging.
 
-```bash
-pnpm --filter @cspr-agentpay/web dev
-```
+## x402 accuracy
 
-Optional external paid-api mode:
+- [x] Official x402 v2 transport headers are described accurately.
+- [x] `agentpay-casper-native-v1` is labeled project-specific.
+- [x] No official Casper x402 scheme claim.
+- [x] No official Casper MCP server claim.
+- [x] Current guarded flow uses PAYMENT-REQUIRED, PAYMENT-SIGNATURE, and PAYMENT-RESPONSE.
 
-```bash
-AGENTPAY_DEMO_BACKEND=external pnpm --filter @cspr-agentpay/paid-api dev
-AGENTPAY_DEMO_BACKEND=external pnpm --filter @cspr-agentpay/web dev
-```
+## Video package
 
-## Casper Testnet
+- [x] 3-minute primary script prepared.
+- [x] 90-second backup pitch prepared.
+- [x] Shot list prioritizes Judge Mode and existing evidence.
+- [x] Recording runbook prohibits live commands and secret display.
+- [x] Captions file prepared.
+- [ ] Silent browser recording generated locally; set from actual run result.
+- [ ] Voiceover and edit completed manually.
+- [ ] Video uploaded manually.
+- [ ] Public video URL added to repository and DoraHacks.
 
-```bash
-pnpm proof:testnet:dry-run      # pass
-pnpm contract:check             # pass
-pnpm contract:build             # pass
-pnpm contract:test              # pass, 8 tests
-pnpm contract:deploy:testnet    # pass; deployed on Casper Testnet
-pnpm proof:testnet              # pass; submitted one record_proof call
-```
+## Documentation and submission
 
-Status:
+- [x] Requirements matrix exists.
+- [x] Paste-ready DoraHacks final update exists.
+- [x] README makes MCP and Judge Mode first class.
+- [x] Reviewer playbook begins with a two-minute path.
+- [x] Real-versus-hosted limitations are explicit.
+- [ ] Final public links reviewed after deployment and upload.
 
-- [x] Contract source exists
-- [x] Odra manifest exists
-- [x] Contract schema generated
-- [x] Contract wasm generated
-- [x] Dry-run proof works without credentials
-- [x] Deploy script fails safely when credentials are missing
-- [x] Proof script fails safely when credentials or contract hash are missing
-- [x] Contract deployed to Casper Testnet: `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c`
-- [x] Contract hash documented: `2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01`
-- [x] Package hash documented: `d5587b9875c2e1090d65dd20bdd8eade6f3f8d97792525ecffc3b90506aef010`
-- [x] Deployment transaction link documented: `https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c`
-- [x] Proof transaction submitted: `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409`
-- [x] Proof transaction link documented: `https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409`
+## Validation
 
-## Real vs Mock Safety
+- [ ] `pnpm docs:check`
+- [ ] `pnpm typecheck`
+- [ ] `pnpm test`
+- [ ] `pnpm --filter @cspr-agentpay/mcp-server test`
+- [ ] `pnpm demo:mcp:judge`
+- [ ] `pnpm contract:test`
+- [ ] `pnpm proof:testnet:dry-run`
+- [ ] `pnpm demo:testnet:guarded:dry-run`
+- [ ] `pnpm --filter @cspr-agentpay/web build`
+- [ ] `pnpm security:check`
+- [ ] Browser routes checked at desktop and mobile widths.
+- [ ] Secret scan completed before push.
 
-- [x] `.env` ignored
-- [x] `*.pem` ignored
-- [x] No private keys documented
-- [x] No fake deploy hash documented
-- [x] No `mock-*` hash presented as a Casper transaction
-- [x] Mock mode described as deterministic local simulation
-- [x] Casper contract described as audit/proof anchor, not payable escrow
+The current suite passes; see latest CI. Do not hard-code a test count here.
 
-## DoraHacks Fields Prepared
+## Remaining manual steps
 
-- Project title: CSPR AgentPay Guard
-- One-liner: Policy-controlled HTTP 402 payments for autonomous AI agents with Casper proof anchoring.
-- Repository: `https://github.com/alsaecas/cspr-agentpay-guard`
-- Video: pending
-- Live demo: `https://cspr-agentpay-guard.vercel.app`
-- Testnet deployment: complete with deployment/proof links in `docs/testnet-status.md`
-- README: complete
-- Submission narrative: `docs/submission.md`
+1. Review the Vercel preview.
+2. Merge the draft PR only after review.
+3. Verify production `/judge` after deployment.
+4. Record voiceover and edit the local silent clip.
+5. Upload the final video.
+6. Add the video URL to current docs and DoraHacks copy.
+7. Paste the final DoraHacks update before July 26, 2026 at 23:59.
 
-## Remaining Manual Steps
+## Absolute safety gate
 
-1. Record the demo video using `docs/video-script.md`.
-2. Submit DoraHacks.
-# Milestone 2 guarded Testnet gate
-
-- [x] Native CSPR TransactionV1 scheme documented
-- [x] Canonical authorization and fixed hash vector
-- [x] Signer secret failures are redacted
-- [x] Real/mock idempotency stores separated and ignored
-- [x] Independent destination, amount, signer, network and transfer-ID verification
-- [x] Premium endpoint rejects legacy receipt and unverified evidence
-- [x] Dry run submits nothing and reports missing configuration
-- [x] Hosted dashboard cannot sign
-- [x] Full configured dry run reviewed with exact intent
-- [x] Explicit exact-hash user confirmation received
-- [x] One live Testnet payment submitted and explorer-verified: `801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f`
-- [x] Premium MAD-001 resource released only after independent verification
-- [x] Public JSON and Markdown evidence contain no secrets
+Do not submit another Casper payment, another Odra proof, or another contract deployment for this milestone. Never expose private keys, PEM paths, `.env`, wallet state, or tokens.

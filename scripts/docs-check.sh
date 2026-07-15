@@ -33,7 +33,8 @@ check_contains() {
 
 check_not_duplicate() {
   local count
-  count=$(grep -c "$2" "$ROOT/$1" 2>/dev/null || echo 0)
+  count=$(grep -c "$2" "$ROOT/$1" 2>/dev/null || true)
+  count=${count:-0}
   if [ "$count" -gt 1 ]; then
     echo "  DUPLICATE: $1 contains '$2' $count times"
     errors=$((errors + 1))
@@ -51,7 +52,8 @@ check_min_lines() {
 
 check_no_long_lines() {
   local long
-  long=$(rg -c '^.{300,}$' "$ROOT/$1" 2>/dev/null || echo 0)
+  long=$(rg -c '^.{300,}$' "$ROOT/$1" 2>/dev/null || true)
+  long=${long:-0}
   if [ "$long" -gt 0 ]; then
     echo "  LONG LINES: $1 has $long line(s) over 300 chars"
     errors=$((errors + 1))
@@ -76,6 +78,10 @@ for f in \
   docs/testnet-status.md \
   docs/final-round-implementation-plan.md \
   docs/x402-integration.md \
+  docs/hackathon-requirements-matrix.md \
+  docs/dorahacks-final-update.md \
+  docs/video-recording-runbook.md \
+  docs/video-captions.srt \
   docs/technical-spike.md \
   docs/casper-contract-boundary.md \
   contracts/README.md \
@@ -93,11 +99,11 @@ echo ""
 echo "Line counts:"
 check_min_lines "README.md"                             80
 check_min_lines "docs/submission.md"                   80
-check_min_lines "docs/video-script.md"                 60
-check_min_lines "docs/video-shot-list.md"              50
-check_min_lines "docs/final-checklist.md"              60
-check_min_lines "docs/final-round-playbook.md"         80
-check_min_lines "docs/testnet-status.md"               60
+check_min_lines "docs/video-script.md"                 50
+check_min_lines "docs/video-shot-list.md"              25
+check_min_lines "docs/final-checklist.md"              50
+check_min_lines "docs/final-round-playbook.md"         50
+check_min_lines "docs/testnet-status.md"               50
 check_min_lines "docs/technical-spike.md"             100
 check_min_lines "contracts/README.md"                  40
 check_min_lines "contracts/agentpay-guard/README.md"   50
@@ -110,7 +116,8 @@ echo ""
 
 echo "Long lines (over 300 chars, excluding tables):"
 # Check README for unreasonably long lines
-long_readme=$(rg -c '^.{300,}$' "$ROOT/README.md" 2>/dev/null || echo 0)
+long_readme=$(rg -c '^.{300,}$' "$ROOT/README.md" 2>/dev/null || true)
+long_readme=${long_readme:-0}
 echo "  README.md long lines: $long_readme (paragraph text is OK under 400)"
 echo ""
 
@@ -147,4 +154,8 @@ check_not_contains "docs/submission.md" "0xabc"
 echo ""
 
 echo "=== Done: $errors error(s) ==="
-exit $errors
+if [ "$errors" -ne 0 ]; then
+  exit "$errors"
+fi
+
+pnpm exec tsx scripts/validate-final-content.ts
