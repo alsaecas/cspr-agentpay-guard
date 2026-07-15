@@ -9,7 +9,7 @@ const sampleProofInput = {
   requestHash: "b".repeat(64),
   policyId: "policy_demo_agent_001",
   merchantId: "merchant_market_data_001",
-  status: "escrowed",
+  status: "settled",
   receiptHash: "c".repeat(64),
 };
 
@@ -27,7 +27,7 @@ describe("RealCasperTestnetAdapter — proof path", () => {
     expect(result.proof.kind).toBe("legacy-deploy");
     expect(result.payload.paymentId).toBe(sampleProofInput.paymentId);
     expect(result.payload.requestHash).toBe(sampleProofInput.requestHash);
-    expect(result.payload.status).toBe("escrowed");
+    expect(result.payload.status).toBe("settled");
     expect(result.payload.receiptHash).toBe("c".repeat(64));
     expect(result.missingEnvVars.length).toBeGreaterThanOrEqual(3);
   });

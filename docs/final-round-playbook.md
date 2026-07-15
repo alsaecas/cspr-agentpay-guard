@@ -1,155 +1,92 @@
 # Final-Round Reviewer Playbook
 
-## Links
+## Two-minute path
+
+1. Open `/judge`.
+2. Inspect the ALLOW, payee-substitution DENY, and replay REJECTED scenarios.
+3. Inspect the existing verified 2.5 CSPR Testnet payment evidence.
+4. Run or inspect `pnpm demo:mcp:judge` and the discovered MCP tools.
+5. Inspect the separate Odra proof-recorder deployment and existing proof transaction.
+6. Read the hosted-versus-real boundary cards.
+
+That path demonstrates the thesis: **x402 is the payment rail. AgentPay Guard is the authorization layer.**
+
+## Public links
 
 - Repository: https://github.com/alsaecas/cspr-agentpay-guard
-- Live dashboard: https://cspr-agentpay-guard.vercel.app
-- Demo video: pending; replace this placeholder with the public video URL.
-- Testnet status: `docs/testnet-status.md`
+- Production: https://cspr-agentpay-guard.vercel.app
+- DoraHacks: https://dorahacks.io/buidl/46706
+- Payment: https://testnet.cspr.live/transaction/801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f
+- Contract deployment: https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c
+- Existing proof: https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409
+- Final video: `[ADD AFTER MANUAL UPLOAD]`
 
-## Local Setup
+## Local review
 
 ```bash
 pnpm install
-pnpm docs:check
-pnpm typecheck
-pnpm test
-pnpm proof:testnet:dry-run
-pnpm --filter @cspr-agentpay/web build
-pnpm security:check
-```
-
-Expected result: all commands exit with status `0`. The dry run prints the proof payload and does not submit a transaction.
-
-## Terminal Demo
-
-```bash
-pnpm demo:mock
-```
-
-Expected result:
-
-1. Agent receives `402 Payment Required`.
-2. Policy authorizes the request under merchant, resource, amount, budget, and expiry checks.
-3. Mock Casper adapter returns deterministic `mock-*` proof fields.
-4. Agent retries with `X-AgentPay-Receipt`.
-5. Premium parking report is returned.
-6. Mock payment is fulfilled and settled in local audit state.
-
-Guarded x402 scenarios:
-
-```bash
-AGENTPAY_SCENARIO=allowed-payment pnpm demo:guarded
-AGENTPAY_SCENARIO=prompt-injection-attack pnpm demo:guarded
-AGENTPAY_SCENARIO=replay-attack pnpm demo:guarded
-```
-
-Each result prints the normalized x402 request, ordered guard checks, ALLOW or
-DENY, reason code, settlement-adapter call flag, budget before/after, and an
-explicit mock-mode note. These scenarios use official x402 v2 transport shapes
-with deterministic local settlement; no CSPR transaction is submitted.
-
-## Dashboard Demo
-
-Production:
-
-```text
-https://cspr-agentpay-guard.vercel.app/demo
-```
-
-Local:
-
-```bash
+pnpm demo:mcp:judge
 pnpm --filter @cspr-agentpay/web dev
-open http://localhost:3000/demo
 ```
 
-Expected result:
+Open `http://localhost:3000/judge`. No key, paid API, or Testnet credential is required.
 
-1. Click `Run AgentPay Demo`.
-2. Timeline shows the HTTP 402 flow, policy authorization, receipt retry, fulfillment, settlement, and audit update.
-3. Payment receipt uses mock proof values and is visibly labeled mock mode.
-4. Testnet Proof card links to the real Casper Testnet deployment and proof transactions.
-5. `/audit` and `/payments` show the generated audit/payment events after the run.
+## What the MCP command proves
 
-## Casper Testnet Proof Verification
+The command creates a real SDK MCP client and server over an in-memory transport. The tools call the product's existing guarded x402 implementation rather than duplicating decision results. It lists tools and invokes:
 
-### Verified guarded payment
+- the MAD-001 RWA journey;
+- an allowed requirement;
+- prompt-injection/payee substitution;
+- transaction replay rejection; and
+- read-only public Testnet evidence.
 
-- TransactionV1: [`801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f`](https://testnet.cspr.live/transaction/801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f)
-- Amount: 2.5 CSPR
-- Block: `8510676`
-- Result: successful native transfer; MAD-001 released after independent RPC verification
-- Evidence: `docs/evidence/first-guarded-testnet-payment.md`
+Expected safety output includes `Hosted demo submitted: no` and `Hosted signing: disabled`.
 
-This payment settlement is separate from the Odra deployment and proof transaction below.
+## What to look for in Judge Mode
 
-Contract hash:
+### Allowed request
 
-```text
-2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01
-```
+The authoritative requirement matches policy. Hosted mode reports ALLOW without invoking a signer. The separate verified card proves the real guarded path has completed once.
 
-Package hash:
+### Prompt injection
 
-```text
-d5587b9875c2e1090d65dd20bdd8eade6f3f8d97792525ecffc3b90506aef010
-```
+Malicious model output attempts to change the payee or amount. The guard returns a stable denial code before signing, submission, or budget mutation.
 
-Deployment transaction:
+### Replay
 
-- Hash: `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c`
-- Link: https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c
-- Description: deploys the Odra `AgentPayProofRecorder` contract to Casper Testnet.
+A consumed requirement nonce cannot unlock a repeated request. The guard returns `NONCE_ALREADY_USED` and releases no deterministic premium response.
 
-Proof transaction:
+## Existing real payment
 
-- Hash: `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409`
-- Link: https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409
-- Description: calls `record_proof` with AgentPay proof fields for one payment proof record.
+The public evidence records a 2.5 CSPR native TransactionV1 on `casper-test`, block 8510676, with succeeded execution. Submission happened exactly once. The protected API independently verified the transaction and request-bound authorization before releasing MAD-001.
 
-## BUIDL Page Values
+Do not run a live payment command to review this evidence.
 
-Use these values on the DoraHacks BUIDL page:
+## Separate Odra proof recorder
 
-- Contract package hash: `d5587b9875c2e1090d65dd20bdd8eade6f3f8d97792525ecffc3b90506aef010`
-- Contract hash: `2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01`
-- Sample Testnet transaction 1: contract deployment, `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c`
-- Sample Testnet transaction 2: proof recording call, `9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409`
+The Odra `AgentPayProofRecorder` deployment and existing proof transaction are a public audit path. They are not the native-CSPR payment, payable escrow, custody, or settlement.
 
-## What Is Real vs Mock
+Do not submit another proof to review this evidence.
 
-Real:
+## Honest boundaries
 
-- Protocol types, canonical hashes, and validation schemas.
-- Policy checks for merchant allowlist, resource scope, amount limit, total budget, expiry, and request hash.
-- HTTP 402 paid-resource flow and request-bound receipt verification.
-- Casper Testnet `AgentPayProofRecorder` contract deployment.
-- Casper Testnet `record_proof` transaction listed above.
-- One policy-authorized native-CSPR TransactionV1 payment and post-verification premium response.
+| Surface | Meaning |
+|---|---|
+| Hosted Judge Mode | Deterministic, repeatable, no funds |
+| MCP judge command | Real MCP protocol and actual guard logic with an injected no-spend adapter |
+| Guarded payment evidence | One real verified Casper Testnet TransactionV1 |
+| Odra proof recorder | Separate real audit/proof transaction |
+| Native-CSPR x402 payload | Project-specific, not official Casper standardization |
 
-Hosted deterministic demo:
+## Why this is Agentic AI
 
-- Repeatable allowed, prompt-injection, and replay scenario state.
-- Interactive dashboard payment proofs shown as `mock-*` values.
+The agent autonomously encounters payment gating and invokes payment-security tools. The language model selects a task, not the wallet destination. Policy and authoritative server data decide whether signing is allowed.
 
-Not claimed:
+## Why this is RWA
 
-- Production escrow.
-- Custody of funds.
-- Mainnet or production-grade custody/settlement.
+MAD-001 represents a tokenized parking asset. The paid output is premium due-diligence data an agent might need before evaluating or servicing the asset.
 
-## Known Limitations
+## Limitations
 
-- CSPR.cloud indexing is not implemented.
-- CSPR.click is not implemented.
-- The Casper contract is a proof recorder, not payable escrow.
-- Real Testnet deploy/proof commands require a funded Testnet key and local `.env`; CI only runs `proof:testnet:dry-run`.
-- Demo video URL is pending until the final public video is uploaded.
-# Real Testnet judge path
-
-1. Start the paid API locally and open the demo dashboard.
-2. Run `pnpm demo:testnet:guarded:dry-run` and show every policy check plus the exact signer, payee, motes, network, resource, authorization hash and TransactionV1 hash.
-3. After explicit approval only, run the printed `--confirm-authorization <hash>` command.
-4. Show RPC execution evidence and the CSPR.live transaction page.
-5. Retry the premium resource with PAYMENT-SIGNATURE and show PAYMENT-RESPONSE. Explain that the server independently re-read Casper RPC before returning the report.
+This is a Testnet hackathon prototype. It is not Mainnet, a security audit, custody, payable escrow, or a production settlement service. The hosted site cannot spend.

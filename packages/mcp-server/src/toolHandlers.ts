@@ -77,11 +77,15 @@ export async function getAgentPayStatusHandler(
   }
 
   const tools = [
+    "agentpay_run_rwa_due_diligence — deterministic MAD-001 judge journey",
+    "agentpay_evaluate_payment — no-spend allow and attack evaluation",
+    "agentpay_get_verified_testnet_payment — read-only public Testnet evidence",
+    "agentpay_security_model — fail-closed wallet invariants",
     "agentpay_status — server status + paid-api health",
-    "setup_demo — initialize demo merchant and policy",
-    "call_paid_resource — full 402 → authorize → retry → premium data",
-    "authorize_requirement — authorize + escrow a payment requirement",
-    "settle_payment — settle a fulfilled payment",
+    "setup_demo — initialize legacy deterministic demo state",
+    "call_paid_resource — legacy deterministic 402 lifecycle",
+    "authorize_requirement — authorize a legacy demo requirement",
+    "settle_payment — settle the legacy demo lifecycle",
     "get_audit_timeline — retrieve ordered audit events",
   ];
 
@@ -186,7 +190,7 @@ export async function callPaidResourceHandler(
     requirement,
   });
 
-  timeline.push("Submitted mock Casper payment into escrow.");
+  timeline.push("Recorded deterministic mock lifecycle payment state.");
 
   // 6. Retry with receipt
   timeline.push("Retried protected resource with request-bound receipt.");

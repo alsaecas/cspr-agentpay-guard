@@ -110,8 +110,8 @@ export function TestnetProofCard() {
         </div>
       </dl>
       <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-        <code>pnpm proof:testnet</code>
-        <span style={{ color: "var(--ink-dim)" }}>record_proof executed</span>
+        <span className="badge badge-warn">READ ONLY</span>
+        <span style={{ color: "var(--ink-dim)" }}>existing record_proof evidence; no new proof required</span>
       </div>
     </div>
   );

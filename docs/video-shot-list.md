@@ -1,75 +1,46 @@
-# Video Shot List — Automated Browser Clip
+# Final Video Shot List
 
-Use this shot list to produce the silent browser footage that will later be edited with voiceover, captions, and a title card.
+The automated clip is silent browser footage for editing. It prioritizes judge comprehension and never submits a transaction.
 
-## Automated Browser Recording
+| Time | Shot | Required content | Caption |
+|---|---|---|---|
+| 0:00–0:10 | Homepage | Product statement and Judge Mode CTA | Firewall for AI wallets |
+| 0:10–0:30 | Judge hero | MAD-001 use case and thesis | x402 rail. AgentPay authorization. |
+| 0:30–0:42 | Architecture | Agent → 402 → guard → Casper boundary → verification → data | Deterministic checks before signing |
+| 0:42–0:58 | Payment card | Tagged payee, account hash, 2.5 CSPR, block, execution | Existing verified Testnet TransactionV1 |
+| 0:58–1:16 | MCP section | Four real tool names and no-spend boundary | Project-owned MCP server · actual guard flow |
+| 1:16–1:28 | Real versus hosted | Three boundary cards | Hosted no-spend · real payment · separate proof |
+| 1:28–1:42 | Allowed scenario | Actual ordered guard checks and deterministic premium response | ALLOW · no-spend adapter |
+| 1:42–1:56 | Prompt injection | Payee substitution denied, signer false | PAYEE_MISMATCH — denied before signing |
+| 1:56–2:10 | Replay | Consumed nonce rejected | NONCE_ALREADY_USED |
+| 2:12–2:30 | Payment explorer | Existing public transaction only | Independent RPC verification succeeded |
+| 2:30–2:43 | Odra card | Contract, deploy, existing proof | Separate audit proof — not settlement |
+| 2:55–3:00 | Final CTA | Repository and Judge Mode | x402 is the rail. AgentPay Guard is authorization. |
 
-Start the local services in separate terminals:
+## Capture requirements
 
-```bash
-pnpm --filter @cspr-agentpay/paid-api dev
-pnpm --filter @cspr-agentpay/web dev
-```
+- 1280×720 browser recording.
+- Browser B-roll includes only the homepage, `/judge`, and `/demo`.
+- Empty Payments and Audit pages are excluded.
+- Transaction strings truncate or wrap safely.
+- No console, hydration, or horizontal overflow errors.
+- Do not show a Vercel preview URL as the public final URL.
+- Do not require the local paid API; hosted/self-contained demo state is sufficient.
+- Do not commit the WebM artifact.
 
-Record browser footage:
+## Separate manual inserts
 
-```bash
-pnpm video:record
-```
+Capture these outside browser automation so the editor can control terminal and public explorer framing:
 
-Output:
+- `pnpm demo:mcp:judge`;
+- the existing CSPR.live payment transaction;
+- the existing contract deployment; and
+- the existing proof transaction.
 
-```text
-artifacts/video/cspr-agentpay-browser-demo.webm
-```
+## Editing checklist
 
-The recorder does not read `.env`, does not print keys, and does not submit new Casper transactions. It shows the local mock payment execution plus the already real Casper Testnet deploy/proof pages.
-
-## Pages Recorded
-
-1. `http://localhost:3000/demo`
-   - Shows the dashboard in mock mode.
-   - Clicks **Run AgentPay Demo**.
-   - Waits for the policy/payment/proof cards to render.
-
-2. `http://localhost:3000/payments`
-   - Shows the payment lifecycle after the demo run.
-   - Keep the mock-mode label visible.
-
-3. `http://localhost:3000/audit`
-   - Shows the audit trail derived from backend records.
-   - Use this for the narration about request-bound receipts and replay protection.
-
-4. `https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c`
-   - Real Casper Testnet contract deploy transaction.
-   - Use this for the on-chain component requirement.
-
-5. `https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409`
-   - Real Casper Testnet `record_proof` transaction.
-   - Use this for the proof transaction requirement.
-
-## Captions To Add In Editing
-
-- "Mock payment execution: no real CSPR moves in the local browser flow."
-- "Real Casper Testnet contract deployment."
-- "Real Casper Testnet proof transaction."
-- "Proof recorder only: no production escrow or custody."
-- "Request-bound receipts prevent replay across URL, method, or body."
-
-## Editing Plan
-
-1. Import `artifacts/video/cspr-agentpay-browser-demo.webm` into Canva, CapCut, or iMovie.
-2. Add a title card: "CSPR AgentPay Guard".
-3. Add the voiceover from `docs/video-script.md`.
-4. Add captions for "mock payment execution" and "real Casper Testnet proof transaction".
-5. Trim loading pauses, but keep enough time to read the dashboard and CSPR.live hashes.
-6. Export the final video.
-7. Upload to YouTube as Unlisted.
-
-## Safety Checklist
-
-- Do not show `.env`.
-- Do not show PEM files or private keys.
-- Do not show `mock-*` hashes on CSPR.live.
-- Do not describe the proof recorder as payment settlement; show the separate verified TransactionV1 for the real payment.
-- Do describe the Casper Testnet proof transaction as real.
+- Add voiceover from `docs/video-script.md`.
+- Import `docs/video-captions.srt` and correct timing after the final edit.
+- Keep the payment and Odra proof clearly separated.
+- Never imply a new live transaction was executed during recording.
+- End before 3:00; use the 90-second backup if necessary.

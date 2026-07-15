@@ -25,6 +25,7 @@ export interface GuardedFetchOptions {
   merchant: Merchant;
   endpointId?: string | undefined;
   expectedAmount?: string | undefined;
+  expectedPayee?: string | undefined;
   settlementAdapter: X402SettlementAdapter;
   usedNonces?: Set<string> | undefined;
   policySignatureValid?: boolean | undefined;
@@ -106,6 +107,7 @@ export async function guardedFetch(
     expectedRequestHash: hashes.requestHash,
     expectedBodyHash: hashes.bodyHash,
     expectedAmount: options.expectedAmount,
+    expectedPayee: options.expectedPayee,
     usedNonces: options.usedNonces,
     policySignatureValid: options.policySignatureValid,
     now: options.now,

@@ -8,6 +8,13 @@ import { z } from "zod";
 import { PaidApiError } from "./client";
 import { type McpServerConfig, loadMcpServerConfig } from "./config";
 import {
+  JUDGE_SCENARIOS,
+  evaluatePaymentScenario,
+  getSecurityModel,
+  getVerifiedTestnetPayment,
+  runRwaDueDiligence,
+} from "./judgeWorkflow";
+import {
   authorizeRequirementHandler,
   callPaidResourceHandler,
   getAgentPayStatusHandler,
@@ -44,6 +51,52 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
     version: "0.2.0",
   });
 
+  server.registerTool(
+    "agentpay_run_rwa_due_diligence",
+    {
+      title: "Run MAD-001 RWA Due Diligence",
+      description:
+        "Run the deterministic, no-spend judge journey from HTTP 402 through ordered policy checks and premium MAD-001 data release. Never invokes a signer.",
+      inputSchema: {},
+    },
+    async () => jsonResponse(await runRwaDueDiligence()),
+  );
+
+  server.registerTool(
+    "agentpay_evaluate_payment",
+    {
+      title: "Evaluate a Payment Requirement Safely",
+      description:
+        "Evaluate allowed, substitution, escalation, expiry, and replay scenarios without signing or submitting a transaction.",
+      inputSchema: {
+        scenario: z.enum(JUDGE_SCENARIOS).default("allowed-payment"),
+      },
+    },
+    async ({ scenario }) =>
+      jsonResponse(await evaluatePaymentScenario(scenario)),
+  );
+
+  server.registerTool(
+    "agentpay_get_verified_testnet_payment",
+    {
+      title: "Get Verified Casper Testnet Payment Evidence",
+      description:
+        "Read the repository's public evidence for the existing guarded payment. Does not read wallet state, keys, or local runtime stores.",
+      inputSchema: {},
+    },
+    async () => jsonResponse(getVerifiedTestnetPayment()),
+  );
+
+  server.registerTool(
+    "agentpay_security_model",
+    {
+      title: "Explain the AgentPay Guard Security Model",
+      description: "Return the concise fail-closed invariants enforced before wallet signing.",
+      inputSchema: {},
+    },
+    async () => jsonResponse(getSecurityModel()),
+  );
+
   // -----------------------------------------------------------------------
   // Tool: agentpay_status
   // -----------------------------------------------------------------------
@@ -64,13 +117,17 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
 
         const lines: string[] = [
           "CSPR AgentPay Guard MCP server is ready.",
-          `mode=mock`,
+          `mode=deterministic-demo`,
           `paidApiBaseUrl=${cfg.paidApiBaseUrl}`,
         ];
 
         if (!status.reachable) {
-          lines.unshift("⚠ paid-api unreachable — demo tools will fail.");
-          lines.push("⚠ paid-api is unreachable. Start it with: pnpm --filter @cspr-agentpay/paid-api dev");
+          lines.unshift(
+            "First-class judge tools remain available; only legacy API-backed demo tools are unavailable.",
+          );
+          lines.push(
+            "Legacy paid-api tools require: pnpm --filter @cspr-agentpay/paid-api dev",
+          );
         }
 
         lines.push("");
@@ -101,7 +158,7 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
   server.registerTool(
     "setup_demo",
     {
-      title: "Setup Demo State",
+      title: "Setup Legacy Deterministic Demo State",
       description:
         "Initialize or reset the paid API demo state (merchant + policy). Call this before using other tools.",
       inputSchema: {
@@ -141,9 +198,9 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
   server.registerTool(
     "call_paid_resource",
     {
-      title: "Call Paid Resource",
+      title: "Call Legacy Deterministic Paid Resource",
       description:
-        "Call a protected HTTP 402 resource. If payment is required, automatically authorizes and retries with a receipt. Returns premium data, payment proof, and audit timeline.",
+        "Run the legacy mock lifecycle against a local paid API. This demo tool does not perform the real native-CSPR guarded path.",
       inputSchema: {
         url: z.string().url().describe("The protected resource URL to call."),
         method: z.string().default("GET").describe("HTTP method (GET only for now)."),
@@ -185,9 +242,9 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
   server.registerTool(
     "authorize_requirement",
     {
-      title: "Authorize Payment Requirement",
+      title: "Authorize Legacy Demo Requirement",
       description:
-        "Authorize and escrow a PaymentRequirement returned by a protected resource. Returns an escrowed receipt for use with X-AgentPay-Receipt.",
+        "Authorize a requirement in the legacy deterministic demo lifecycle. The current guarded x402 path uses PAYMENT-REQUIRED, PAYMENT-SIGNATURE, and PAYMENT-RESPONSE.",
       inputSchema: {
         requirement: z.record(z.string(), z.unknown()).describe("The PaymentRequirement object from a 402 response."),
         policyId: z.string().optional().describe("Policy ID (defaults to config)."),
@@ -220,7 +277,7 @@ export function createAgentPayMcpServer(config?: McpServerConfig) {
   server.registerTool(
     "settle_payment",
     {
-      title: "Settle Payment",
+      title: "Settle Legacy Demo Lifecycle",
       description:
         "Settle a fulfilled payment by paymentId. The payment must be in 'fulfilled' status.",
       inputSchema: {

@@ -7,10 +7,7 @@ cat <<EOF
 CSPR AgentPay Guard browser recording prep
 ==========================================
 
-Start these in separate terminals before recording:
-
-  cd "$ROOT"
-  pnpm --filter @cspr-agentpay/paid-api dev
+Start the web app before recording:
 
   cd "$ROOT"
   pnpm --filter @cspr-agentpay/web dev
@@ -21,11 +18,16 @@ Then record:
 
 Pages recorded:
 
+  http://localhost:3000/
+  http://localhost:3000/judge
   http://localhost:3000/demo
-  http://localhost:3000/payments
-  http://localhost:3000/audit
-  https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c
-  https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409
+
+Capture separately during editing:
+
+  pnpm demo:mcp:judge
+  the existing CSPR.live payment page
+  the existing contract deployment
+  the existing proof transaction
 
 Output:
 
@@ -35,7 +37,8 @@ Safety reminders:
 
   - Do not show .env.
   - Do not show private keys or PEM files.
-  - Payment execution in the browser demo is mock mode.
-  - The Casper Testnet proof transaction is real.
-  - Do not describe this as production escrow, custody, or real CSPR settlement.
+  - Browser scenarios are deterministic and move no funds.
+  - Existing Casper payment and Odra proof evidence are read-only.
+  - Empty Payments and Audit pages are intentionally excluded.
+  - Do not run payment, proof, or deployment commands while recording.
 EOF

@@ -13,7 +13,8 @@
     "dev": "tsx src/server.ts",
     "build": "pnpm typecheck",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "demo:judge": "tsx scripts/judge-demo.ts"
   },
   "dependencies": {
     "@cspr-agentpay/casper-adapter": "workspace:*",

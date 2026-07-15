@@ -1,98 +1,55 @@
-# MCP Server — Agent-Facing Tool Surface
+# AgentPay Guard MCP Server
 
-This package exposes CSPR AgentPay Guard as an MCP (Model Context Protocol) server that AI agents can use to safely call paid HTTP 402 resources.
+This project-owned server exposes CSPR AgentPay Guard through the official Model Context Protocol SDK. It is not an official Casper MCP server.
 
-## What It Does
-
-An AI agent can:
-
-1. Ask the MCP server to call a protected resource.
-2. The MCP server calls the URL, receives `402 Payment Required`.
-3. Parses the `PaymentRequirement`.
-4. Calls the paid API's demo authorization helper to authorize and escrow payment.
-5. Retries the protected URL with `X-AgentPay-Receipt`.
-6. Returns premium data plus payment proof and audit timeline.
-7. Optionally settles the payment.
-
-**All in mock mode.** No real Casper Testnet connection is needed. Every receipt uses `kind: "mock"` proofs.
-
-## Available Tools
-
-| Tool | Description |
-|---|---|
-| `agentpay_status` | Server status, config, paid-api health check, available tools list. |
-| `setup_demo` | Initialize/reset paid API demo state (merchant + policy). |
-| `call_paid_resource` | Full 402 → authorize → retry → premium data flow. |
-| `authorize_requirement` | Authorize and escrow a single PaymentRequirement. |
-| `settle_payment` | Settle a fulfilled payment by paymentId. |
-| `get_audit_timeline` | Retrieve ordered audit events, optionally filtered by paymentId. |
-
-## Quick Start
+## Judge workflow
 
 ```bash
-# Terminal 1: Start the paid API
-pnpm --filter @cspr-agentpay/paid-api dev
+pnpm demo:mcp:judge
+```
 
-# Terminal 2: Start the MCP server over stdio
+The command creates an actual MCP client and server over an SDK-supported in-memory transport. Tool calls execute the existing guarded x402 normalization, policy evaluation, injected no-spend settlement adapter, PAYMENT-SIGNATURE retry, and PAYMENT-RESPONSE verification before the endpoints close cleanly.
+
+It requires no paid API, private key, signer, Casper credentials, or funds.
+
+## First-class tools
+
+| Tool | Purpose |
+|---|---|
+| `agentpay_run_rwa_due_diligence` | Run the deterministic MAD-001 agent journey from protected request and HTTP 402 through ordered policy checks and premium data. |
+| `agentpay_evaluate_payment` | Evaluate allowed, payee-substitution, amount-escalation, resource-substitution, expiry, and replay scenarios. |
+| `agentpay_get_verified_testnet_payment` | Read only the committed public evidence for the existing verified payment. |
+| `agentpay_security_model` | Return the concise fail-closed wallet invariants. |
+
+All four judge tools are deterministic and no-spend. They never call a signer or submitter.
+
+## Legacy deterministic demo tools
+
+The server retains `agentpay_status`, `setup_demo`, `call_paid_resource`, `authorize_requirement`, `settle_payment`, and `get_audit_timeline` for backward compatibility with the older local mock lifecycle. Their MCP titles and descriptions explicitly label that boundary.
+
+That legacy lifecycle may use `X-AgentPay-Receipt` and mock receipt states internally. The current real guarded x402 path instead uses official v2 `PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE`, and `PAYMENT-RESPONSE` transport headers with a project-specific native-CSPR payload.
+
+## Direct stdio server
+
+```bash
 pnpm --filter @cspr-agentpay/mcp-server dev
 ```
 
-The MCP server starts on stdio and waits for MCP client connections.
+The stdio server waits for an MCP client. Legacy paid-resource tools additionally require the local paid API; the four judge tools do not.
 
-## Example: call_paid_resource
+## Safety and evidence boundaries
 
-Input:
-```json
-{
-  "url": "http://127.0.0.1:4000/premium/parking-report/MAD-001",
-  "autoSettle": true
-}
+- Hosted and MCP judge scenarios have no signer and move no funds.
+- Public Testnet evidence comes from `docs/evidence/first-guarded-testnet-payment.json`.
+- The evidence tool never reads `.agentpay` state, wallet files, keys, or environment secrets.
+- One separate real guarded payment already exists; the judge command does not create another.
+- The Odra proof recorder is a separate audit path, not payment settlement, escrow, or custody.
+- The project-specific native-CSPR payload is not an official Casper x402 scheme.
+
+## Tests
+
+```bash
+pnpm --filter @cspr-agentpay/mcp-server test
 ```
 
-Output includes:
-- `resource` — premium parking-lot data
-- `paymentRequirement` — the 402 requirement
-- `authorization` — the payment authorization
-- `receipt` — escrowed mock receipt
-- `proof` — `{ kind: "mock", hash: "...", eventId: "..." }`
-- `auditEvents` — ordered audit trail
-- `timeline` — judge-readable step-by-step timeline
-- `settlement` — settlement result (if autoSettle=true)
-
-## Example: authorize_requirement
-
-If the agent wants to fetch the resource itself:
-
-1. Agent makes GET request to paid API → receives 402.
-2. Agent passes the `paymentRequirement` to `authorize_requirement`.
-3. MCP server authorizes and returns an escrowed receipt.
-4. Agent retries the URL with `X-AgentPay-Receipt: <receipt JSON>`.
-
-## Configuration
-
-| Variable | Default | Description |
-|---|---|---|
-| `AGENTPAY_MCP_TRANSPORT` | `stdio` | Transport mode (`stdio` or `streamable-http`). |
-| `AGENTPAY_PAID_API_BASE_URL` | `http://127.0.0.1:4000` | Paid API base URL. |
-| `AGENTPAY_DEFAULT_POLICY_ID` | `policy_demo_agent_001` | Default policy for authorization. |
-| `AGENTPAY_DEFAULT_AGENT_ID` | `agent_research_001` | Default agent identity. |
-| `AGENTPAY_AUTO_SETUP` | `true` | Auto-initialize demo state before calls. |
-| `AGENTPAY_AUTO_SETTLE` | `false` | Auto-settle after successful retrieval. |
-
-## Important Boundaries
-
-- MCP does **not** duplicate paid-api verification logic.
-- MCP calls the paid-api HTTP endpoints for the end-to-end demo flow.
-- MCP does **not** directly mutate adapter internals.
-- MCP reuses protocol schemas to validate received objects.
-- Paid API remains the owner of HTTP 402 requirement generation and receipt verification.
-- All receipts use mock proofs — no real Casper settlement.
-
-## Implementation Status
-
-- ✅ 7 MCP tools fully implemented over mock mode.
-- ✅ Full 402 → authorize → retry → premium data flow.
-- ✅ Judge-readable timeline output.
-- ✅ Auto-setup and auto-settle support.
-- ⬜ Streamable HTTP transport (local stdio for now).
-- ⬜ Real Casper Testnet mode (planned for Prompt 10).
+The integration suite performs a real MCP handshake, tool discovery, allowed flow, payee-substitution denial, replay denial, evidence retrieval, no-spend verification, invalid-input rejection, secret-field checks, and clean shutdown.

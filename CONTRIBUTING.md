@@ -23,4 +23,4 @@ pnpm --filter @cspr-agentpay/web build
 
 ## Real vs Mock Boundary
 
-Payment execution is mock mode. The Casper Testnet component is a real Odra proof-recorder transaction path. This project does not implement production escrow, custody, or real CSPR payment settlement.
+Hosted scenarios use deterministic no-spend execution. One separate guarded native-CSPR payment and one separate Odra proof transaction are publicly verified on Casper Testnet. This project does not implement production escrow, custody, Mainnet, or an audited settlement service.

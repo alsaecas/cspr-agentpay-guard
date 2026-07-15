@@ -13,8 +13,11 @@ Use a dedicated, low-value Casper Testnet account. Put its secret PEM outside th
 Start the paid API on port 4000, then run:
 
 ```bash
+pnpm demo:testnet:guarded:check
 pnpm demo:testnet:guarded:dry-run
 ```
+
+The `check` command is safe for CI and presentations: no `.env`, key, network, signing, or submission. The configured `dry-run` is an operator command that fetches the local 402 requirement and signs the exact TransactionV1 intent with the externally configured Testnet key, but never submits. Do not run the configured dry run merely to demonstrate readiness.
 
 With complete configuration, this fetches the actual 402, runs every guard, builds and signs the exact TransactionV1, prints only public intent and hashes, and submits nothing. Without configuration it reports all missing fields and exits without loading a key.
 

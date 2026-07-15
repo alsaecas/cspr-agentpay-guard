@@ -1,8 +1,8 @@
 # Paid API — HTTP 402 Protected Resource Demo
 
-This app implements the HTTP 402 Payment Required flow for CSPR AgentPay Guard. It serves premium parking-lot reports that can only be accessed by providing a valid Casper AgentPay receipt.
+This app contains both the legacy deterministic receipt lifecycle and the current guarded MAD-001 x402 endpoint. The legacy flow below remains for backward compatibility; the real guarded endpoint uses PAYMENT-REQUIRED, PAYMENT-SIGNATURE, and PAYMENT-RESPONSE.
 
-## Architecture
+## Legacy deterministic architecture
 
 ```
 Client/Agent → GET /premium/parking-report/MAD-001

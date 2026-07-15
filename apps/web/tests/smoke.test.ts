@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import { loadDashboardConfig } from "../lib/agentpayConfig";
 import { executeSelfContainedDemoFlow } from "../lib/selfContainedDemo";
@@ -64,6 +66,26 @@ describe("dashboard pages", () => {
     // Verify key labels exist in the app.
     expect("CSPR AgentPay Guard").toContain("AgentPay");
     expect("MOCK MODE").toBeTruthy();
+  });
+
+  it("renders the judge-ready content without a live-spend control", () => {
+    const judge = readFileSync(resolve(import.meta.dirname, "../app/judge/page.tsx"), "utf8");
+    expect(judge).toContain("Firewall for AI Wallets");
+    expect(judge).toContain("Prompt-injection attack");
+    expect(judge).toContain("Replay attack");
+    expect(judge).toContain("VerifiedTestnetPaymentCard");
+    expect(judge).toContain("MCP Agent Interface");
+    expect(judge).toContain("Real versus hosted");
+    expect(judge).toContain("agentpay_run_rwa_due_diligence");
+    expect(judge).toContain("801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f");
+    expect(judge).not.toMatch(/live[- ]spend.*(?:button|href)/i);
+  });
+
+  it("keeps transaction values responsive-safe", () => {
+    const css = readFileSync(resolve(import.meta.dirname, "../app/globals.css"), "utf8");
+    expect(css).toContain(".hash-value");
+    expect(css).toContain("overflow-wrap: anywhere");
+    expect(css).toContain("@media (max-width: 720px)");
   });
 });
 

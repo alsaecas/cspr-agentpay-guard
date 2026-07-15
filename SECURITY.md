@@ -21,4 +21,4 @@ Never commit `.env`, PEM files, wallet files, private keys, seed phrases, API to
 
 ## Project Boundary
 
-CSPR AgentPay Guard is a hackathon prototype. Payment execution is mock mode. The Casper Testnet component records proof data on-chain through `AgentPayProofRecorder`; it is not production escrow, custody, or real CSPR settlement.
+CSPR AgentPay Guard is a Testnet hackathon prototype. Hosted execution is deterministic and no-spend. Separately, one guarded native-CSPR Testnet payment is publicly verified, and `AgentPayProofRecorder` records a different audit proof. Neither path is production escrow, custody, Mainnet readiness, or a security audit.

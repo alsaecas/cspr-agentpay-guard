@@ -1,0 +1,27 @@
+1
+00:00:00,000 --> 00:00:20,000
+AI agents need paid data, but the model cannot be trusted with unrestricted wallet control.
+
+2
+00:00:20,000 --> 00:00:40,000
+AgentPay Guard is a zero-trust authorization layer between the model, x402, and the wallet.
+
+3
+00:00:40,000 --> 00:01:15,000
+An MCP-compatible agent requests premium MAD-001 due diligence. Hosted Judge Mode is deterministic and no-spend.
+
+4
+00:01:15,000 --> 00:01:45,000
+Payee substitution is denied before signing. A consumed transaction is rejected as replay.
+
+5
+00:01:45,000 --> 00:02:20,000
+One existing 2.5 CSPR TransactionV1 completed exactly once and was independently verified on Casper Testnet.
+
+6
+00:02:20,000 --> 00:02:40,000
+The Odra proof recorder is a separate public audit path, not payment settlement, escrow, or custody.
+
+7
+00:02:40,000 --> 00:03:00,000
+x402 is the payment rail. AgentPay Guard is the authorization layer.
