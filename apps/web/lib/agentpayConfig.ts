@@ -29,6 +29,13 @@ function getPublicBaseUrl(): string {
     return stripTrailingSlash(configured);
   }
 
+  if (
+    process.env.VERCEL_ENV === "production" &&
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ) {
+    return `https://${stripTrailingSlash(process.env.VERCEL_PROJECT_PRODUCTION_URL)}`;
+  }
+
   if (process.env.VERCEL_URL) {
     return `https://${stripTrailingSlash(process.env.VERCEL_URL)}`;
   }

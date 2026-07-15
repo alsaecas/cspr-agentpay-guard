@@ -1,9 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { loadDashboardConfig } from "../lib/agentpayConfig";
 import { executeSelfContainedDemoFlow } from "../lib/selfContainedDemo";
 
 describe("dashboard config", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("loads defaults", () => {
     const cfg = loadDashboardConfig();
     expect(cfg.mode).toBe("mock");
@@ -15,6 +19,43 @@ describe("dashboard config", () => {
     );
     expect(cfg.defaultPolicyId).toBe("policy_demo_agent_001");
     expect(cfg.autoSettle).toBe(true);
+  });
+
+  it("uses the stable Vercel domain in production", () => {
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv(
+      "VERCEL_PROJECT_PRODUCTION_URL",
+      "cspr-agentpay-guard.vercel.app",
+    );
+    vi.stubEnv(
+      "VERCEL_URL",
+      "cspr-agentpay-guard-random-deployment.vercel.app",
+    );
+
+    const cfg = loadDashboardConfig();
+
+    expect(cfg.publicBaseUrl).toBe(
+      "https://cspr-agentpay-guard.vercel.app",
+    );
+    expect(cfg.targetUrl).toBe(
+      "https://cspr-agentpay-guard.vercel.app/premium/parking-report/MAD-001",
+    );
+  });
+
+  it("uses the deployment URL for Vercel previews", () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv(
+      "VERCEL_PROJECT_PRODUCTION_URL",
+      "cspr-agentpay-guard.vercel.app",
+    );
+    vi.stubEnv(
+      "VERCEL_URL",
+      "cspr-agentpay-guard-preview.vercel.app",
+    );
+
+    expect(loadDashboardConfig().publicBaseUrl).toBe(
+      "https://cspr-agentpay-guard-preview.vercel.app",
+    );
   });
 });
 
