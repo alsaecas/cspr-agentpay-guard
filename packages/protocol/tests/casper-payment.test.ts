@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   CASPER_PAYMENT_AUTHORIZATION_VERSION,
   createCasperPaymentAuthorizationHash,
+  deriveCasperTransferId,
   validateCasperPaymentAuthorization,
   type CasperPaymentAuthorization,
 } from "../src/index";
@@ -32,6 +33,14 @@ describe("Casper payment authorization", () => {
     expect(createCasperPaymentAuthorizationHash(fixture)).toBe(
       "5111fd055ddd4f42ef4e18df8939bf78c4c1fc1258a04ace84997b963832300e",
     );
+  });
+
+  it("derives a deterministic JavaScript-safe transfer ID from 52 bits", () => {
+    const seed = "ff".repeat(32);
+    const transferId = deriveCasperTransferId(seed);
+    expect(transferId).toBe("4503599627370495");
+    expect(deriveCasperTransferId(seed)).toBe(transferId);
+    expect(Number(transferId)).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
   });
 
   it.each(["destination", "amountMotes", "requestHash"] as const)(

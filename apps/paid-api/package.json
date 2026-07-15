@@ -25,6 +25,7 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/supertest": "^7.2.0",
+    "casper-js-sdk": "5.0.12",
     "supertest": "^7.2.2"
   }
 }
