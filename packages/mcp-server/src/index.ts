@@ -8,6 +8,13 @@ export type {
 export type { McpServerConfig } from "./config";
 export { loadMcpServerConfig } from "./config";
 export {
+  evaluatePaymentScenario,
+  getSecurityModel,
+  getVerifiedTestnetPayment,
+  runRwaDueDiligence,
+} from "./judgeWorkflow";
+export type { JudgeScenario } from "./judgeWorkflow";
+export {
   createAgentPayMcpServer,
   startStdioServer,
 } from "./server";

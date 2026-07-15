@@ -11,6 +11,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "demo:mock": "pnpm --filter @cspr-agentpay/agent demo:mock",
     "demo:guarded": "pnpm --filter @cspr-agentpay/agent demo:guarded",
+    "demo:mcp:judge": "tsx packages/mcp-server/scripts/judge-demo.ts",
     "demo": "pnpm --filter @cspr-agentpay/agent demo",
     "proof:testnet": "tsx packages/casper-adapter/scripts/proof-testnet.ts",
     "proof:testnet:dry-run": "tsx packages/casper-adapter/scripts/proof-testnet.ts --dry-run",
