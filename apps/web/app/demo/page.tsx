@@ -61,6 +61,10 @@ export default function DemoPage() {
     <div className="shell">
       <NavBar />
 
+      <div className="panel demo-context">
+        <strong>Judge path:</strong> start with <a href="/judge">Judge Mode</a>, run the real MCP protocol demo with <code>pnpm demo:mcp:judge</code>, or inspect the <a href="#verified-testnet-evidence">verified Testnet evidence</a>. Hosted controls never sign or spend.
+      </div>
+
       <div className="panel">
         <div className="panel-header">
           <h2>AgentPay Demo</h2>
@@ -203,7 +207,7 @@ export default function DemoPage() {
         </div>
       )}
 
-      <div className="gap">
+      <div className="gap" id="verified-testnet-evidence">
         <VerifiedTestnetPaymentCard
           commit={testnetStatus?.gitCommit ?? null}
         />

@@ -17,7 +17,7 @@ export function VerifiedTestnetPaymentCard({
       </p>
       <div className="kv">
         <span className="kv-key">transaction</span>
-        <span className="kv-value">
+        <span className="kv-value hash-value">
           <a href={evidence.explorerUrl} target="_blank" rel="noreferrer">
             {evidence.transactionHash}
           </a>
@@ -32,6 +32,10 @@ export function VerifiedTestnetPaymentCard({
         <span className="kv-value">{evidence.payeeAccountHash}</span>
         <span className="kv-key">block height</span>
         <span className="kv-value">{evidence.blockHeight}</span>
+        <span className="kv-key">execution</span>
+        <span className="kv-value">{evidence.executionStatus}</span>
+        <span className="kv-key">payment response</span>
+        <span className="kv-value">verified</span>
         <span className="kv-key">verified</span>
         <span className="kv-value">{evidence.verifiedAt}</span>
         <span className="kv-key">premium resource</span>

@@ -341,6 +341,40 @@ code {
   color: #fff;
 }
 
+.btn-disabled {
+  color: var(--ink-dim);
+  border: 1px dashed var(--line);
+  cursor: default;
+}
+
+.cta-row, .judge-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.judge-hero .cta-row { justify-content: center; }
+.eyebrow { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+.judge-subtitle { color: var(--ink) !important; font-size: 20px !important; font-weight: 700; max-width: 760px !important; }
+.section-lede { color: var(--ink-dim); max-width: 820px; }
+.architecture-flow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+.flow-step { min-width: 0; display: flex; gap: 8px; align-items: center; color: var(--ink-dim); }
+.flow-step span { min-width: 0; flex: 1; padding: 12px 8px; text-align: center; background: var(--panel-hover); border: 1px solid var(--line); border-radius: var(--radius); }
+.flow-step b { color: var(--accent); }
+.scenario-card h3, .boundary-grid h3 { margin-top: 12px; }
+.scenario-card p, .scenario-card li, .boundary-grid p { color: var(--ink-dim); }
+.scenario-card ul { padding-left: 20px; margin-bottom: 0; }
+.allow-card { border-top: 3px solid var(--accent); }
+.deny-card { border-top: 3px solid var(--error); }
+.tool-list > div { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.tool-list dt, .tool-list dd { margin: 0; }
+.tool-list dd { color: var(--ink-dim); margin-top: 4px; }
+.terminal-card { min-width: 0; background: #05080c; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+.terminal-label { color: var(--accent); font-size: 12px; text-transform: uppercase; font-weight: 800; }
+.terminal-card pre { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-dim); }
+.hash-value { min-width: 0; overflow-wrap: anywhere; }
+.demo-context { margin-bottom: 16px; color: var(--ink-dim); }
+
 /* Hero */
 .hero {
   text-align: center;
@@ -401,6 +435,10 @@ code {
   .nav { flex-wrap: wrap; gap: 10px; }
   .hero h1 { font-size: 28px; }
   .kv { grid-template-columns: 100px minmax(0, 1fr); }
+  .architecture-flow { grid-template-columns: 1fr; }
+  .flow-step { flex-direction: column; }
+  .flow-step b { transform: rotate(90deg); }
+  .shell { width: min(100% - 28px, 1120px); }
 }
 
 /* Filter bar */

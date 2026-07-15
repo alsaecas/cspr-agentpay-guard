@@ -14,11 +14,11 @@ export default function HomePage() {
           released only after independently verified settlement.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-          <a href="/demo" className="btn btn-primary">
-            Run Dashboard Demo
+          <a href="/judge" className="btn btn-primary">
+            Open Judge Mode
           </a>
-          <a href="/audit" className="btn btn-ghost">
-            View Audit Trail
+          <a href="/demo" className="btn btn-ghost">
+            Run Interactive Demo
           </a>
         </div>
       </div>
@@ -118,7 +118,7 @@ export default function HomePage() {
         Hosted interactive scenarios use deterministic demo state. The verified
         payment card above is separate public Casper Testnet evidence.
         <br />
-        Terminal demo: <code>pnpm demo:mock</code>
+        MCP judge demo: <code>pnpm demo:mcp:judge</code>
       </div>
     </div>
   );
