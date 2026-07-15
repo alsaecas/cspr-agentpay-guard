@@ -1,0 +1,32 @@
+{
+  "status": "verified",
+  "network": "casper-test",
+  "x402Version": 2,
+  "scheme": "agentpay-casper-native-v1",
+  "resource": "http://127.0.0.1:4000/premium/rwa/parking-asset/MAD-001",
+  "requestHash": "199ec14c9d2ed2cd873a75b58a483384440367240317b5d35f7bb1c93d313c29",
+  "paymentId": "7ecf8722f8f553c86018bfd464653ad82492cea32ff0f3555300cb77a8cad030",
+  "authorizationHash": "dd6f6b5e7d4383bf400cd40e9e3a139bfcdfa48fda873ad19b55463c60807642",
+  "requirementHash": "0b0bdbd1cb4df27b6247310f1dbfa946dc88b90aecf1a8667560c5ea8b819ee3",
+  "transactionHash": "801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f",
+  "transferId": "2230876648738645",
+  "signerPublicKey": "01336f14a3c431deec7041a9f4d64d7a2675b727c5150050963ccbb4f56a254d69",
+  "signerAccountHash": "a25198a08bcaa9a861edc88db374123469a1349cf2a55e3529a3e4430efcce13",
+  "payee": "01e16a6a8992000821589fc26d00bc63c1c06e636765e27bba3b8df99f302c8ec6",
+  "payeeAccountHash": "40ccfcd1c883b9b6241dc73dba2c13e852b9ea859bc50c244dbb940f63f297b4",
+  "amountMotes": "2500000000",
+  "executionStatus": "succeeded",
+  "blockHash": "d9a302d8521dc0c0dad241269311ed8b25c0ce3f4baf67522716194386840740",
+  "blockHeight": 8510676,
+  "transactionTimestamp": "2026-07-15T08:59:29.513Z",
+  "verifiedAt": "2026-07-15T09:03:06.514Z",
+  "paymentResponseVerified": true,
+  "premiumResourceReleased": true,
+  "explorerUrl": "https://testnet.cspr.live/transaction/801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f",
+  "proofRecorderTransactionHash": null,
+  "notes": [
+    "Payment settlement and Odra proof anchoring are separate transactions.",
+    "This is a project-specific Casper x402 scheme.",
+    "The local client recovered the confirmed transaction by hash after fixing a null error-message classification defect; it did not resubmit."
+  ]
+}
