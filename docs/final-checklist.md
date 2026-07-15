@@ -1,6 +1,6 @@
 # Final Checklist — CSPR AgentPay Guard
 
-Last updated: 2026-07-14
+Last updated: 2026-07-15
 
 ## GitHub / Submission
 
@@ -42,7 +42,8 @@ pnpm --filter @cspr-agentpay/web build  # pass
 - [x] Network, asset, exact payee, merchant, resource, price, budget, expiry, request/body hash, nonce, facilitator, and optional policy-signature checks
 - [x] Signer/facilitator path is never called after a denial
 - [x] Real Casper x402 adapter fails closed without an injected verified Casper signer and facilitator
-- [x] No real x402 CSPR settlement claimed
+- [x] Project-specific native-CSPR x402 scheme distinguished from official x402 transport
+- [x] First guarded Testnet settlement independently verified
 
 Dashboard commands:
 
@@ -119,6 +120,8 @@ Status:
 - [x] Premium endpoint rejects legacy receipt and unverified evidence
 - [x] Dry run submits nothing and reports missing configuration
 - [x] Hosted dashboard cannot sign
-- [ ] Full configured dry run reviewed with exact intent
-- [ ] Explicit user confirmation received
-- [ ] One live Testnet payment submitted and explorer-verified
+- [x] Full configured dry run reviewed with exact intent
+- [x] Explicit exact-hash user confirmation received
+- [x] One live Testnet payment submitted and explorer-verified: `801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f`
+- [x] Premium MAD-001 resource released only after independent verification
+- [x] Public JSON and Markdown evidence contain no secrets

@@ -1,7 +1,8 @@
 # First guarded Casper Testnet payment
 
-Status: **verified**  
-Executed: 2026-07-15  
+Status: **verified**
+
+Executed: 2026-07-15
 Starting commit: `c4054b9` (`set Vercel app root`), on branch `final-round/live-testnet-evidence`
 
 AgentPay Guard completed one real, policy-authorized native-CSPR payment on Casper Testnet. The protected API released premium data only after independently reconstructing the authorization, verifying its signature, and confirming the TransactionV1 settlement through Casper RPC.

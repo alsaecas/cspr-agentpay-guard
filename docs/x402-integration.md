@@ -2,10 +2,11 @@
 
 ## Status
 
-Milestone 1 implements an official x402 v2 transport-compatible guard pipeline.
-It does not claim that Casper x402 settlement is live. `@x402/core` 2.18.0 has no
-official Casper scheme package, so real mode requires an injected verified Casper
-signer and facilitator and otherwise fails closed without a transaction hash.
+Official x402 v2 transport headers carry both the deterministic hosted scenarios
+and the project-specific `agentpay-casper-native-v1` local Testnet path. The first
+guarded native-CSPR payment is verified publicly. `@x402/core` 2.18.0 still has no
+official Casper scheme package, so this repository does not claim official Casper
+x402 standardization or a third-party facilitator.
 
 ## Wire Flow
 
@@ -95,7 +96,7 @@ signer must also be injected. Secrets and PEM files must remain outside the repo
 | Payment signature | Deterministic `mock-*` payload | Requires injected verified Casper signer |
 | Facilitator settlement | Deterministic local state | Requires Casper-capable facilitator |
 | Transaction hash | Never shown as Casper evidence | Only accepted as 64-character hex from settlement response |
-| CSPR movement | No | Not implemented in this milestone |
+| CSPR movement | No | One verified local Testnet payment |
 | Existing proof recorder | Separate from payment | Separate optional post-settlement anchor |
 
 ## Threat Model
@@ -122,7 +123,11 @@ duplicate mock settlement authorization. Real mode still needs an atomic durable
 nonce/in-flight store shared across server instances and a unique Casper transfer
 identifier bound into the signed x402 payload.
 
-## Remaining Work for Real Testnet Settlement
+## Verified Testnet settlement
+
+Transaction `801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f` executed a 2.5 CSPR native transfer in block `8510676`. The server reconstructed and verified the authorization, independently read RPC settlement fields, persisted consumption, returned `PAYMENT-RESPONSE`, and released MAD-001. See `docs/evidence/first-guarded-testnet-payment.md`.
+
+## Remaining production work
 
 1. Specify and review the Casper x402 `exact` payload and network identifier.
 2. Implement the `@x402/core` client, server, and facilitator scheme interfaces.

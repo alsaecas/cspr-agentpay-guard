@@ -1,14 +1,14 @@
 # Casper Testnet Integration Status
 
-Last updated: 2026-07-14
+Last updated: 2026-07-15
 
 ## Current State
 
-State C — **Deployed on Casper Testnet with one proof transaction submitted**.
+State D — **First guarded native-CSPR payment independently verified on Casper Testnet**.
 
 The repository has a buildable Odra proof-recorder contract, generated wasm/schema artifacts, a guarded Testnet deploy command, and a guarded real proof submission command. The `AgentPayProofRecorder` contract is deployed on Casper Testnet, and one `record_proof` call has executed successfully.
 
-The final-round guarded x402 foundation does not change this status: no real x402 CSPR payment settlement has been submitted. The existing Testnet transactions remain proof-recorder evidence only.
+The guarded payment is TransactionV1 `801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f`, executed successfully in block `8510676`. The existing Odra deployment and proof call remain separate transactions and do not establish payment settlement.
 
 ## Status Table
 
@@ -23,6 +23,10 @@ The final-round guarded x402 foundation does not change this status: no real x40
 | Proof dry-run | Done | `pnpm proof:testnet:dry-run` passes |
 | Real Testnet deployment | Done | [CSPR.live deploy](https://testnet.cspr.live/deploy/b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c) |
 | Real proof transaction | Done | [CSPR.live proof](https://testnet.cspr.live/deploy/9bf7e42d1763c3933c29617c564135067d45907b57c3cda4b2caffce902c6409) |
+| Guarded native-CSPR payment | Verified | [CSPR.live transaction](https://testnet.cspr.live/transaction/801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f) |
+| Payment amount | Verified | `2,500,000,000` motes |
+| Payment block | Verified | `8510676` |
+| Premium resource | Released | MAD-001 after RPC verification |
 | Contract hash | Done | `2f3dc02eb40c42701609db6ee1a3557d437a68014deb01f46ab658e0a57e1a01` |
 | Package hash | Done | `d5587b9875c2e1090d65dd20bdd8eade6f3f8d97792525ecffc3b90506aef010` |
 | Deployment transaction | Done | `b03078ffe751d10b01aa761cd2d9cb0032f7ea2f206064a3647521cdd8f3442c` |
@@ -140,4 +144,4 @@ If it does not print a real hash, do not document one.
 
 Implemented dependency-independent pieces: canonical native-CSPR authorization, server-authoritative reconstruction of issued payment terms, Ed25519/Secp256k1 authorization-signature verification over raw hash bytes, SDK 5.0.12 TransactionV1 signing, atomic file idempotency, durable consumed-transaction replay defense, exact-once coordination, bounded submission polling, RPC transfer reading, independent settlement verification, official x402 v2 headers, a dedicated premium endpoint, dry-run/live-gated CLI, and a hosted-safe dashboard status panel.
 
-No new live payment has been submitted in this milestone. The existing proof-recorder deployment/evidence remains separate. Local credentials, a funded Testnet signer, configured payee, and reachable RPC are still required before a live validation can be authorized.
+One live payment was submitted exactly once and verified. Public evidence is stored in `docs/evidence/first-guarded-testnet-payment.json` and `.md`. Reproduction requires new funded Testnet accounts and a new explicit authorization; the committed evidence does not enable spending.

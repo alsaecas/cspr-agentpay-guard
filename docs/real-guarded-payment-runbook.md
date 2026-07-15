@@ -1,5 +1,11 @@
 # Real guarded payment runbook
 
+## First verified execution
+
+The first guarded payment completed on 2026-07-15. TransactionV1 `801d558b18be546ebe18ff884541d451428dacc92e17c8a6c6a33df4d8b4440f` transferred 2.5 CSPR on `casper-test`; Casper RPC reported successful execution in block `8510676`, and MAD-001 was released afterward. See `docs/evidence/first-guarded-testnet-payment.md`.
+
+During the run, the transaction succeeded but the initial local poller misclassified the presence of a null `error_message` field as failure. State and hash were preserved; the classifier was corrected to inspect the field value; recovery queried the existing hash and did not resubmit. Never clear state to recover from a similar discrepancy.
+
 ## Setup and funding
 
 Use a dedicated, low-value Casper Testnet account. Put its secret PEM outside the repository with owner-only permissions. Configure the variables documented in `.env.example`, including the tagged `CASPER_TESTNET_PUBLIC_KEY` and `AGENTPAY_CONSUMED_TRANSACTIONS_PATH=.agentpay/consumed.real.json`; the PEM path never reaches the browser or logs. The signer may be Ed25519 or Secp256k1. Fund enough for the configured transfer plus network payment cost. The sample transfer is 2,500,000,000 motes (2.5 CSPR) and the builder payment limit defaults to 100,000,000 motes (0.1 CSPR), but the actual fee and minimum are network/chainspec-controlled—verify current Testnet values before approval.

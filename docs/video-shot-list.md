@@ -71,5 +71,5 @@ The recorder does not read `.env`, does not print keys, and does not submit new 
 - Do not show `.env`.
 - Do not show PEM files or private keys.
 - Do not show `mock-*` hashes on CSPR.live.
-- Do not describe the proof recorder as production escrow, custody, or real CSPR settlement.
+- Do not describe the proof recorder as payment settlement; show the separate verified TransactionV1 for the real payment.
 - Do describe the Casper Testnet proof transaction as real.
