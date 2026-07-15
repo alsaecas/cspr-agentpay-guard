@@ -66,7 +66,7 @@ const samplePayload = {
   ),
   policyId: "policy_demo_agent_001",
   merchantId: "merchant_market_data_001",
-  status: "escrowed",
+  status: "settled",
   receiptHash: blake2b256Hex("mock proof receipt"),
 };
 

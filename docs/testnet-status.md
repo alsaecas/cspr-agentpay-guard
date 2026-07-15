@@ -58,11 +58,15 @@ The contract records audit/proof fields. It does not transfer CSPR and is not pa
 
 ```bash
 pnpm proof:testnet:dry-run
-pnpm demo:testnet:guarded:dry-run
+pnpm demo:testnet:guarded:check
 pnpm contract:test
 ```
 
-The milestone validation uses dry runs only. No reviewer needs to submit another payment, proof, or deployment.
+`demo:testnet:guarded:check` is the CI- and presentation-safe readiness check. It reads only public process configuration and performs no `.env` load, key read, HTTP/RPC request, signing, or submission.
+
+`demo:testnet:guarded:dry-run` is different: when complete local configuration is intentionally supplied, it fetches the HTTP 402 requirement, runs the actual policy checks, reconstructs authorization, loads the external Testnet key, and signs the exact TransactionV1 intent while submitting nothing. It fails safely when configuration is incomplete and is not part of CI or no-secret presentation validation.
+
+The proof dry run remains zero-credential and no-submit. No reviewer needs to submit another payment, proof, or deployment.
 
 ## Hosted boundary
 

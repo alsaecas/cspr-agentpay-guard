@@ -254,7 +254,7 @@ export default function DemoPage() {
           </span>
           <span className="kv-key">execution</span>
           <span className="kv-value">
-            <code>pnpm demo:testnet:guarded:dry-run</code>
+            <code>pnpm demo:testnet:guarded:check</code>
           </span>
         </div>
       </div>

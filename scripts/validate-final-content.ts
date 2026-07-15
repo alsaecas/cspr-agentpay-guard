@@ -27,6 +27,7 @@ const packageJson = JSON.parse(readFileSync(path.join(root, "package.json"), "ut
   scripts?: Record<string, string>;
 };
 if (!packageJson.scripts?.["demo:mcp:judge"]) fail("missing demo:mcp:judge command");
+if (!packageJson.scripts?.["demo:testnet:guarded:check"]) fail("missing guarded Testnet readiness check command");
 
 const evidence = JSON.parse(readFileSync(
   path.join(root, "docs/evidence/first-guarded-testnet-payment.json"), "utf8",
