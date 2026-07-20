@@ -1356,9 +1356,9 @@ dependencies = [
 
 [[package]]
 name = "odra"
-version = "2.8.1"
+version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2f4d14dccb0ddcf8fe1808caef3fe2e7bb93a786d5bd3967b2c67a0a7af6c2f"
+checksum = "79960341b1cc279adeb433cbfb83638f6b62d3d0bb5a8e4ddb17345253b54054"
 dependencies = [
  "odra-casper-wasm-env",
  "odra-core",
@@ -1391,9 +1391,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-wasm-env"
-version = "2.8.1"
+version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67de2cddccb900998696a13967c59f2809b3a6b24b45d2ee6731a05de795c32c"
+checksum = "1f786b5c9cef0be3b6594f294348629e42845f3eaf0e966bfc808a79e4ec7529"
 dependencies = [
  "casper-contract",
  "ink_allocator",
@@ -1403,9 +1403,9 @@ dependencies = [
 
 [[package]]
 name = "odra-core"
-version = "2.8.1"
+version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "940fef67dfa971d79fba7344844c9fe7c750e97258f08277797aa13a3fe7c439"
+checksum = "62c0916de173840d88f33b09c13073f0e935a4b7385764d6cdd15d21a1ec33a9"
 dependencies = [
  "anyhow",
  "casper-event-standard",
@@ -1419,9 +1419,9 @@ dependencies = [
 
 [[package]]
 name = "odra-macros"
-version = "2.8.1"
+version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e4d87eb0bc0d286c227a245c9c47fbca5c37e396a47c6ed6deb78eefe005259"
+checksum = "26eca968407254024b76215f1b86e30ca349b00405d40977bce886d38b623b8c"
 dependencies = [
  "convert_case 0.6.0",
  "derive-try-from-ref",
@@ -1434,9 +1434,9 @@ dependencies = [
 
 [[package]]
 name = "odra-schema"
-version = "2.8.1"
+version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42fcd0da8f46722a2204b4aa0a1adc52206c9d5ca2e8d8346d701b1dcb12c0bc"
+checksum = "b2246b2ecd220e968316efeb4ecb1d4a5317e40166b59086f0575a79d5010e4c"
 dependencies = [
  "casper-contract-schema",
  "casper-types",
